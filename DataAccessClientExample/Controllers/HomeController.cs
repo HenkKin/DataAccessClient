@@ -64,15 +64,13 @@ namespace DataAccessClientExample.Controllers
             await _unitOfWork.SaveAsync();
 
             var exampleEntities = await _exampleEntityRepository.GetChangeTrackingQuery()
-                .Where(e => !e.IsDeleted)
                 .ToListAsync();
 
             var exampleSecondEntities = await _exampleSecondEntityRepository.GetChangeTrackingQuery()
-                .Where(e => !e.IsDeleted)
                 .ToListAsync();
 
-            _exampleEntityRepository.RemoveRange(exampleEntities);
-            _exampleSecondEntityRepository.RemoveRange(exampleSecondEntities);
+            _exampleEntityRepository.Remove(exampleEntity1);
+            _exampleSecondEntityRepository.Remove(exampleSecondEntity1);
 
             await _unitOfWork.SaveAsync();
 
