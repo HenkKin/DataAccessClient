@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Authors>Henk Kin</Authors>
+    <Company>Henk Kin</Company>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageProjectUrl>https://github.com/HenkKin/DataAccessClient</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/HenkKin/DataAccessClient.git</RepositoryUrl>
+    <RepositoryType>GitHub</RepositoryType>
+    <PackageTags>DataAccess Repository, UnitOfWork, SoftDelete, RowVersioning, Filtering, Paging, Sorting, Includes</PackageTags>
+    <Description>Provides interfaces for Data Access with IRepository&lt;T&gt; and IUnitOfWork. Also provides haviorial interfaces for entities like IIdentifiable, ICreatable, IModifiable, ISoftDeletable and IRowVersioned. Last but not least provides some types for Exceptions and searching capabilities like Filtering,Paging, Sorting and Includes.</Description>
+    <Copyright>Henk Kin</Copyright>
+    <Version>0.0.1-alpha-1</Version>
+  </PropertyGroup>
+
+</Project>

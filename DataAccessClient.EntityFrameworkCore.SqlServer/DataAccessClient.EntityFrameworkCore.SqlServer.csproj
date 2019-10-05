@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Authors>Henk Kin</Authors>
+    <Description>Provides implementation for Data Access with EntityFrameworkCore.SqlServer. It provides implementation for IRepository&lt;T&gt; and DbContext. It also provides extension methods for IServiceCollection to easily adding types to .NET Core DependencyInjection. Is also supports using multiple DbContexts within same IUnitOfWork.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageProjectUrl>https://github.com/HenkKin/DataAccessClient</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/HenkKin/DataAccessClient.git</RepositoryUrl>
+    <RepositoryType>GitHub</RepositoryType>
+    <PackageReleaseNotes></PackageReleaseNotes>
+    <Copyright>Henk Kin</Copyright>
+    <PackageTags>EntityFrameworkCore, EF, SqlServer, DependencyInjection, Multiple DbContext support, DataAccess, Repository, UnitOfWork, SoftDelete, RowVersioning, Filtering, Paging, Sorting, Includes</PackageTags>
+    <Version>0.0.1-alpha-1</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LinqKit.Microsoft.EntityFrameworkCore" Version="1.1.16" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="3.3.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DataAccessClient\DataAccessClient.csproj" />
+  </ItemGroup>
+
+</Project>
