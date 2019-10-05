@@ -32,7 +32,7 @@ No external dependencies
 
 The [DataAccessClient](https://github.com/HenkKin/DataAccessClient/) package provides you a set of EntityBehavior interfaces. These interfaces you can use to decorate your entites.
 
-The implementation packages, like [DataAccessClient.EntityFrameworkCore.SqlServer](https://github.com/HenkKin/DataAccessClient.EntityFrameworkCore.SqlServer/) package, use these interface to apply the behavior automaticalle.
+The implementation packages, like [DataAccessClient.EntityFrameworkCore.SqlServer](https://github.com/HenkKin/DataAccessClient.EntityFrameworkCore.SqlServer/) package, use these interface to apply the behavior automatically.
 
 ```csharp
 ...
@@ -65,9 +65,9 @@ using DataAccessClient;
 
 ```
 
-Alle entity behaviours are optional. No one is required.
+Alle entity behaviors are optional. No one is required.
 
-The generic parameter int defines the IdentifierType of your identifier fiels (primary and foreign keys).
+The generic parameter int defines the IdentifierType of your identifier fields (primary and foreign keys).
 
 ### IUnitOfWork and IRepository<T>
 	
@@ -208,7 +208,7 @@ public class YourService : IYourService
 
 public class Client
 {
-	public void Main(IYourService yourService)
+	public async Task Main(IYourService yourService)
 	{
 		var criteria = new Criteria();
     		criteria.OrderBy = "Id";
@@ -217,7 +217,7 @@ public class Client
 		criteria.PageSize = 10;
 		criteria.Search = "Data Access Client";
 
-		var criteriaResult = yourService.SearchAsync(criteria);
+		var criteriaResult = await yourService.SearchAsync(criteria);
 
 		// criteriaResult.Records // of type YourEntity
 		// criteriaResult.TotalRecordCount // integer
@@ -324,7 +324,7 @@ public class Startup
 		builder => ... , // f.e. builder.UseSqlServer(...)
 		entityTypes
     	);
-		...
+	...
     }
     
     ...
@@ -344,11 +344,11 @@ internal class YourDbContext : SqlServerDbContext<int>
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
-	    // Register your entities to the DbContext using EntityTypeBuilder
+	    	// Register your entities to the DbContext using EntityTypeBuilder
 		modelBuilder.Entity<ExampleEntity>()
-            .ToTable("ExampleEntities");
+            		.ToTable("ExampleEntities");
 
-	    // Register your entities to the DbContext using EntityEntityTypeConfiguration class
+	    	// Register your entities to the DbContext using EntityEntityTypeConfiguration class
 		modelBuilder.ApplyConfiguration(new ExampleEntityEntityTypeConfiguration());
 
 		base.OnModelCreating(modelBuilder);
