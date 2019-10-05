@@ -28,13 +28,8 @@ Either commands, from Package Manager Console or .NET Core CLI, will download an
 
 No external dependencies
 
-### Usage
+### Entity behaviors
 
-If you're using EntityFrameworkCore and you want to use this Identifier type in your entities, then you can use [DataAccessClient](https://github.com/HenkKin/DataAccessClient/) package which includes a `DbContextOptionsBuilder.UseIdentifiers<[InternalClrType:short|int|long|Guid]>()` extension method, allowing you to register all needed IValueConverterSelectors and IMigrationsAnnotationProviders. 
-It also includes a `PropertyBuilder<Identifier>.IdentifierValueGeneratedOnAdd()` extension method, allowing you to register all needed configuration to use `SqlServerValueGenerationStrategy.IdentityColumn`. 
-
-Entity behaviors
-================
 The [DataAccessClient](https://github.com/HenkKin/DataAccessClient/) package provides you a set of EntityBehavior interfaces. These interfaces you can use to decorate your entites.
 
 The implementation packages, like [DataAccessClient.EntityFrameworkCore.SqlServer](https://github.com/HenkKin/DataAccessClient.EntityFrameworkCore.SqlServer/) package, use these interface to apply the behavior automaticalle.
@@ -46,26 +41,26 @@ using DataAccessClient;
  public class ExampleEntity : IIdentifiable<int>, ICreatable<int>, IModifiable<int>, ISoftDeletable<int>, IRowVersioned
 {
 	// to identify an entity
-    public int Id { get; set; }
+    	public int Id { get; set; }
 
 	// to track creation
-    public DateTime CreatedOn { get; set; }
-    public int CreatedById { get; set; }
+   	public DateTime CreatedOn { get; set; }
+    	public int CreatedById { get; set; }
 
 	// to track modification
-    public DateTime? ModifiedOn { get; set; }
-    public int? ModifiedById { get; set; }
+    	public DateTime? ModifiedOn { get; set; }
+    	public int? ModifiedById { get; set; }
 
 	//  to implement Soft Delete
-    public bool IsDeleted { get; set; }
-    public DateTime? DeletedOn { get; set; }
-    public int? DeletedById { get; set; }
+    	public bool IsDeleted { get; set; }
+    	public DateTime? DeletedOn { get; set; }
+    	public int? DeletedById { get; set; }
 
 	//  to implement optimistic concurrency control.
-    public byte[] RowVersion { get; set; } 
+    	public byte[] RowVersion { get; set; } 
 
 	// your own fields
-    public string Name { get; set; }
+    	public string Name { get; set; }
 }
 
 ```
@@ -74,9 +69,8 @@ Alle entity behaviours are optional. No one is required.
 
 The generic parameter int defines the IdentifierType of your identifier fiels (primary and foreign keys).
 
-
-IUnitOfWork and IRepository<T>
-=========================
+### IUnitOfWork and IRepository<T>
+	
 To use Repository and UnitOfWork, see example below.
 
 ```csharp
@@ -92,17 +86,17 @@ public class HomeController : Controller
     private readonly IQueryableSearcher<ExampleSecondEntity> _exampleSecondEntityQueryableSearcher;
 
     public HomeController(
-		IUnitOfWork unitOfWork, 
-		IRepository<ExampleEntity> exampleEntityRepository, 
-		IRepository<ExampleSecondEntity> exampleSecondEntityRepository, 
-		IQueryableSearcher<ExampleEntity> exampleEntityQueryableSearcher, 
-		IQueryableSearcher<ExampleSecondEntity> exampleSecondEntityQueryableSearcher)
+	IUnitOfWork unitOfWork, 
+	IRepository<ExampleEntity> exampleEntityRepository, 
+	IRepository<ExampleSecondEntity> exampleSecondEntityRepository, 
+	IQueryableSearcher<ExampleEntity> exampleEntityQueryableSearcher, 
+	IQueryableSearcher<ExampleSecondEntity> exampleSecondEntityQueryableSearcher)
     {
-        _unitOfWork = unitOfWork;
-        _exampleEntityRepository = exampleEntityRepository;
-        _exampleSecondEntityRepository = exampleSecondEntityRepository;
-        _exampleEntityQueryableSearcher = exampleEntityQueryableSearcher;
-        _exampleSecondEntityQueryableSearcher = exampleSecondEntityQueryableSearcher;
+	_unitOfWork = unitOfWork;
+	_exampleEntityRepository = exampleEntityRepository;
+	_exampleSecondEntityRepository = exampleSecondEntityRepository;
+	_exampleEntityQueryableSearcher = exampleEntityQueryableSearcher;
+	_exampleSecondEntityQueryableSearcher = exampleSecondEntityQueryableSearcher;
     }
 
     [HttpGet]
@@ -170,19 +164,20 @@ public class HomeController : Controller
 
 ```
 
-Exceptions
-==========
+### Exceptions
 
 The package provides you two types of exceptions
 
 1) DuplicateKeyException
+
 This exception is throw when an implementation package detects an duplicate key.
 
 2) RowVersioningException
+
 This exception is thrown when an entity is changed during your change.
 
-Searching
-=========
+### Searching
+
 To support easy searching with filtering, includes, ordering and paging, an IQueryableSearcher<ExampleEntity> interface is provided. It requires an IQueryable<ExampleEntity parameter and a Criteria parameter.
 
 ```csharp
@@ -216,11 +211,11 @@ public class Client
 	public void Main(IYourService yourService)
 	{
 		var criteria = new Criteria();
-        criteria.OrderBy = "Id";
-        criteria.OrderByDirection = OrderByDirection.Ascending;
-        criteria.Page = 1;
-        criteria.PageSize = 10;
-        criteria.Search = "Data Access Client";
+    		criteria.OrderBy = "Id";
+		criteria.OrderByDirection = OrderByDirection.Ascending;
+		criteria.Page = 1;
+		criteria.PageSize = 10;
+		criteria.Search = "Data Access Client";
 
 		var criteriaResult = yourService.SearchAsync(criteria);
 
@@ -230,9 +225,7 @@ public class Client
 }
 ```
 
-
 =========================================
-
 
 
 DataAccessClient.EntityFrameworkCore.SqlServer
@@ -264,14 +257,20 @@ Either commands, from Package Manager Console or .NET Core CLI, will download an
 - [DataAccessClient](https://www.nuget.org/packages/DataAccessClient/)
 - [Microsoft.EntityFrameworkCore.SqlServer](https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.SqlServer/)
 - [LinqKit.Microsoft.EntityFrameworkCore](https://www.nuget.org/packages/LinqKit.Microsoft.EntityFrameworkCore/)
+- [Microsoft.CodeAnalysis.CSharp.Scripting](https://www.nuget.org/packages/Microsoft.CodeAnalysis.CSharp.Scripting/)
 
 ### Usage
 
 IIf you're using EntityFrameworkCore.SqlServer and you want to use this Identifier type in your entities, then you can use [DataAccessClient.EntityFrameworkCore.SqlServer](https://github.com/HenkKin/DataAccessClient.EntityFrameworkCore.SqlServer/) package which includes the following registration options via extensions method on the DataAccessSqlServerServiceCollectionExtensions class:
+
 - `IServiceCollection AddDataAccessClient<TDbContext, TIdentifierType>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, IEnumerable<Type> entityTypes)`
+
 - `IServiceCollection AddDataAccessClient<TDbContext, TIdentifierType, TUserIdentifierProvider>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, IEnumerable<Type> entityTypes)` 
+
 - `IServiceCollection AddDataAccessClientPool<TDbContext, TIdentifierType>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, IEnumerable<Type> entityTypes)`
+
 - `IServiceCollection AddDataAccessClientPool<TDbContext, TIdentifierType, TUserIdentifierProvider>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, IEnumerable<Type> entityTypes)`
+
 
 These extension methods supporting you to register all needed DbContexts, IUnitOfWorks and IRepositories for provided entity types. 
 
@@ -288,43 +287,43 @@ public class Startup
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services)
     {
-		var entityTypes = new [] { typeof(Entity1), typeof(Entity2) }; // can also done by using reflection
-        ...
+	var entityTypes = new [] { typeof(Entity1), typeof(Entity2) }; // can also done by using reflection
+	...
 
-		// regist IUserIdentifierProvider standalone, usefull in n-layer architectures
-		services.AddSingleton<IUserIdentifierProvider<int>, YourUserIdentifierProviderType>();
-		// register as AddDbContext (without pooling)
+	// regist IUserIdentifierProvider standalone, usefull in n-layer architectures
+	services.AddSingleton<IUserIdentifierProvider<int>, YourUserIdentifierProviderType>();
+	// register as AddDbContext (without pooling)
         services.AddDataAccessClient<YourDbContext, int>(
-				builder => ... , // f.e. builder.UseSqlServer(...)
-				entityTypes
-            );
+		builder => ... , // f.e. builder.UseSqlServer(...)
+		entityTypes
+    	);
                 
         // or
         // register IUserIdentifierProvider standalone, usefull in n-layer architectures
-		// register as AddDbContextPool (with pooling)
-	    services.AddSingleton<IUserIdentifierProvider<int>, YourUserIdentifierProviderType>();
+	// register as AddDbContextPool (with pooling)
+    	services.AddSingleton<IUserIdentifierProvider<int>, YourUserIdentifierProviderType>();
         services.AddDataAccessClientPool<YourDbContext, int>(
-				builder => ... , // f.e. builder.UseSqlServer(...)
-				entityTypes
-            );
+		builder => ... , // f.e. builder.UseSqlServer(...)
+		entityTypes
+    	);
                 
         // or
                 
-		// register IUserIdentifierProvider within extension method
-		// register as AddDbContext (without pooling)
+	// register IUserIdentifierProvider within extension method
+	// register as AddDbContext (without pooling)
         services.AddDataAccessClient<YourDbContext, int, YourUserIdentifierProvider>(
-				builder => ... , // f.e. builder.UseSqlServer(...)
-				entityTypes
-            );
+		builder => ... , // f.e. builder.UseSqlServer(...)
+		entityTypes
+    	);
                 
         // or
                 
-		// register IUserIdentifierProvider within extension method
-		// register as AddDbContext (with pooling)
+	// register IUserIdentifierProvider within extension method
+	// register as AddDbContext (with pooling)
         services.AddDataAccessClientPool<YourDbContext, int, YourUserIdentifierProvider>(
-				builder => ... , // f.e. builder.UseSqlServer(...)
-				entityTypes
-            );
+		builder => ... , // f.e. builder.UseSqlServer(...)
+		entityTypes
+    	);
 		...
     }
     
@@ -368,9 +367,9 @@ public class YourUserIdentifierProvider : IUserIdentifierProvider<int>
 {
     public async Task<int> ExecuteAsync()
     {
-		// f.e. in Asp.NET Core it could use IHttpContextAccessor.HttpContext.User.Identity to get user identifier via claims or your own implementation;
+	// f.e. in Asp.NET Core it could use IHttpContextAccessor.HttpContext.User.Identity to get user identifier via claims or your own implementation;
 
-		// return the current user id
+	// return the current user id
         return await Task.FromResult(10);
     }
 }
@@ -383,7 +382,8 @@ First navigate to your migrations project folder
 `cd [path-to-your-project-folder]`
 
 Install `dotnet ef` tooling (only needed first time)
-'dotnet tool install --global dotnet-ef --version 3.0.0 --add-source https://api.nuget.org/v3/index.json --ignore-failed-sources'
+
+`dotnet tool install --global dotnet-ef --version 3.0.0 --add-source https://api.nuget.org/v3/index.json --ignore-failed-sources`
 
 Adding migrations for specific DbContext
 
