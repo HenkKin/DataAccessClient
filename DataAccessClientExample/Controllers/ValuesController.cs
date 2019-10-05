@@ -1,16 +1,16 @@
-﻿using System.Diagnostics;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using DataAccessClient;
 using DataAccessClient.Searching;
 using DataAccessClientExample.DataLayer;
 using Microsoft.AspNetCore.Mvc;
-using DataAccessClientExample.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessClientExample.Controllers
 {
-    public class HomeController : Controller
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ValuesController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IRepository<ExampleEntity> _exampleEntityRepository;
@@ -18,7 +18,7 @@ namespace DataAccessClientExample.Controllers
         private readonly IQueryableSearcher<ExampleEntity> _exampleEntityQueryableSearcher;
         private readonly IQueryableSearcher<ExampleSecondEntity> _exampleSecondEntityQueryableSearcher;
 
-        public HomeController(IUnitOfWork unitOfWork, IRepository<ExampleEntity> exampleEntityRepository, IRepository<ExampleSecondEntity> exampleSecondEntityRepository, IQueryableSearcher<ExampleEntity> exampleEntityQueryableSearcher, IQueryableSearcher<ExampleSecondEntity> exampleSecondEntityQueryableSearcher)
+        public ValuesController(IUnitOfWork unitOfWork, IRepository<ExampleEntity> exampleEntityRepository, IRepository<ExampleSecondEntity> exampleSecondEntityRepository, IQueryableSearcher<ExampleEntity> exampleEntityQueryableSearcher, IQueryableSearcher<ExampleSecondEntity> exampleSecondEntityQueryableSearcher)
         {
             _unitOfWork = unitOfWork;
             _exampleEntityRepository = exampleEntityRepository;
@@ -27,6 +27,7 @@ namespace DataAccessClientExample.Controllers
             _exampleSecondEntityQueryableSearcher = exampleSecondEntityQueryableSearcher;
         }
 
+        [Route("Test")]
         [HttpGet]
         public async Task<IActionResult> Test()
         {
@@ -63,12 +64,6 @@ namespace DataAccessClientExample.Controllers
 
             await _unitOfWork.SaveAsync();
 
-            var exampleEntities = await _exampleEntityRepository.GetChangeTrackingQuery()
-                .ToListAsync();
-
-            var exampleSecondEntities = await _exampleSecondEntityRepository.GetChangeTrackingQuery()
-                .ToListAsync();
-
             _exampleEntityRepository.Remove(exampleEntity1);
             _exampleSecondEntityRepository.Remove(exampleSecondEntity1);
 
@@ -79,7 +74,7 @@ namespace DataAccessClientExample.Controllers
             criteria.OrderByDirection = OrderByDirection.Ascending;
             criteria.Page = 1;
             criteria.PageSize = 10;
-            criteria.Search = "Data Access Client";
+            criteria.Search = "Updated";
 
             var exampleEntitiesSearchResults = await _exampleEntityQueryableSearcher.ExecuteAsync(_exampleEntityRepository.GetReadOnlyQuery(), criteria);
             var exampleSecondEntitiesSearchResults = await _exampleSecondEntityQueryableSearcher.ExecuteAsync(_exampleSecondEntityRepository.GetReadOnlyQuery(), criteria);
@@ -87,6 +82,7 @@ namespace DataAccessClientExample.Controllers
             return Json(new{ exampleEntitiesSearchResults, exampleSecondEntitiesSearchResults });
         }
 
+        [Route("get-all")]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -99,12 +95,6 @@ namespace DataAccessClientExample.Controllers
                 .ToListAsync();
 
             return Json(new { exampleEntities, exampleSecondEntities });
-        }
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
     }
 }
