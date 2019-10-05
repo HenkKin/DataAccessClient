@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer
 {
-    public static class DataAccessEntityFrameworkCoreSqlServerExtensions
+    public static class ServiceCollectionExtensions
     {
         public static IServiceCollection AddDataAccessClient<TDbContext, TIdentifierType, TUserIdentifierProvider>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, IEnumerable<Type> entityTypes)
             where TDbContext : SqlServerDbContext<TIdentifierType>

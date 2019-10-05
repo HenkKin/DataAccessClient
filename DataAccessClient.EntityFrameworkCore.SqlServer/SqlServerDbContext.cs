@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using DataAccessClient.EntityBehaviors;
@@ -22,6 +23,63 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            var entityBehaviors = new[]
+            {
+                typeof(IIdentifiable<>),
+                typeof(ICreatable<>),
+                typeof(IModifiable<>),
+                typeof(ISoftDeletable<>),
+                typeof(IRowVersionable),
+            };
+
+            var entityTypes = modelBuilder.Model
+                .GetEntityTypes()
+                .Where(t => t.ClrType.GetInterfaces().Any(x =>
+                    x.IsGenericType &&
+                    entityBehaviors.Contains(x.GetGenericTypeDefinition())));
+
+            var configureEntityBehaviorIIdentifiable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods.Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorIIdentifiable));
+            var configureEntityBehaviorICreatable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods.Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorICreatable));
+            var configureEntityBehaviorIModifiable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods.Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorIModifiable));
+            var configureEntityBehaviorISoftDeletable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods.Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorISoftDeletable));
+            var configureEntityBehaviorIRowVersionable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods.Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorIRowVersionable));
+
+            var args = new object[] { modelBuilder };
+            foreach (var entityType in entityTypes)
+            {
+                var entityInterfaces = entityType.ClrType.GetInterfaces();
+
+                if (entityInterfaces.Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IIdentifiable<>)))
+                {
+                    var identifierType = entityType.ClrType.GetInterface(typeof(IIdentifiable<>).Name).GenericTypeArguments[0];
+                    configureEntityBehaviorIIdentifiable.MakeGenericMethod(entityType.ClrType, identifierType).Invoke(null, args);
+                }
+
+                if (entityInterfaces.Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(ICreatable<>)))
+                {
+                    var identifierType = entityType.ClrType.GetInterface(typeof(ICreatable<>).Name).GenericTypeArguments[0];
+                    configureEntityBehaviorICreatable.MakeGenericMethod(entityType.ClrType, identifierType).Invoke(null, args);
+                }
+
+                if (entityInterfaces.Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IModifiable<>)))
+                {
+                    var identifierType = entityType.ClrType.GetInterface(typeof(IModifiable<>).Name).GenericTypeArguments[0];
+                    configureEntityBehaviorIModifiable.MakeGenericMethod(entityType.ClrType, identifierType).Invoke(null, args);
+                }
+
+                if (entityInterfaces.Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(ISoftDeletable<>)))
+                {
+                    var identifierType = entityType.ClrType.GetInterface(typeof(ISoftDeletable<>).Name).GenericTypeArguments[0];
+                    configureEntityBehaviorISoftDeletable.MakeGenericMethod(entityType.ClrType, identifierType).Invoke(null, args);
+                }
+
+                if (entityInterfaces.Any(x => !x.IsGenericType && x == typeof(IRowVersionable)))
+                {
+                    configureEntityBehaviorIRowVersionable.MakeGenericMethod(entityType.ClrType).Invoke(null, args);
+                }
+            }
+
+            base.OnModelCreating(modelBuilder);
         }
 
         public override int SaveChanges(bool acceptAllChangesOnSuccess)
@@ -63,6 +121,8 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                 throw;
             }
         }
+
+       
 
         public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = new CancellationToken())
         {
@@ -106,7 +166,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
         private void AdjustEntities(TIdentifierType authenticatedUserIdentifier)
         {
-            foreach (var entityEntry in ChangeTracker.Entries<IRowVersioned>())
+            foreach (var entityEntry in ChangeTracker.Entries<IRowVersionable>())
             {
                 var rowVersionProperty = entityEntry.Property(u => u.RowVersion);
                 var rowVersion = rowVersionProperty.CurrentValue;

@@ -1,6 +1,6 @@
 ﻿namespace DataAccessClient.EntityBehaviors
 {
-    public interface IRowVersioned
+    public interface IRowVersionable
     {
         byte[] RowVersion { get; set; }
     }

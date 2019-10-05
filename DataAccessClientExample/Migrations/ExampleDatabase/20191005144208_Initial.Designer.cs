@@ -7,10 +7,10 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
+namespace DataAccessClientExample.Migrations.ExampleDatabase
 {
-    [DbContext(typeof(ExampleSecondDbContext))]
-    [Migration("20191005083957_Initial")]
+    [DbContext(typeof(ExampleDbContext))]
+    [Migration("20191005144208_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -21,7 +21,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-            modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleSecondEntity", b =>
+            modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleEntity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -53,11 +53,13 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<byte[]>("RowVersion")
-                        .HasColumnType("varbinary(max)");
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.HasKey("Id");
 
-                    b.ToTable("ExampleSecondEntities");
+                    b.ToTable("ExampleEntities");
                 });
 #pragma warning restore 612, 618
         }

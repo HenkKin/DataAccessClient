@@ -3,7 +3,7 @@ using DataAccessClient.EntityBehaviors;
 
 namespace DataAccessClientExample.DataLayer
 {
-    public class ExampleSecondEntity : IIdentifiable<int>, ICreatable<int>, IModifiable<int>, ISoftDeletable<int>, IRowVersioned
+    public class ExampleSecondEntity : IIdentifiable<int>, ICreatable<int>, IModifiable<int>, ISoftDeletable<int>, IRowVersionable
     {
         public int Id { get; set; }
         public DateTime CreatedOn { get; set; }

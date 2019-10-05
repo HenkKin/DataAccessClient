@@ -16,6 +16,7 @@ namespace DataAccessClient
         {
             // TODO: add transacion management
             // https://docs.microsoft.com/en-gb/azure/architecture/patterns/compensating-transaction
+            // https://docs.microsoft.com/en-us/ef/core/saving/transactions
             var saveTasks = _unitofWorkParts.Select(part => part.SaveAsync()).ToList();
 
             await Task.WhenAll(saveTasks);

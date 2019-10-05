@@ -1,14 +1,14 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
+namespace DataAccessClientExample.Migrations.ExampleDatabase
 {
     public partial class Initial : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "ExampleSecondEntities",
+                name: "ExampleEntities",
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
@@ -20,19 +20,19 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                     IsDeleted = table.Column<bool>(nullable: false),
                     DeletedOn = table.Column<DateTime>(nullable: true),
                     DeletedById = table.Column<int>(nullable: true),
-                    RowVersion = table.Column<byte[]>(nullable: true),
+                    RowVersion = table.Column<byte[]>(rowVersion: true, nullable: true),
                     Name = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ExampleSecondEntities", x => x.Id);
+                    table.PrimaryKey("PK_ExampleEntities", x => x.Id);
                 });
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "ExampleSecondEntities");
+                name: "ExampleEntities");
         }
     }
 }
