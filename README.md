@@ -1,9 +1,19 @@
-DataAccessClient
+Packages
 =========================================
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/HenkKin/DataAccessClient?branch=master&svg=true)](https://ci.appveyor.com/project/HenkKin/DataAccessClient) 
+[![BCH compliance](https://bettercodehub.com/edge/badge/HenkKin/DataAccessClient?branch=master)](https://bettercodehub.com/)
+
+[DataAccessClient](https://github.com/HenkKin/DataAccessClient#dataaccessclient)
+
+[DataAccessClient.EntityFrameworkCore.SqlServer](https://github.com/HenkKin/DataAccessClient#dataaccesscliententityframeworkcoresqlserver)
+
+
+
+DataAccessClient
+=========================================
 [![NuGet](https://img.shields.io/nuget/dt/DataAccessClient.svg)](https://www.nuget.org/packages/DataAccessClient) 
 [![NuGet](https://img.shields.io/nuget/vpre/DataAccessClient.svg)](https://www.nuget.org/packages/DataAccessClient)
-[![BCH compliance](https://bettercodehub.com/edge/badge/HenkKin/DataAccessClient?branch=master)](https://bettercodehub.com/)
+
 
 ### Summary
 
@@ -224,8 +234,6 @@ public class Client
 	}
 }
 ```
-
-=========================================
 
 
 DataAccessClient.EntityFrameworkCore.SqlServer
