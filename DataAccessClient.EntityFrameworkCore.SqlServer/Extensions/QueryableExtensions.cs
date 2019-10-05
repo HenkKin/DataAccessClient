@@ -13,7 +13,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Extensions
 {
     internal static class QueryableExtensions
     {
-        public static async Task<CriteriaResult<T>> ToCriteriaResultAsync<T>(this IQueryable<T> source, Criteria criteria) where T: class
+        internal static async Task<CriteriaResult<T>> ToCriteriaResultAsync<T>(this IQueryable<T> source, Criteria criteria) where T: class
         {
             if (!string.IsNullOrWhiteSpace(criteria.Search))
             {

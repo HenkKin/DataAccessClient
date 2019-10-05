@@ -4,25 +4,25 @@ using System.Linq.Expressions;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Extensions
 {
-    public static class OrderByExtensions
+    internal static class OrderByExtensions
     {
-        public static IOrderedQueryable<T> OrderBy<T>(this IQueryable<T> source, string property)
+        internal static IOrderedQueryable<T> OrderBy<T>(this IQueryable<T> source, string property)
         {
             return ApplyOrder(source, property, "OrderBy");
         }
-        public static IOrderedQueryable<T> OrderByDescending<T>(this IQueryable<T> source, string property)
+        internal static IOrderedQueryable<T> OrderByDescending<T>(this IQueryable<T> source, string property)
         {
             return ApplyOrder(source, property, "OrderByDescending");
         }
-        public static IOrderedQueryable<T> ThenBy<T>(this IOrderedQueryable<T> source, string property)
+        internal static IOrderedQueryable<T> ThenBy<T>(this IOrderedQueryable<T> source, string property)
         {
             return ApplyOrder(source, property, "ThenBy");
         }
-        public static IOrderedQueryable<T> ThenByDescending<T>(this IOrderedQueryable<T> source, string property)
+        internal static IOrderedQueryable<T> ThenByDescending<T>(this IOrderedQueryable<T> source, string property)
         {
             return ApplyOrder(source, property, "ThenByDescending");
         }
-        static IOrderedQueryable<T> ApplyOrder<T>(IQueryable<T> source, string orderByProperty, string methodName)
+        internal static IOrderedQueryable<T> ApplyOrder<T>(IQueryable<T> source, string orderByProperty, string methodName)
         {
             string[] properties = orderByProperty.Split('.');
             Type type = typeof(T);

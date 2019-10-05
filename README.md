@@ -269,7 +269,7 @@ Either commands, from Package Manager Console or .NET Core CLI, will download an
 
 ### Usage
 
-IIf you're using EntityFrameworkCore.SqlServer and you want to use this Identifier type in your entities, then you can use [DataAccessClient.EntityFrameworkCore.SqlServer](https://github.com/HenkKin/DataAccessClient.EntityFrameworkCore.SqlServer/) package which includes the following registration options via extensions method on the DataAccessSqlServerServiceCollectionExtensions class:
+IIf you're using EntityFrameworkCore.SqlServer and you want to use this Identifier type in your entities, then you can use [DataAccessClient.EntityFrameworkCore.SqlServer](https://github.com/HenkKin/DataAccessClient.EntityFrameworkCore.SqlServer/) package which includes the following registration options via extensions method:
 
 - `IServiceCollection AddDataAccessClient<TDbContext, TIdentifierType>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, IEnumerable<Type> entityTypes)`
 
@@ -280,7 +280,7 @@ IIf you're using EntityFrameworkCore.SqlServer and you want to use this Identifi
 - `IServiceCollection AddDataAccessClientPool<TDbContext, TIdentifierType, TUserIdentifierProvider>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, IEnumerable<Type> entityTypes)`
 
 
-These extension methods supporting you to register all needed DbContexts, IUnitOfWorks and IRepositories for provided entity types. 
+These extension methods supporting you to register all needed DbContexts, IUnitOfWorks and IRepositories for provided entity types. Calling AddDbContext or AddDbContextPool of EntityFrameworkCore is not needed an not recommended when you are using this library.
 
 To use it:
 
