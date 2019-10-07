@@ -344,7 +344,7 @@ public class Startup
 			entityTypes
 		);
 		...
-		}
+	}
     
     ...
 ```
@@ -397,7 +397,7 @@ public class YourUserIdentifierProvider : IUserIdentifierProvider<int>
 
 ### Supporting migrations using `dotnet ef` tooling
 
-First navigate to your migrations project folder
+First, open a command prompt and navigate to your migrations project folder
 
 `cd [path-to-your-project-folder]`
 
