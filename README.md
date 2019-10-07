@@ -48,36 +48,42 @@ The implementation packages, like [DataAccessClient.EntityFrameworkCore.SqlServe
 ...
 using DataAccessClient;
 
- public class ExampleEntity : IIdentifiable<int>, ICreatable<int>, IModifiable<int>, ISoftDeletable<int>, IRowVersioned
+public class ExampleEntity : 
+	IIdentifiable<int>, 
+	ICreatable<int>, 
+	IModifiable<int>, 
+	ISoftDeletable<int>, 
+	IRowVersionable
 {
 	// to identify an entity
-    	public int Id { get; set; }
+	public int Id { get; set; }
 
 	// to track creation
-   	public DateTime CreatedOn { get; set; }
-    	public int CreatedById { get; set; }
+	public DateTime CreatedOn { get; set; }
+	public int CreatedById { get; set; }
 
 	// to track modification
-    	public DateTime? ModifiedOn { get; set; }
-    	public int? ModifiedById { get; set; }
+	public DateTime? ModifiedOn { get; set; }
+	public int? ModifiedById { get; set; }
 
 	//  to implement Soft Delete
-    	public bool IsDeleted { get; set; }
-    	public DateTime? DeletedOn { get; set; }
-    	public int? DeletedById { get; set; }
+	public bool IsDeleted { get; set; }
+	public DateTime? DeletedOn { get; set; }
+	public int? DeletedById { get; set; }
 
 	//  to implement optimistic concurrency control.
-    	public byte[] RowVersion { get; set; } 
+	public byte[] RowVersion { get; set; } 
 
 	// your own fields
-    	public string Name { get; set; }
+	public string Name { get; set; }
 }
 
 ```
 
 Alle entity behaviors are optional. No one is required.
 
-The generic parameter int defines the IdentifierType of your identifier fields (primary and foreign keys).
+The generic parameter `int` defines the IdentifierType of your identifier fields (primary and foreign keys). 
+All `struct` types are possible, also the `Identifier` type of package [Identifiers](https://www.nuget.org/packages/Identifiers)
 
 ### IUnitOfWork and IRepository<T>
 	
