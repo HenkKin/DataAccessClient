@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,11 +13,14 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         where TIdentifierType : struct
     {
         protected readonly TDbContext DbContext;
-        protected DbSet<TEntity> DbSet => DbContext.Set<TEntity>();
+        protected readonly DbSet<TEntity> DbSet;
+        private readonly PropertyInfo _primaryKeyProperty;
 
         public SqlServerRepository(TDbContext dbContext)
         {
             DbContext = dbContext;
+            DbSet = DbContext.Set<TEntity>();
+            _primaryKeyProperty = DbContext.Model.FindEntityType(typeof(TEntity)).FindPrimaryKey().Properties.Single().PropertyInfo;
         }
 
         public IQueryable<TEntity> GetReadOnlyQuery()
@@ -54,12 +58,23 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
         public async Task<TEntity> FindByIdAsync(object id)
         {
-            if (id?.GetType() != typeof(TIdentifierType))
+            if (id?.GetType() != _primaryKeyProperty.PropertyType)
             {
-                throw new NotSupportedException($"FindByIdAsync only can handle id of type '{id?.GetType().FullName}', expected id of type '{typeof(TIdentifierType).FullName}'");
+                throw new NotSupportedException($"FindByIdAsync only can handle id of type '{_primaryKeyProperty.PropertyType.FullName}', passed id of type '{id?.GetType().FullName}'");
             }
-
             return await DbSet.FindAsync(id);
+        }
+
+        public TEntity StartChangeTrackingById(object id)
+        {
+            if (id?.GetType() != _primaryKeyProperty.PropertyType)
+            {
+                throw new NotSupportedException($"StartChangeTrackingById only can handle id of type '{_primaryKeyProperty.PropertyType.FullName}', passed id of type '{id?.GetType().FullName}'");
+            }
+            var entity = Activator.CreateInstance<TEntity>();
+            _primaryKeyProperty.SetValue(entity, id);
+            DbSet.Attach(entity);
+            return entity;
         }
     }
 }

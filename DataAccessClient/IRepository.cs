@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using DataAccessClient.Searching;
 
 namespace DataAccessClient
 {
@@ -20,5 +19,7 @@ namespace DataAccessClient
         void RemoveRange(IEnumerable<TEntity> entities);
 
         Task<TEntity> FindByIdAsync(object id);
+
+        TEntity StartChangeTrackingById(object id);
     }
 }

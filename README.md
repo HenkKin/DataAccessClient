@@ -138,7 +138,12 @@ public class HomeController : Controller
         _exampleSecondEntityRepository.Add(exampleSecondEntity1);
         _exampleSecondEntityRepository.Add(exampleSecondEntity2);
 
-        await _unitOfWork.SaveAsync();
+		await _unitOfWork.SaveAsync();
+
+		// start change tracking without querying database
+        var exampleEntityAttach = _exampleEntityRepository.StartChangeTrackingById(10);
+		// update properties to trigger changetracking
+		exampleEntityAttach.Name =  "Updated DataAccessClient10";
 
         exampleEntity2.Name = "Updated DataAccessClient2";
         exampleSecondEntity2.Name = "Updated SecondDataAccessClient2";
@@ -355,7 +360,7 @@ internal class YourDbContext : SqlServerDbContext<int>
 	    	// Register your entities to the DbContext using EntityTypeBuilder
 		modelBuilder.Entity<ExampleEntity>()
             		.ToTable("ExampleEntities");
-
+			// OR
 	    	// Register your entities to the DbContext using EntityEntityTypeConfiguration class
 		modelBuilder.ApplyConfiguration(new ExampleEntityEntityTypeConfiguration());
 
