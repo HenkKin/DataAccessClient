@@ -95,92 +95,92 @@ using DataAccessClient;
 
 public class HomeController : Controller
 {
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IRepository<ExampleEntity> _exampleEntityRepository;
-    private readonly IRepository<ExampleSecondEntity> _exampleSecondEntityRepository;
-    private readonly IQueryableSearcher<ExampleEntity> _exampleEntityQueryableSearcher;
-    private readonly IQueryableSearcher<ExampleSecondEntity> _exampleSecondEntityQueryableSearcher;
+	private readonly IUnitOfWork _unitOfWork;
+	private readonly IRepository<ExampleEntity> _exampleEntityRepository;
+	private readonly IRepository<ExampleSecondEntity> _exampleSecondEntityRepository;
+	private readonly IQueryableSearcher<ExampleEntity> _exampleEntityQueryableSearcher;
+	private readonly IQueryableSearcher<ExampleSecondEntity> _exampleSecondEntityQueryableSearcher;
 
-    public HomeController(
-	IUnitOfWork unitOfWork, 
-	IRepository<ExampleEntity> exampleEntityRepository, 
-	IRepository<ExampleSecondEntity> exampleSecondEntityRepository, 
-	IQueryableSearcher<ExampleEntity> exampleEntityQueryableSearcher, 
-	IQueryableSearcher<ExampleSecondEntity> exampleSecondEntityQueryableSearcher)
-    {
-	_unitOfWork = unitOfWork;
-	_exampleEntityRepository = exampleEntityRepository;
-	_exampleSecondEntityRepository = exampleSecondEntityRepository;
-	_exampleEntityQueryableSearcher = exampleEntityQueryableSearcher;
-	_exampleSecondEntityQueryableSearcher = exampleSecondEntityQueryableSearcher;
-    }
+	public HomeController(
+		IUnitOfWork unitOfWork, 
+		IRepository<ExampleEntity> exampleEntityRepository, 
+		IRepository<ExampleSecondEntity> exampleSecondEntityRepository, 
+		IQueryableSearcher<ExampleEntity> exampleEntityQueryableSearcher, 
+		IQueryableSearcher<ExampleSecondEntity> exampleSecondEntityQueryableSearcher)
+	{
+		_unitOfWork = unitOfWork;
+		_exampleEntityRepository = exampleEntityRepository;
+		_exampleSecondEntityRepository = exampleSecondEntityRepository;
+		_exampleEntityQueryableSearcher = exampleEntityQueryableSearcher;
+		_exampleSecondEntityQueryableSearcher = exampleSecondEntityQueryableSearcher;
+	}
 
-    [HttpGet]
-    public async Task<IActionResult> Test()
-    {
-        var exampleEntity1 = new ExampleEntity
-        {
-            Name = "DataAccessClient1"
-        };
+	[HttpGet]
+	public async Task<IActionResult> Test()
+	{
+		var exampleEntity1 = new ExampleEntity
+		{
+			Name = "DataAccessClient1"
+		};
 
-        var exampleEntity2 = new ExampleEntity
-        {
-            Name = "DataAccessClient2"
-        };
+		var exampleEntity2 = new ExampleEntity
+		{
+			Name = "DataAccessClient2"
+		};
 
-        _exampleEntityRepository.Add(exampleEntity1);
-        _exampleEntityRepository.Add(exampleEntity2);
+		_exampleEntityRepository.Add(exampleEntity1);
+		_exampleEntityRepository.Add(exampleEntity2);
 
-        var exampleSecondEntity1 = new ExampleSecondEntity
-        {
-            Name = "SecondDataAccessClient1"
-        };
+		var exampleSecondEntity1 = new ExampleSecondEntity
+		{
+			Name = "SecondDataAccessClient1"
+		};
 
-        var exampleSecondEntity2 = new ExampleSecondEntity
-        {
-            Name = "SecondDataAccessClient2"
-        };
+		var exampleSecondEntity2 = new ExampleSecondEntity
+		{
+			Name = "SecondDataAccessClient2"
+		};
 
-        _exampleSecondEntityRepository.Add(exampleSecondEntity1);
-        _exampleSecondEntityRepository.Add(exampleSecondEntity2);
+		_exampleSecondEntityRepository.Add(exampleSecondEntity1);
+		_exampleSecondEntityRepository.Add(exampleSecondEntity2);
 
 		await _unitOfWork.SaveAsync();
 
 		// start change tracking without querying database
-        var exampleEntityAttach = _exampleEntityRepository.StartChangeTrackingById(10);
+		var exampleEntityAttach = _exampleEntityRepository.StartChangeTrackingById(10);
 		// update properties to trigger changetracking
 		exampleEntityAttach.Name =  "Updated DataAccessClient10";
 
-        exampleEntity2.Name = "Updated DataAccessClient2";
-        exampleSecondEntity2.Name = "Updated SecondDataAccessClient2";
+		exampleEntity2.Name = "Updated DataAccessClient2";
+		exampleSecondEntity2.Name = "Updated SecondDataAccessClient2";
 
-        await _unitOfWork.SaveAsync();
+		await _unitOfWork.SaveAsync();
 
-        var exampleEntities = await _exampleEntityRepository.GetChangeTrackingQuery()
-            .Where(e => !e.IsDeleted)
-            .ToListAsync();
+		var exampleEntities = await _exampleEntityRepository.GetChangeTrackingQuery()
+			.Where(e => !e.IsDeleted)
+			.ToListAsync();
 
-        var exampleSecondEntities = await _exampleSecondEntityRepository.GetChangeTrackingQuery()
-            .Where(e => !e.IsDeleted)
-            .ToListAsync();
+		var exampleSecondEntities = await _exampleSecondEntityRepository.GetChangeTrackingQuery()
+			.Where(e => !e.IsDeleted)
+			.ToListAsync();
 
-        _exampleEntityRepository.RemoveRange(exampleEntities);
-        _exampleSecondEntityRepository.RemoveRange(exampleSecondEntities);
+		_exampleEntityRepository.RemoveRange(exampleEntities);
+		_exampleSecondEntityRepository.RemoveRange(exampleSecondEntities);
 
-        await _unitOfWork.SaveAsync();
+		await _unitOfWork.SaveAsync();
 
-        var criteria = new Criteria();
-        criteria.OrderBy = "Id";
-        criteria.OrderByDirection = OrderByDirection.Ascending;
-        criteria.Page = 1;
-        criteria.PageSize = 10;
-        criteria.Search = "Data Access Client";
+		var criteria = new Criteria();
+		criteria.OrderBy = "Id";
+		criteria.OrderByDirection = OrderByDirection.Ascending;
+		criteria.Page = 1;
+		criteria.PageSize = 10;
+		criteria.Search = "Data Access Client";
 
-        var exampleEntitiesSearchResults = await _exampleEntityQueryableSearcher.ExecuteAsync(_exampleEntityRepository.GetReadOnlyQuery(), criteria);
-        var exampleSecondEntitiesSearchResults = await _exampleSecondEntityQueryableSearcher.ExecuteAsync(_exampleSecondEntityRepository.GetReadOnlyQuery(), criteria);
+		var exampleEntitiesSearchResults = await _exampleEntityQueryableSearcher.ExecuteAsync(_exampleEntityRepository.GetReadOnlyQuery(), criteria);
+		var exampleSecondEntitiesSearchResults = await _exampleSecondEntityQueryableSearcher.ExecuteAsync(_exampleSecondEntityRepository.GetReadOnlyQuery(), criteria);
 
-        return Json(new{ exampleEntitiesSearchResults, exampleSecondEntitiesSearchResults });
-    }
+		return Json(new{ exampleEntitiesSearchResults, exampleSecondEntitiesSearchResults });
+	}
 }
 
 ```
@@ -232,7 +232,7 @@ public class Client
 	public async Task Main(IYourService yourService)
 	{
 		var criteria = new Criteria();
-    		criteria.OrderBy = "Id";
+		criteria.OrderBy = "Id";
 		criteria.OrderByDirection = OrderByDirection.Ascending;
 		criteria.Page = 1;
 		criteria.PageSize = 10;
@@ -291,7 +291,7 @@ IIf you're using EntityFrameworkCore.SqlServer and you want to use this Identifi
 - `IServiceCollection AddDataAccessClientPool<TDbContext, TIdentifierType, TUserIdentifierProvider>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, IEnumerable<Type> entityTypes)`
 
 
-These extension methods supporting you to register all needed DbContexts, IUnitOfWorks and IRepositories for provided entity types. Calling AddDbContext or AddDbContextPool of EntityFrameworkCore is not needed an not recommended when you are using this library.
+These extension methods supporting you to register all needed DbContexts, IUnitOfWorks and IRepositories for provided entity types. Calling AddDbContext or AddDbContextPool of EntityFrameworkCore is not needed and not recommended when you are using this library.
 
 To use it:
 
@@ -306,45 +306,45 @@ public class Startup
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services)
     {
-	var entityTypes = new [] { typeof(Entity1), typeof(Entity2) }; // can also done by using reflection
-	...
+		var entityTypes = new [] { typeof(Entity1), typeof(Entity2) }; // can also done by using reflection
+		...
 
-	// regist IUserIdentifierProvider standalone, usefull in n-layer architectures
-	services.AddSingleton<IUserIdentifierProvider<int>, YourUserIdentifierProviderType>();
-	// register as AddDbContext (without pooling)
-        services.AddDataAccessClient<YourDbContext, int>(
-		builder => ... , // f.e. builder.UseSqlServer(...)
-		entityTypes
-    	);
+		// regist IUserIdentifierProvider standalone, usefull in n-layer architectures
+		services.AddSingleton<IUserIdentifierProvider<int>, YourUserIdentifierProviderType>();
+		// register as AddDbContext (without pooling)
+		services.AddDataAccessClient<YourDbContext, int>(
+			builder => ... , // f.e. builder.UseSqlServer(...)
+			entityTypes
+		);
                 
-        // or
-        // register IUserIdentifierProvider standalone, usefull in n-layer architectures
-	// register as AddDbContextPool (with pooling)
-    	services.AddSingleton<IUserIdentifierProvider<int>, YourUserIdentifierProviderType>();
-        services.AddDataAccessClientPool<YourDbContext, int>(
-		builder => ... , // f.e. builder.UseSqlServer(...)
-		entityTypes
-    	);
+		// or
+		// register IUserIdentifierProvider standalone, usefull in n-layer architectures
+		// register as AddDbContextPool (with pooling)
+		services.AddSingleton<IUserIdentifierProvider<int>, YourUserIdentifierProviderType>();
+		services.AddDataAccessClientPool<YourDbContext, int>(
+			builder => ... , // f.e. builder.UseSqlServer(...)
+			entityTypes
+		);
                 
-        // or
+		// or
                 
-	// register IUserIdentifierProvider within extension method
-	// register as AddDbContext (without pooling)
-        services.AddDataAccessClient<YourDbContext, int, YourUserIdentifierProvider>(
-		builder => ... , // f.e. builder.UseSqlServer(...)
-		entityTypes
-    	);
+		// register IUserIdentifierProvider within extension method
+		// register as AddDbContext (without pooling)
+		services.AddDataAccessClient<YourDbContext, int, YourUserIdentifierProvider>(
+			builder => ... , // f.e. builder.UseSqlServer(...)
+			entityTypes
+		);
                 
-        // or
+		// or
                 
-	// register IUserIdentifierProvider within extension method
-	// register as AddDbContext (with pooling)
-        services.AddDataAccessClientPool<YourDbContext, int, YourUserIdentifierProvider>(
-		builder => ... , // f.e. builder.UseSqlServer(...)
-		entityTypes
-    	);
-	...
-    }
+		// register IUserIdentifierProvider within extension method
+		// register as AddDbContext (with pooling)
+		services.AddDataAccessClientPool<YourDbContext, int, YourUserIdentifierProvider>(
+			builder => ... , // f.e. builder.UseSqlServer(...)
+			entityTypes
+		);
+		...
+		}
     
     ...
 ```
@@ -357,17 +357,17 @@ using DataAccessClient.EntityFrameworkCore.SqlServer;
 
 internal class YourDbContext : SqlServerDbContext<int>
 {
-    public YourDbContext(DbContextOptions<YourDbContext> options) : base(options)
-    {
-    }
+	public YourDbContext(DbContextOptions<YourDbContext> options) : base(options)
+	{
+	}
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
-	    	// Register your entities to the DbContext using EntityTypeBuilder
+		// Register your entities to the DbContext using EntityTypeBuilder
 		modelBuilder.Entity<ExampleEntity>()
-            		.ToTable("ExampleEntities");
-			// OR
-	    	// Register your entities to the DbContext using EntityEntityTypeConfiguration class
+				.ToTable("ExampleEntities");
+		// OR
+		// Register your entities to the DbContext using EntityEntityTypeConfiguration class
 		modelBuilder.ApplyConfiguration(new ExampleEntityEntityTypeConfiguration());
 
 		base.OnModelCreating(modelBuilder);
@@ -384,13 +384,13 @@ using DataAccessClient.EntityFrameworkCore.SqlServer;
 
 public class YourUserIdentifierProvider : IUserIdentifierProvider<int>
 {
-    public async Task<int> ExecuteAsync()
-    {
-	// f.e. in Asp.NET Core it could use IHttpContextAccessor.HttpContext.User.Identity to get user identifier via claims or your own implementation;
+	public async Task<int> ExecuteAsync()
+	{
+		// f.e. in Asp.NET Core it could use IHttpContextAccessor.HttpContext.User.Identity to get user identifier via claims or your own implementation;
 
-	// return the current user id
-        return await Task.FromResult(10);
-    }
+		// return the current user id
+		return await Task.FromResult(10);
+	}
 }
 ...
 ```
@@ -398,6 +398,7 @@ public class YourUserIdentifierProvider : IUserIdentifierProvider<int>
 ### Supporting migrations using `dotnet ef` tooling
 
 First navigate to your migrations project folder
+
 `cd [path-to-your-project-folder]`
 
 Install `dotnet ef` tooling (only needed first time)
