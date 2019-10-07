@@ -16,6 +16,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataAccessClient.EntityFrameworkCore.SqlServer", "DataAccessClient.EntityFrameworkCore.SqlServer\DataAccessClient.EntityFrameworkCore.SqlServer.csproj", "{EDC1B0DC-1C14-4FB6-86E2-C163FF0B600F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataAccessClient.Tests", "DataAccessClient.Tests\DataAccessClient.Tests.csproj", "{3851FBB3-886B-42C5-B695-936920A472A8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataAccessClient.EntityFrameworkCore.SqlServer.Tests", "DataAccessClient.EntityFrameworkCore.SqlServer.Tests\DataAccessClient.EntityFrameworkCore.SqlServer.Tests.csproj", "{B2AE5FD4-D99D-4FBD-94D0-86FEF54A9814}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,6 +38,14 @@ Global
 		{EDC1B0DC-1C14-4FB6-86E2-C163FF0B600F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EDC1B0DC-1C14-4FB6-86E2-C163FF0B600F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EDC1B0DC-1C14-4FB6-86E2-C163FF0B600F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3851FBB3-886B-42C5-B695-936920A472A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3851FBB3-886B-42C5-B695-936920A472A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3851FBB3-886B-42C5-B695-936920A472A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3851FBB3-886B-42C5-B695-936920A472A8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2AE5FD4-D99D-4FBD-94D0-86FEF54A9814}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2AE5FD4-D99D-4FBD-94D0-86FEF54A9814}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2AE5FD4-D99D-4FBD-94D0-86FEF54A9814}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2AE5FD4-D99D-4FBD-94D0-86FEF54A9814}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
