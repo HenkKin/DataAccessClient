@@ -1,14 +1,14 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
+namespace DataAccessClientExample.Migrations.ExampleDatabase
 {
     public partial class Initial : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "ExampleSecondEntities",
+                name: "ExampleEntities",
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
@@ -25,14 +25,36 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ExampleSecondEntities", x => x.Id);
+                    table.PrimaryKey("PK_ExampleEntities", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ExampleEntityTranslation",
+                columns: table => new
+                {
+                    Language = table.Column<string>(nullable: false),
+                    TranslatedEntityId = table.Column<int>(nullable: false),
+                    Description = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ExampleEntityTranslation", x => new { x.TranslatedEntityId, x.Language });
+                    table.ForeignKey(
+                        name: "FK_ExampleEntityTranslation_ExampleEntities_TranslatedEntityId",
+                        column: x => x.TranslatedEntityId,
+                        principalTable: "ExampleEntities",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "ExampleSecondEntities");
+                name: "ExampleEntityTranslation");
+
+            migrationBuilder.DropTable(
+                name: "ExampleEntities");
         }
     }
 }

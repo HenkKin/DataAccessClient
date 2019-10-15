@@ -15,5 +15,7 @@ namespace DataAccessClientExample.DataLayer
         public int? DeletedById { get; set; }
         public byte[] RowVersion { get; set; }
         public string Name { get; set; }
+        public TranslatedProperty Description { get; set; }
+        public TranslatedProperty Code { get; set; }
     }
 }

@@ -13,6 +13,7 @@ namespace DataAccessClientExample.DataLayer
         {
             modelBuilder.Entity<ExampleSecondEntity>()
                 .ToTable("ExampleSecondEntities");
+                
             base.OnModelCreating(modelBuilder);
         }
     }

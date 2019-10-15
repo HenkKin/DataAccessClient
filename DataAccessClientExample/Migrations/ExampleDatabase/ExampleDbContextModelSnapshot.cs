@@ -59,6 +59,31 @@ namespace DataAccessClientExample.Migrations.ExampleDatabase
 
                     b.ToTable("ExampleEntities");
                 });
+
+            modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleEntityTranslation", b =>
+                {
+                    b.Property<int>("TranslatedEntityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Language")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("TranslatedEntityId", "Language");
+
+                    b.ToTable("ExampleEntityTranslation");
+                });
+
+            modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleEntityTranslation", b =>
+                {
+                    b.HasOne("DataAccessClientExample.DataLayer.ExampleEntity", "TranslatedEntity")
+                        .WithMany("Translations")
+                        .HasForeignKey("TranslatedEntityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
 #pragma warning restore 612, 618
         }
     }

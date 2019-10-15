@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using DataAccessClient;
 using DataAccessClient.Searching;
@@ -36,9 +37,16 @@ namespace DataAccessClientExample.Controllers
                 Name = "Henk Kin"
             };
 
+            var exampleEntity2TranslationNlNl = new ExampleEntityTranslation { Description = "Omschrijving", Language = "nl-NL" };
+            var exampleEntity2TranslationEnGb = new ExampleEntityTranslation { Description = "Description", Language = "en-GB" };
             var exampleEntity2 = new ExampleEntity
             {
-                Name = "Kin Henk"
+                Name = "Kin Henk",
+                Translations = new List<ExampleEntityTranslation>
+                {
+                    exampleEntity2TranslationNlNl,
+                    exampleEntity2TranslationEnGb
+                }
             };
 
             _exampleEntityRepository.Add(exampleEntity1);
@@ -46,7 +54,7 @@ namespace DataAccessClientExample.Controllers
 
             var exampleSecondEntity1 = new ExampleSecondEntity
             {
-                Name = "Henk Kin"
+                Name = "Henk Kin",
             };
 
             var exampleSecondEntity2 = new ExampleSecondEntity
@@ -59,7 +67,10 @@ namespace DataAccessClientExample.Controllers
 
             await _unitOfWork.SaveAsync();
 
+            exampleEntity2TranslationNlNl.Description = exampleEntity2TranslationNlNl.Description + " geupdated";
+            exampleEntity2.Translations.Add(new ExampleEntityTranslation{ Description = "Comment", Language = "fr-FR"});
             exampleEntity2.Name = "Updated example";
+
             exampleSecondEntity2.Name = "Updated example second";
 
             await _unitOfWork.SaveAsync();
@@ -75,9 +86,17 @@ namespace DataAccessClientExample.Controllers
             criteria.Page = 1;
             criteria.PageSize = 10;
             criteria.Search = "Updated";
+            criteria.Includes.Add("Translations");
+
+            var secondCriteria = new Criteria();
+            criteria.OrderBy = "Id";
+            criteria.OrderByDirection = OrderByDirection.Ascending;
+            criteria.Page = 1;
+            criteria.PageSize = 10;
+            criteria.Search = "Updated";
 
             var exampleEntitiesSearchResults = await _exampleEntityQueryableSearcher.ExecuteAsync(_exampleEntityRepository.GetReadOnlyQuery(), criteria);
-            var exampleSecondEntitiesSearchResults = await _exampleSecondEntityQueryableSearcher.ExecuteAsync(_exampleSecondEntityRepository.GetReadOnlyQuery(), criteria);
+            var exampleSecondEntitiesSearchResults = await _exampleSecondEntityQueryableSearcher.ExecuteAsync(_exampleSecondEntityRepository.GetReadOnlyQuery(), secondCriteria);
 
             return Json(new{ exampleEntitiesSearchResults, exampleSecondEntitiesSearchResults });
         }

@@ -7,10 +7,10 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
+namespace DataAccessClientExample.Migrations.ExampleDatabase
 {
-    [DbContext(typeof(ExampleSecondDbContext))]
-    [Migration("20191005144223_Initial")]
+    [DbContext(typeof(ExampleDbContext))]
+    [Migration("20191015062056_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -21,7 +21,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-            modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleSecondEntity", b =>
+            modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleEntity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -59,7 +59,32 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
 
                     b.HasKey("Id");
 
-                    b.ToTable("ExampleSecondEntities");
+                    b.ToTable("ExampleEntities");
+                });
+
+            modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleEntityTranslation", b =>
+                {
+                    b.Property<int>("TranslatedEntityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Language")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("TranslatedEntityId", "Language");
+
+                    b.ToTable("ExampleEntityTranslation");
+                });
+
+            modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleEntityTranslation", b =>
+                {
+                    b.HasOne("DataAccessClientExample.DataLayer.ExampleEntity", "TranslatedEntity")
+                        .WithMany("Translations")
+                        .HasForeignKey("TranslatedEntityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

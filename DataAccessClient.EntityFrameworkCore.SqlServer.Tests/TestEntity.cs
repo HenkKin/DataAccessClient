@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using DataAccessClient.EntityBehaviors;
 
-namespace DataAccessClientExample.DataLayer
+namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
 {
-    public class ExampleEntity : IIdentifiable<int>, ICreatable<int>, IModifiable<int>, ISoftDeletable<int>, IRowVersionable, ITranslatable<ExampleEntityTranslation, int>
+    public class TestEntity : IIdentifiable<int>, ICreatable<int>, IModifiable<int>, ISoftDeletable<int>, IRowVersionable, ITranslatable<TestEntityTranslation, int>
     {
         public int Id { get; set; }
         public DateTime CreatedOn { get; set; }
@@ -15,15 +15,15 @@ namespace DataAccessClientExample.DataLayer
         public DateTime? DeletedOn { get; set; }
         public int? DeletedById { get; set; }
         public byte[] RowVersion { get; set; }
-        public string Name { get; set; }
-        public ICollection<ExampleEntityTranslation> Translations { get; set; }
+        public TranslatedProperty Name { get; set; }
+        public ICollection<TestEntityTranslation> Translations { get; set; }
     }
 
-    public class ExampleEntityTranslation : IEntityTranslation<ExampleEntity, int>
+    public class TestEntityTranslation : IEntityTranslation<TestEntity, int>
     {
-        public string Description { get; set; }
-        public string Language { get; set; }
-        public ExampleEntity TranslatedEntity { get; set; }
+        public TestEntity TranslatedEntity { get; set; }
         public int TranslatedEntityId { get; set; }
+        public string Language { get; set; }
+        public string Description { get; set; }
     }
 }

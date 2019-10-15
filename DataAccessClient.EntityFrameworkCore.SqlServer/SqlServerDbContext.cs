@@ -21,30 +21,30 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             _authenticatedUserIdentifierProvider = this.GetService<IUserIdentifierProvider<TIdentifierType>>();
         }
 
+        // for testing purpose
+        protected internal SqlServerDbContext() : base() { }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            var entityBehaviors = new[]
-            {
-                typeof(IIdentifiable<>),
-                typeof(ICreatable<>),
-                typeof(IModifiable<>),
-                typeof(ISoftDeletable<>),
-                typeof(IRowVersionable),
-            };
-
-            var entityTypes = modelBuilder.Model
-                .GetEntityTypes()
-                .Where(t => t.ClrType.GetInterfaces().Any(x =>
-                    x.IsGenericType &&
-                    entityBehaviors.Contains(x.GetGenericTypeDefinition())));
-
             var configureEntityBehaviorIIdentifiable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods.Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorIIdentifiable));
             var configureEntityBehaviorICreatable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods.Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorICreatable));
             var configureEntityBehaviorIModifiable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods.Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorIModifiable));
             var configureEntityBehaviorISoftDeletable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods.Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorISoftDeletable));
             var configureEntityBehaviorIRowVersionable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods.Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorIRowVersionable));
+            var configureEntityBehaviorITranslatable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods.Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorITranslatable));
+            var configureEntityBehaviorTranslatedProperties = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods.Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorTranslatedProperties));
 
             var args = new object[] { modelBuilder };
+
+            var ignoredEntityTypes = new[]
+            {
+                typeof(PropertyTranslation),
+                typeof(TranslatedProperty),
+            };
+
+            var entityTypes = modelBuilder.Model.GetEntityTypes()
+                .Where(p=> !ignoredEntityTypes.Contains(p.ClrType)).ToList();
+
             foreach (var entityType in entityTypes)
             {
                 var entityInterfaces = entityType.ClrType.GetInterfaces();
@@ -77,6 +77,16 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                 {
                     configureEntityBehaviorIRowVersionable.MakeGenericMethod(entityType.ClrType).Invoke(null, args);
                 }
+
+                if (entityInterfaces.Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(ITranslatable<,>)))
+                {
+                    var entityTranslationType = entityType.ClrType.GetInterface(typeof(ITranslatable<,>).Name).GenericTypeArguments[0];
+                    var identifierType = entityType.ClrType.GetInterface(typeof(ITranslatable<,>).Name).GenericTypeArguments[1];
+
+                    configureEntityBehaviorITranslatable.MakeGenericMethod(entityType.ClrType, entityTranslationType, identifierType).Invoke(null, args);
+                }
+
+                configureEntityBehaviorTranslatedProperties.MakeGenericMethod(entityType.ClrType).Invoke(null, args);
             }
 
             base.OnModelCreating(modelBuilder);
@@ -121,8 +131,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                 throw;
             }
         }
-
-       
 
         public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = new CancellationToken())
         {

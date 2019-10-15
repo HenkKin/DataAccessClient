@@ -66,8 +66,9 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Extensions
                     var propertyInfo = typeof(T).GetProperties().First(p => string.Compare(p.Name, keyFilter.Key, StringComparison.InvariantCultureIgnoreCase) == 0);
                     var paramExpr = Expression.Parameter(typeof(T));
                     var propertyAccessExpr = Expression.MakeMemberAccess(paramExpr, propertyInfo);
-                    var guidExpr = Expression.Constant(Guid.Parse(keyFilter.Value));
-                    var body = Expression.Equal(propertyAccessExpr, guidExpr);
+                    // TODO: Convert.ChangeType does not work for custom types like Identifier
+                    var valueExpr = Expression.Constant(Convert.ChangeType(keyFilter.Value, propertyInfo.PropertyType));
+                    var body = Expression.Equal(propertyAccessExpr, valueExpr);
                     var lambda = Expression.Lambda<Func<T, bool>>(body, paramExpr);
 
                     keyFiltersPredicate = keyFiltersPredicate.And(lambda);

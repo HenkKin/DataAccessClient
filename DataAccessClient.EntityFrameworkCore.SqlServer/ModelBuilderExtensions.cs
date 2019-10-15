@@ -53,5 +53,30 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
             return modelBuilder;
         }
+
+
+        internal static ModelBuilder ConfigureEntityBehaviorITranslatable<TEntity, TEntityTranslation, TIdentifierType>(
+            ModelBuilder modelBuilder)
+            where TEntity : class, ITranslatable<TEntityTranslation, TIdentifierType>
+            where TEntityTranslation : class, IEntityTranslation<TEntity, TIdentifierType>
+            where TIdentifierType : struct
+        {
+            modelBuilder.Entity<TEntity>()
+                .IsTranslatable<TEntity, TEntityTranslation, TIdentifierType>();
+
+            modelBuilder.Entity<TEntityTranslation>()
+                .IsEntityTranslation<TEntityTranslation, TEntity, TIdentifierType>();
+
+            return modelBuilder;
+        }
+
+        internal static ModelBuilder ConfigureEntityBehaviorTranslatedProperties<TEntity>(ModelBuilder modelBuilder) 
+            where TEntity : class
+        {
+            modelBuilder.Entity<TEntity>()
+                .HasTranslatedProperties();
+
+            return modelBuilder;
+        }
     }
 }
