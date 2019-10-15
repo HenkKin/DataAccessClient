@@ -17,7 +17,7 @@ DataAccessClient
 
 ### Summary
 
-Provides interfaces for Data Access with IRepository<T>, IUnitOfWork and IQueryableSearcher<T>. Also provides haviorial interfaces for entities like IIdentifiable, ICreatable, IModifiable, ISoftDeletable and IRowVersioned. Last but not least provides some types for Exceptions and searching capabilities like Filtering, Paging, Sorting and Includes.
+Provides interfaces for Data Access with IRepository<T>, IUnitOfWork and IQueryableSearcher<T>. Also provides haviorial interfaces for entities like IIdentifiable, ICreatable, IModifiable, ISoftDeletable, ITranslatable and IRowVersioned. Last but not least provides some types for Exceptions and searching capabilities like Filtering, Paging, Sorting and Includes.
 
 This library is Cross-platform, supporting `netstandard2.1`.
 
@@ -53,7 +53,8 @@ public class ExampleEntity :
 	ICreatable<int>, 
 	IModifiable<int>, 
 	ISoftDeletable<int>, 
-	IRowVersionable
+	IRowVersionable,
+	ITranslatable<ExampleEntityTranslation, int>
 {
 	// to identify an entity
 	public int Id { get; set; }
@@ -74,8 +75,24 @@ public class ExampleEntity :
 	//  to implement optimistic concurrency control.
 	public byte[] RowVersion { get; set; } 
 
+	// to translate entity specific fields
+	public ICollection<ExampleEntityTranslation> Translations { get; set; }
+
 	// your own fields
 	public string Name { get; set; }
+}
+
+public class ExampleEntityTranslation : IEntityTranslation<ExampleEntity, int>
+{
+    public ExampleEntity TranslatedEntity { get; set; }
+    public int TranslatedEntityId { get; set; }
+
+	// language of translations, f.e. en-GB or nl-NL
+    public string Language { get; set; }
+
+	// your custom translatable fields
+	public string Description { get; set; }
+	...
 }
 
 ```
