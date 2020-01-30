@@ -418,9 +418,13 @@ First, open a command prompt and navigate to your migrations project folder
 
 `cd [path-to-your-project-folder]`
 
-Install `dotnet ef` tooling (only needed first time)
+When version of `dotnet ef` tooling is updated, uninstall `dotnet ef` tooling 
 
-`dotnet tool install --global dotnet-ef --version 3.0.0 --add-source https://api.nuget.org/v3/index.json --ignore-failed-sources`
+`dotnet tool uninstall --global dotnet-ef `
+
+Install `dotnet ef` tooling (only needed first time or when version is updated)
+
+`dotnet tool install --global dotnet-ef --version 3.1.1 --add-source https://api.nuget.org/v3/index.json --ignore-failed-sources`
 
 Adding migrations for specific DbContext
 
