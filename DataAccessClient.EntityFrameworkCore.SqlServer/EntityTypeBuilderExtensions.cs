@@ -1,7 +1,9 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using DataAccessClient.EntityBehaviors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer
 {
@@ -102,6 +104,23 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                     });
                 });
             }
+
+            return entity;
+        }
+
+        internal static EntityTypeBuilder<TEntity> HasUtcDateTimeProperties<TEntity>(this EntityTypeBuilder<TEntity> entity, ValueConverter<DateTime?, DateTime?> dateTimeValueConverter)
+            where TEntity : class
+        {
+            var datetimeProperties = typeof(TEntity).GetProperties()
+                .Where(property => property.CanWrite && (property.PropertyType == typeof(DateTime) ||  property.PropertyType == typeof(DateTime?))
+                )
+                .ToList();
+
+            datetimeProperties.ForEach(property =>
+            {
+                entity.Property(property.Name)
+                    .HasConversion(dateTimeValueConverter);
+            });
 
             return entity;
         }

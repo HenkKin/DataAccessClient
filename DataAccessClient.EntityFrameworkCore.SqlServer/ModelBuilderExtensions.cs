@@ -1,5 +1,7 @@
-﻿using DataAccessClient.EntityBehaviors;
+﻿using System;
+using DataAccessClient.EntityBehaviors;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer
 {
@@ -70,11 +72,20 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             return modelBuilder;
         }
 
-        internal static ModelBuilder ConfigureEntityBehaviorTranslatedProperties<TEntity>(ModelBuilder modelBuilder) 
+        internal static ModelBuilder ConfigureEntityBehaviorTranslatedProperties<TEntity>(ModelBuilder modelBuilder)
             where TEntity : class
         {
             modelBuilder.Entity<TEntity>()
                 .HasTranslatedProperties();
+
+            return modelBuilder;
+        }
+        
+        internal static ModelBuilder ConfigureHasUtcDateTimeProperties<TEntity>(ModelBuilder modelBuilder, ValueConverter<DateTime?, DateTime?> dateTimeValueConverter)
+            where TEntity : class
+        {
+            modelBuilder.Entity<TEntity>()
+                .HasUtcDateTimeProperties(dateTimeValueConverter);
 
             return modelBuilder;
         }

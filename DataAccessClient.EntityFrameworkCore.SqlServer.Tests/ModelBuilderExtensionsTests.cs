@@ -2,6 +2,7 @@
 using DataAccessClient.EntityBehaviors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Xunit;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
@@ -160,6 +161,94 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             Assert.Equal(nameof(IRowVersionable.RowVersion), rowVersion.Name);
             Assert.True(rowVersion.IsNullable);
             Assert.True(rowVersion.IsConcurrencyToken);
+        }
+
+        [Fact]
+        public void IsTranslatable_WhenNotCalled_ItShouldHaveNoConfiguration()
+        {
+            // Act
+            var result = new ModelBuilder(new ConventionSet());
+
+            // Assert
+            Assert.Null(result.Entity<TestEntity>().Metadata.FindNavigation(nameof(ITranslatable<TestEntityTranslation, int>.Translations)));
+            Assert.Null(result.Entity<TestEntityTranslation>().Metadata.FindProperty(nameof(IEntityTranslation<int>.TranslatedEntityId)));
+            Assert.Null(result.Entity<TestEntityTranslation>().Metadata.FindProperty(nameof(IEntityTranslation<int>.Language)));
+            Assert.Null(result.Entity<TestEntityTranslation>().Metadata.FindPrimaryKey());
+        }
+
+        [Fact]
+        public void IsTranslatable_WhenCalled_ItShouldSetTranslatableConfiguration()
+        {
+            // Arrange
+            var entityTypeBuilder = new ModelBuilder(new ConventionSet());
+
+            // Act
+            var result = ModelBuilderExtensions.ConfigureEntityBehaviorITranslatable<TestEntity, TestEntityTranslation, int>(entityTypeBuilder);
+
+            // Assert
+            Assert.NotNull(result.Entity<TestEntity>().Metadata.FindNavigation(nameof(ITranslatable<TestEntityTranslation, int>.Translations)));
+            Assert.NotNull(result.Entity<TestEntityTranslation>().Metadata.FindProperty(nameof(IEntityTranslation<int>.TranslatedEntityId)));
+            Assert.NotNull(result.Entity<TestEntityTranslation>().Metadata.FindProperty(nameof(IEntityTranslation<int>.Language)));
+
+            Assert.Equal(2, result.Entity<TestEntityTranslation>().Metadata.FindPrimaryKey().Properties.Count);
+            Assert.Contains(result.Entity<TestEntityTranslation>().Metadata.FindPrimaryKey().Properties, x =>x.Name == nameof(IEntityTranslation<TestEntity, int>.TranslatedEntityId));
+            Assert.Contains(result.Entity<TestEntityTranslation>().Metadata.FindPrimaryKey().Properties, x =>x.Name == nameof(IEntityTranslation<TestEntity, int>.Language));
+        }
+
+
+        [Fact]
+        public void ConfigureEntityBehaviorTranslatedProperties_WhenNotCalled_ItShouldHaveNoConfiguration()
+        {
+            // Act
+            var result = new ModelBuilder(new ConventionSet());
+
+            // Assert
+            Assert.Null(result.Entity<TestEntity>().Metadata.FindNavigation(nameof(TestEntity.Name)));
+        }
+
+        [Fact]
+        public void ConfigureEntityBehaviorTranslatedProperties_WhenCalled_ItShouldConfigureTranslatedProperties()
+        {
+            // Arrange
+            var entityTypeBuilder = new ModelBuilder(new ConventionSet());
+
+            // Act
+            var result = ModelBuilderExtensions.ConfigureEntityBehaviorTranslatedProperties<TestEntity>(entityTypeBuilder);
+
+            // Assert
+            Assert.NotNull(result.Entity<TestEntity>().Metadata.FindNavigation(nameof(TestEntity.Name)));
+            Assert.Equal(typeof(TranslatedProperty), result.Entity<TestEntity>().Metadata.FindNavigation(nameof(TestEntity.Name)).ForeignKey.PrincipalToDependent.ClrType);
+        }
+
+        [Fact]
+        public void ConfigureHasUtcDateTimeProperties_WhenNotCalled_ItShouldHaveNoConfiguration()
+        {
+            // Act
+            var result = new ModelBuilder(new ConventionSet());
+
+            // Assert
+            Assert.Null(result.Entity<TestEntity>().Property(nameof(TestEntity.CreatedOn)).Metadata.GetValueConverter());
+            Assert.Null(result.Entity<TestEntity>().Property(nameof(TestEntity.ModifiedOn)).Metadata.GetValueConverter());
+            Assert.Null(result.Entity<TestEntity>().Property(nameof(TestEntity.DeletedOn)).Metadata.GetValueConverter());
+        }
+
+        [Fact]
+        public void ConfigureHasUtcDateTimeProperties_WhenCalled_ItShouldSetValueConverterForDateTimePropertiesConfiguration()
+        {
+            // Arrange
+            var entityTypeBuilder = new ModelBuilder(new ConventionSet());
+
+            // Act
+            var result = ModelBuilderExtensions.ConfigureHasUtcDateTimeProperties<TestEntity>(entityTypeBuilder, new UtcDateTimeValueConverter());
+
+            // Assert
+            Assert.NotNull(result.Entity<TestEntity>().Property(nameof(TestEntity.CreatedOn)).Metadata.GetValueConverter());
+            Assert.NotNull(result.Entity<TestEntity>().Property(nameof(TestEntity.ModifiedOn)).Metadata.GetValueConverter());
+            Assert.NotNull(result.Entity<TestEntity>().Property(nameof(TestEntity.DeletedOn)).Metadata.GetValueConverter());
+
+            Assert.IsType<UtcDateTimeValueConverter>(result.Entity<TestEntity>().Property(nameof(TestEntity.CreatedOn)).Metadata.GetValueConverter());
+            Assert.IsType<UtcDateTimeValueConverter>(result.Entity<TestEntity>().Property(nameof(TestEntity.ModifiedOn)).Metadata.GetValueConverter());
+            Assert.IsType<UtcDateTimeValueConverter>(result.Entity<TestEntity>().Property(nameof(TestEntity.DeletedOn)).Metadata.GetValueConverter());
         }
     }
 }

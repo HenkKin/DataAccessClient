@@ -23,6 +23,8 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         }
 
         // for testing purpose
+        // ReSharper disable once UnusedMember.Global
+        // ReSharper disable once RedundantBaseConstructorCall
         protected internal SqlServerDbContext() : base()
         {
         }
@@ -41,9 +43,10 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                 .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorIRowVersionable));
             var configureEntityBehaviorITranslatable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
                 .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorITranslatable));
-            var configureEntityBehaviorTranslatedProperties = typeof(ModelBuilderExtensions).GetTypeInfo()
-                .DeclaredMethods.Single(m =>
-                    m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorTranslatedProperties));
+            var configureEntityBehaviorTranslatedProperties = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
+                .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorTranslatedProperties));
+            var configureHasUtcDateTimeProperties = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
+                .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureHasUtcDateTimeProperties));
 
             var args = new object[] {modelBuilder};
 
@@ -54,7 +57,10 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             };
 
             var entityTypes = modelBuilder.Model.GetEntityTypes()
-                .Where(p => !ignoredEntityTypes.Contains(p.ClrType)).ToList();
+                .Where(p => !ignoredEntityTypes.Contains(p.ClrType))
+                .ToList();
+
+            var utcDateTimeValueConverter = new UtcDateTimeValueConverter();
 
             foreach (var entityType in entityTypes)
             {
@@ -113,6 +119,10 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                 }
 
                 configureEntityBehaviorTranslatedProperties.MakeGenericMethod(entityType.ClrType).Invoke(null, args);
+
+                configureHasUtcDateTimeProperties
+                    .MakeGenericMethod(entityType.ClrType)
+                    .Invoke(null, new object[] {modelBuilder, utcDateTimeValueConverter});
             }
 
             base.OnModelCreating(modelBuilder);
