@@ -386,7 +386,7 @@ internal class YourDbContext : SqlServerDbContext<int>
     ...
 ```
 
-Providing an implementation for interface `IUserIdentifierProvider<TIdentifierType>`. This provider should be a singleton, so the implementation should try to return an user identifier of the current context
+Providing an implementation for interface `IUserIdentifierProvider<TIdentifierType>`. This provider should be a singleton, so the implementation should try to return an user identifier of the current context.
 
 ```csharp
 ...
@@ -405,7 +405,7 @@ public class YourUserIdentifierProvider : IUserIdentifierProvider<int>
 ...
 ```
 
-Providing an implementation for interface `ITenantIdentifierProvider<TIdentifierType>`. This provider should be a singleton, so the implementation should try to return a tenant identifier of the current context
+Providing an implementation for interface `ITenantIdentifierProvider<TIdentifierType>`. This provider should be a singleton, so the implementation should try to return a tenant identifier of the current context.
 
 ```csharp
 ...
@@ -424,7 +424,7 @@ public class YourTenantIdentifierProvider : ITenantIdentifierProvider<int>
 ...
 ```
 
-Providing an implementation for interface `ISoftDeletableConfiguration`. This configuration object should be a singleton, so the implementation keep the configuration of SoftDelete
+Providing an implementation for interface `ISoftDeletableConfiguration`. This configuration object should be a singleton, so the implementation keep the configuration of SoftDelete. The `RestoreAction` is disposable.
 
 ```csharp
 ...
@@ -433,6 +433,7 @@ using DataAccessClient.EntityFrameworkCore.SqlServer;
 public class YourSoftDeletableConfiguration : ISoftDeletableConfiguration
 {
 	public bool IsEnabled { get; private set; } = true;
+	public bool IsQueryFilterEnabled { get; private set; } = true;
 		
 	public RestoreAction Enable()
 	{
@@ -447,12 +448,26 @@ public class YourSoftDeletableConfiguration : ISoftDeletableConfiguration
 		IsEnabled = false;
 		return new RestoreAction(() => IsEnabled = originalIsEnabled);
 	}
+	
+	public RestoreAction EnableQueryFilter()
+	{
+		var originalIsQueryFilterEnabled = IsQueryFilterEnabled;
+		IsQueryFilterEnabled = true;
+		return new RestoreAction(() => IsQueryFilterEnabled = originalIsQueryFilterEnabled);
+	}
+	
+	public RestoreAction DisableQueryFilter()
+	{
+		var originalIsQueryFilterEnabled = IsQueryFilterEnabled;
+		IsQueryFilterEnabled = false;
+		return new RestoreAction(() => IsQueryFilterEnabled = originalIsQueryFilterEnabled);
+	}
 }
 
 ...
 ```
 
-Providing an implementation for interface `IMultiTenancyConfiguration<int>`. This configuration object should be a singleton, so the implementation keep the configuration of Multi-Tenancy
+Providing an implementation for interface `IMultiTenancyConfiguration<int>`. This configuration object should be a singleton, so the implementation keep the configuration of Multi-Tenancy. The `RestoreAction` is disposable.
 
 ```csharp
 ...
@@ -462,7 +477,7 @@ public class YourMultiTenancyConfiguration : IMultiTenancyConfiguration<int>
 {
 	private readonly ITenantIdentifierProvider<int> _tenantIdentifierProvider;
 
-	public bool IsEnabled { get; private set; } = true;
+	public bool IsQueryFilterEnabled { get; private set; } = true;
 	
 	public int? CurrentTenantId => _tenantIdentifierProvider.Execute();
 	
@@ -471,18 +486,18 @@ public class YourMultiTenancyConfiguration : IMultiTenancyConfiguration<int>
 		_tenantIdentifierProvider = tenantIdentifierProvider;
 	}
 	
-	public RestoreAction Enable()
+	public RestoreAction EnableQueryFilter()
 	{
-		var originalIsEnabled = IsEnabled;
-		IsEnabled = true;
-		return new RestoreAction(() => IsEnabled = originalIsEnabled);
+		var originalIsQueryFilterEnabled = IsQueryFilterEnabled;
+		IsQueryFilterEnabled = true;
+		return new RestoreAction(() => IsQueryFilterEnabled = originalIsQueryFilterEnabled);
 	}
 	
-	public RestoreAction Disable()
+	public RestoreAction DisableQueryFilter()
 	{
-		var originalIsEnabled = IsEnabled;
-		IsEnabled = false;
-		return new RestoreAction(() => IsEnabled = originalIsEnabled);
+		var originalIsQueryFilterEnabled = IsQueryFilterEnabled;
+		IsQueryFilterEnabled = false;
+		return new RestoreAction(() => IsQueryFilterEnabled = originalIsQueryFilterEnabled);
 	}
 }
 

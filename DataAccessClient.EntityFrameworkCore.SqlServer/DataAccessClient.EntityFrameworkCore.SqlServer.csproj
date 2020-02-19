@@ -12,7 +12,7 @@
     <RepositoryType>GitHub</RepositoryType>
     <PackageReleaseNotes></PackageReleaseNotes>
     <Copyright>Henk Kin</Copyright>
-    <PackageTags>EntityFrameworkCore, EF, SqlServer, DependencyInjection, Multiple DbContext support, DataAccess, Repository, UnitOfWork, SoftDelete, Translation, RowVersioning, Filtering, Paging, Sorting, Includes</PackageTags>
+    <PackageTags>EntityFrameworkCore, EF, SqlServer, DependencyInjection, Multiple DbContext support, DataAccess, Repository, UnitOfWork, SoftDelete, Translation, RowVersioning, Multi-tenancy, Filtering, Paging, Sorting, Includes</PackageTags>
     <Version>0.0.3</Version>
   </PropertyGroup>
 

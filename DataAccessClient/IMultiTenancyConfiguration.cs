@@ -2,10 +2,10 @@
 {
     public interface IMultiTenancyConfiguration<TTenantIdentifierType> where TTenantIdentifierType : struct
     {
-        bool IsEnabled { get; }
+        bool IsQueryFilterEnabled { get; }
         TTenantIdentifierType? CurrentTenantId { get; }
 
-        RestoreAction Enable();
-        RestoreAction Disable();
+        RestoreAction EnableQueryFilter();
+        RestoreAction DisableQueryFilter();
     }
 }

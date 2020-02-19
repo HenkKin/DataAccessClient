@@ -3,7 +3,7 @@
     public class TestMultiTenancyConfiguration : IMultiTenancyConfiguration<int>
     {
         private readonly ITenantIdentifierProvider<int> _tenantIdentifierProvider;
-        public bool IsEnabled { get; private set; } = true;
+        public bool IsQueryFilterEnabled { get; private set; } = true;
         public int? CurrentTenantId => _tenantIdentifierProvider.Execute();
         
         public TestMultiTenancyConfiguration(ITenantIdentifierProvider<int> tenantIdentifierProvider)
@@ -11,18 +11,18 @@
             _tenantIdentifierProvider = tenantIdentifierProvider;
         }
 
-        public RestoreAction Enable()
+        public RestoreAction EnableQueryFilter()
         {
-            var originalIsEnabled = IsEnabled;
-            IsEnabled = true;
-            return new RestoreAction(() => IsEnabled = originalIsEnabled);
+            var originalIsQueryFilterEnabled = IsQueryFilterEnabled;
+            IsQueryFilterEnabled = true;
+            return new RestoreAction(() => IsQueryFilterEnabled = originalIsQueryFilterEnabled);
         }
 
-        public RestoreAction Disable()
+        public RestoreAction DisableQueryFilter()
         {
-            var originalIsEnabled = IsEnabled;
-            IsEnabled = false;
-            return new RestoreAction(() => IsEnabled = originalIsEnabled);
+            var originalIsQueryFilterEnabled = IsQueryFilterEnabled;
+            IsQueryFilterEnabled = false;
+            return new RestoreAction(() => IsQueryFilterEnabled = originalIsQueryFilterEnabled);
         }
     }
 }

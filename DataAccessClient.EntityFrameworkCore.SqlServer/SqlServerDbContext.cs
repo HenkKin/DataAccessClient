@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -235,7 +238,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             where TUserIdentifierType : struct
         {
             Expression<Func<TEntity, bool>> softDeletableQueryFilter =
-                e => !_softDeletableConfiguration.IsEnabled || !e.IsDeleted;
+                e => !_softDeletableConfiguration.IsQueryFilterEnabled || !e.IsDeleted;
             return softDeletableQueryFilter;
         }
 
@@ -244,8 +247,8 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             where TTenantIdentifierType : struct
         {
             Expression<Func<TEntity, bool>> tenantScopableQueryFilter = e =>
-                (_multiTenancyConfiguration.IsEnabled && e.TenantId.Equals(_multiTenancyConfiguration.CurrentTenantId))
-                || !_multiTenancyConfiguration.IsEnabled;
+                (_multiTenancyConfiguration.IsQueryFilterEnabled && e.TenantId.Equals(_multiTenancyConfiguration.CurrentTenantId))
+                || !_multiTenancyConfiguration.IsQueryFilterEnabled;
 
             return tenantScopableQueryFilter;
         }
@@ -259,6 +262,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             try
             {
                 var result = base.SaveChanges(acceptAllChangesOnSuccess);
+                OnAfterSaveChanges();
                 return result;
             }
             catch (DbUpdateConcurrencyException exception)
@@ -293,12 +297,13 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
         public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = new CancellationToken())
         {
-            var authenticatedUser = await _userIdentifierProvider.ExecuteAsync();
+            var authenticatedUserIdentifier = await _userIdentifierProvider.ExecuteAsync();
 
-            OnBeforeSaveChanges(authenticatedUser);
+            OnBeforeSaveChanges(authenticatedUserIdentifier);
             try
             {
                 var result = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+                OnAfterSaveChanges();
                 return result;
             }
             catch (DbUpdateConcurrencyException exception)
@@ -331,14 +336,37 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             }
         }
 
+        public void Reset()
+        {
+            using var withCascadeTimingOnSaveChanges = new WithCascadeTimingOnSaveChanges(this);
+            withCascadeTimingOnSaveChanges.Run(() =>
+            {
+                var entries = ChangeTracker.Entries().Where(e => e.State != EntityState.Unchanged).ToArray();
+                foreach (var entry in entries)
+                {
+                    switch (entry.State)
+                    {
+                        case EntityState.Modified:
+                            entry.State = EntityState.Unchanged;
+                            break;
+                        case EntityState.Added:
+                            entry.State = EntityState.Detached;
+                            break;
+                        case EntityState.Deleted:
+                            entry.Reload();
+                            break;
+                    }
+                }
+            });
+        }
+
         private void OnBeforeSaveChanges(TIdentifierType authenticatedUserIdentifier)
         {
-            var originalCascadeDeleteTiming = ChangeTracker.CascadeDeleteTiming;
-            var originalDeleteOrphansTiming = ChangeTracker.DeleteOrphansTiming;
-            try
+            using var withCascadeTimingOnSaveChanges = new WithCascadeTimingOnSaveChanges(this);
+            withCascadeTimingOnSaveChanges.Run(() =>
             {
-                ChangeTracker.CascadeDeleteTiming = CascadeTiming.OnSaveChanges;
-                ChangeTracker.DeleteOrphansTiming = CascadeTiming.OnSaveChanges;
+                var saveChangesTime = DateTime.UtcNow;
+
                 foreach (var entityEntry in ChangeTracker.Entries<IRowVersionable>())
                 {
                     var rowVersionProperty = entityEntry.Property(u => u.RowVersion);
@@ -354,9 +382,19 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                     {
                         entityEntry.State = EntityState.Unchanged;
 
+                        var entity = entityEntry.Entity;
+                        var entityIsSoftDeleted = entity.IsDeleted && entity.DeletedById.HasValue && entity.DeletedOn.HasValue;
+
+                        if (entityIsSoftDeleted)
+                        {
+                            continue;
+                        }
+
+                        SetOwnedEntitiesToUnchanged(entityEntry);
+
                         entityEntry.Entity.IsDeleted = true;
                         entityEntry.Entity.DeletedById = authenticatedUserIdentifier;
-                        entityEntry.Entity.DeletedOn = DateTime.UtcNow;
+                        entityEntry.Entity.DeletedOn = saveChangesTime;
                         entityEntry.Member(nameof(ISoftDeletable<TIdentifierType>.IsDeleted)).IsModified = true;
                         entityEntry.Member(nameof(ISoftDeletable<TIdentifierType>.DeletedById)).IsModified = true;
                         entityEntry.Member(nameof(ISoftDeletable<TIdentifierType>.DeletedOn)).IsModified = true;
@@ -384,53 +422,107 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                     .Where(c => c.State == EntityState.Added))
                 {
                     entityEntry.Entity.CreatedById = authenticatedUserIdentifier;
-                    entityEntry.Entity.CreatedOn = DateTime.UtcNow;
+                    entityEntry.Entity.CreatedOn = saveChangesTime;
                 }
 
                 foreach (var entityEntry in ChangeTracker.Entries<IModifiable<TIdentifierType>>()
                     .Where(c => c.State == EntityState.Modified))
                 {
                     entityEntry.Entity.ModifiedById = authenticatedUserIdentifier;
-                    entityEntry.Entity.ModifiedOn = DateTime.UtcNow;
+                    entityEntry.Entity.ModifiedOn = saveChangesTime;
                 }
-            }
-            finally
-            {
-                ChangeTracker.CascadeDeleteTiming = originalCascadeDeleteTiming;
-                ChangeTracker.DeleteOrphansTiming = originalDeleteOrphansTiming;
-            }
+            });
         }
 
-        public void Reset()
+        private void OnAfterSaveChanges()
         {
-            var originalCascadeDeleteTiming = ChangeTracker.CascadeDeleteTiming;
-            var originalDeleteOrphansTiming = ChangeTracker.DeleteOrphansTiming;
-            try
+            using var withCascadeTimingOnSaveChanges = new WithCascadeTimingOnSaveChanges(this);
+            withCascadeTimingOnSaveChanges.Run(() =>
             {
-                ChangeTracker.CascadeDeleteTiming = CascadeTiming.OnSaveChanges;
-                ChangeTracker.DeleteOrphansTiming = CascadeTiming.OnSaveChanges;
-
-                var entries = ChangeTracker.Entries().Where(e => e.State != EntityState.Unchanged).ToArray();
-                foreach (var entry in entries)
+                var trackedEntities = new HashSet<object>();
+                foreach (var dbEntityEntry in ChangeTracker.Entries().ToArray())
                 {
-                    switch (entry.State)
+                    if (dbEntityEntry.Entity != null)
                     {
-                        case EntityState.Modified:
-                            entry.State = EntityState.Unchanged;
-                            break;
-                        case EntityState.Added:
-                            entry.State = EntityState.Detached;
-                            break;
-                        case EntityState.Deleted:
-                            entry.Reload();
-                            break;
+                        trackedEntities.Add(dbEntityEntry.Entity);
+                        RemoveSoftDeletableProperties(dbEntityEntry, trackedEntities);
+                    }
+                }
+            });
+        }
+
+        private void RemoveSoftDeletableProperties(EntityEntry entityEntry, HashSet<object> trackedEntities)
+        {
+            var navigationPropertiesEntries = entityEntry.Navigations;
+            foreach (var navigationEntry in navigationPropertiesEntries)
+            {
+                if (navigationEntry.Metadata.IsCollection())
+                {
+                    if (navigationEntry.CurrentValue is ICollection collection)
+                    {
+                        var notRemovedItems = new Collection<object>();
+                        foreach (var collectionItem in collection)
+                        {
+                            var listItemDbEntityEntry = ChangeTracker.Context.Entry(collectionItem);
+                            if (collectionItem is ISoftDeletable<TIdentifierType> deletable && deletable.IsDeleted)
+                            {
+                                listItemDbEntityEntry.State = EntityState.Detached;
+                            }
+                            else
+                            {
+                                notRemovedItems.Add(collectionItem);
+                                if (!trackedEntities.Contains(collectionItem))
+                                {
+                                    trackedEntities.Add(collectionItem);
+                                    RemoveSoftDeletableProperties(listItemDbEntityEntry, trackedEntities);
+                                }
+                            }
+                        }
+
+                        Type constructedType = typeof(Collection<>).MakeGenericType(navigationEntry.Metadata.PropertyInfo.PropertyType.GenericTypeArguments);
+                        IList col = (IList)Activator.CreateInstance(constructedType);
+                        foreach (var notRemovedItem in notRemovedItems)
+                        {
+                            col.Add(notRemovedItem);
+                        }
+
+                        navigationEntry.CurrentValue = col;
+                    }
+                }
+                else
+                {
+                    if (navigationEntry.CurrentValue != null)
+                    {
+                        var propertyEntityEntry = entityEntry.Reference(navigationEntry.Metadata.Name).TargetEntry;
+
+                        if (navigationEntry.CurrentValue is ISoftDeletable<TIdentifierType> deletable && deletable.IsDeleted)
+                        {
+                            propertyEntityEntry.State = EntityState.Detached;
+                            navigationEntry.CurrentValue = null;
+                        }
+                        else
+                        {
+                            if (!trackedEntities.Contains(navigationEntry.CurrentValue))
+                            {
+                                trackedEntities.Add(navigationEntry.CurrentValue);
+                                RemoveSoftDeletableProperties(propertyEntityEntry, trackedEntities);
+                            }
+                        }
                     }
                 }
             }
-            finally
+        }
+
+        private void SetOwnedEntitiesToUnchanged(EntityEntry entityEntry)
+        {
+            var ownedEntities = entityEntry.References
+                .Where(r => r.TargetEntry != null && r.TargetEntry.Metadata.IsOwned())
+                .ToList();
+
+            foreach (var ownedEntity in ownedEntities)
             {
-                ChangeTracker.CascadeDeleteTiming = originalCascadeDeleteTiming;
-                ChangeTracker.DeleteOrphansTiming = originalDeleteOrphansTiming;
+                ownedEntity.TargetEntry.State = EntityState.Unchanged;
+                SetOwnedEntitiesToUnchanged(ownedEntity.TargetEntry);
             }
         }
     }

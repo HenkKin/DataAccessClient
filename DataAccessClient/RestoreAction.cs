@@ -4,9 +4,9 @@ namespace DataAccessClient
 {
     public class RestoreAction : IDisposable
     {
-        private Func<bool> _dispose;
+        private Action _dispose;
 
-        public RestoreAction(Func<bool> dispose)
+        public RestoreAction(Action dispose)
         {
             _dispose = dispose;
         }

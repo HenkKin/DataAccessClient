@@ -3,6 +3,7 @@
     public class TestSoftDeletableConfiguration : ISoftDeletableConfiguration
     {
         public bool IsEnabled { get; private set; } = true;
+        public bool IsQueryFilterEnabled { get; private set; } = true;
 
         public RestoreAction Enable()
         {
@@ -16,6 +17,21 @@
             var originalIsEnabled = IsEnabled;
             IsEnabled = false;
             return new RestoreAction(() => IsEnabled = originalIsEnabled);
+        }
+
+
+        public RestoreAction EnableQueryFilter()
+        {
+            var originalIsQueryFilterEnabled = IsQueryFilterEnabled;
+            IsQueryFilterEnabled = true;
+            return new RestoreAction(() => IsQueryFilterEnabled = originalIsQueryFilterEnabled);
+        }
+
+        public RestoreAction DisableQueryFilter()
+        {
+            var originalIsQueryFilterEnabled = IsQueryFilterEnabled;
+            IsQueryFilterEnabled = false;
+            return new RestoreAction(() => IsQueryFilterEnabled = originalIsQueryFilterEnabled);
         }
     }
 }
