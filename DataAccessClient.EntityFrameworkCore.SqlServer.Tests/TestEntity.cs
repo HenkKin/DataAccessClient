@@ -4,7 +4,7 @@ using DataAccessClient.EntityBehaviors;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
 {
-    public class TestEntity : IIdentifiable<int>, ICreatable<int>, IModifiable<int>, ISoftDeletable<int>, IRowVersionable, ITranslatable<TestEntityTranslation, int>
+    public class TestEntity : IIdentifiable<int>, ICreatable<int>, IModifiable<int>, ISoftDeletable<int>, IRowVersionable, ITranslatable<TestEntityTranslation, int>, ITenantScopable<int>
     {
         public int Id { get; set; }
         public DateTime CreatedOn { get; set; }
@@ -17,6 +17,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
         public byte[] RowVersion { get; set; }
         public TranslatedProperty Name { get; set; }
         public ICollection<TestEntityTranslation> Translations { get; set; }
+        public int TenantId { get; set; }
     }
 
     public class TestEntityTranslation : IEntityTranslation<TestEntity, int>

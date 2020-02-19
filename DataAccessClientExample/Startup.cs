@@ -31,14 +31,23 @@ namespace DataAccessClientExample
             });
 
             services.AddSingleton<IUserIdentifierProvider<int>, ExampleUserIdentifierProvider>();
+            services.AddSingleton<ITenantIdentifierProvider<int>, ExampleTenantIdentifierProvider>();
+            services.AddSingleton<ISoftDeletableConfiguration, ExampleSoftDeletableConfiguration>();
+            services.AddSingleton<IMultiTenancyConfiguration<int>, ExampleMultiTenancyConfiguration>();
 
             services.AddDataAccessClientPool<ExampleDbContext, int>(builder =>
-                builder.UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=ExampleDataAccessClient;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False"), 
-                new[] { typeof(ExampleEntity) });
+                    builder
+                        .EnableSensitiveDataLogging()
+                        .EnableDetailedErrors()
+                        .UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=ExampleDataAccessClient;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False"),
+                new[] {typeof(ExampleEntity)});
 
             services.AddDataAccessClientPool<ExampleSecondDbContext, int>(builder =>
-                builder.UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=ExampleSecondDataAccessClient;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False"), 
-                new[] { typeof(ExampleSecondEntity) });
+                    builder
+                        .EnableSensitiveDataLogging()
+                        .EnableDetailedErrors()
+                        .UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=ExampleSecondDataAccessClient;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False"),
+                new[] {typeof(ExampleSecondEntity)});
 
         }
 

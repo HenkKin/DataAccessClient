@@ -17,7 +17,7 @@ DataAccessClient
 
 ### Summary
 
-Provides interfaces for Data Access with IRepository<T>, IUnitOfWork and IQueryableSearcher<T>. Also provides haviorial interfaces for entities like IIdentifiable, ICreatable, IModifiable, ISoftDeletable, ITranslatable and IRowVersioned. Last but not least provides some types for Exceptions and searching capabilities like Filtering, Paging, Sorting and Includes.
+Provides interfaces for Data Access with IRepository<T>, IUnitOfWork and IQueryableSearcher<T>. Also provides haviorial interfaces for entities like IIdentifiable, ICreatable, IModifiable, ISoftDeletable, ITranslatable, IRowVersionable and ITenantScopable. Last but not least provides some types for Exceptions and searching capabilities like Filtering, Paging, Sorting and Includes.
 
 This library is Cross-platform, supporting `netstandard2.1`.
 
@@ -54,7 +54,8 @@ public class ExampleEntity :
 	IModifiable<int>, 
 	ISoftDeletable<int>, 
 	IRowVersionable,
-	ITranslatable<ExampleEntityTranslation, int>
+	ITranslatable<ExampleEntityTranslation, int>,
+	ITenantScopable<int>
 {
 	// to identify an entity
 	public int Id { get; set; }
@@ -67,16 +68,19 @@ public class ExampleEntity :
 	public DateTime? ModifiedOn { get; set; }
 	public int? ModifiedById { get; set; }
 
-	//  to implement Soft Delete
+	// to implement Soft Delete
 	public bool IsDeleted { get; set; }
 	public DateTime? DeletedOn { get; set; }
 	public int? DeletedById { get; set; }
 
-	//  to implement optimistic concurrency control.
+	// to implement optimistic concurrency control.
 	public byte[] RowVersion { get; set; } 
 
 	// to translate entity specific fields
 	public ICollection<ExampleEntityTranslation> Translations { get; set; }
+
+	// to scope multiple tenants in same database
+	public int TenantId { get; set; }
 
 	// your own fields
 	public string Name { get; set; }
@@ -301,11 +305,7 @@ IIf you're using EntityFrameworkCore.SqlServer and you want to use this Identifi
 
 - `IServiceCollection AddDataAccessClient<TDbContext, TIdentifierType>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, IEnumerable<Type> entityTypes)`
 
-- `IServiceCollection AddDataAccessClient<TDbContext, TIdentifierType, TUserIdentifierProvider>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, IEnumerable<Type> entityTypes)` 
-
 - `IServiceCollection AddDataAccessClientPool<TDbContext, TIdentifierType>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, IEnumerable<Type> entityTypes)`
-
-- `IServiceCollection AddDataAccessClientPool<TDbContext, TIdentifierType, TUserIdentifierProvider>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, IEnumerable<Type> entityTypes)`
 
 
 These extension methods supporting you to register all needed DbContexts, IUnitOfWorks and IRepositories for provided entity types. Calling AddDbContext or AddDbContextPool of EntityFrameworkCore is not needed and not recommended when you are using this library.
@@ -326,8 +326,18 @@ public class Startup
 		var entityTypes = new [] { typeof(Entity1), typeof(Entity2) }; // can also done by using reflection
 		...
 
-		// regist IUserIdentifierProvider standalone, usefull in n-layer architectures
-		services.AddSingleton<IUserIdentifierProvider<int>, YourUserIdentifierProviderType>();
+		// register IUserIdentifierProvider standalone, usefull in n-layer architectures
+		services.AddSingleton<IUserIdentifierProvider<int>, YourUserIdentifierProvider>();
+
+		// register ITenantIdentifierProvider standalone, usefull in n-layer architectures
+		services.AddSingleton<ITenantIdentifierProvider<int>, YourTenantIdentifierProvider>();
+
+		// register ISoftDeletableConfiguration standalone, usefull in n-layer architectures
+		services.AddSingleton<ISoftDeletableConfiguration, YourSoftDeletableConfiguration>();
+
+		// register IMultiTenancyConfiguration standalone, usefull in n-layer architectures
+		services.AddSingleton<IMultiTenancyConfiguration<int>, YourMultiTenancyConfiguration>();
+
 		// register as AddDbContext (without pooling)
 		services.AddDataAccessClient<YourDbContext, int>(
 			builder => ... , // f.e. builder.UseSqlServer(...)
@@ -335,31 +345,14 @@ public class Startup
 		);
                 
 		// or
-		// register IUserIdentifierProvider standalone, usefull in n-layer architectures
+
 		// register as AddDbContextPool (with pooling)
-		services.AddSingleton<IUserIdentifierProvider<int>, YourUserIdentifierProviderType>();
 		services.AddDataAccessClientPool<YourDbContext, int>(
 			builder => ... , // f.e. builder.UseSqlServer(...)
-			entityTypes
+			entityTypes,
+			poolSize: 128 // is optional
 		);
                 
-		// or
-                
-		// register IUserIdentifierProvider within extension method
-		// register as AddDbContext (without pooling)
-		services.AddDataAccessClient<YourDbContext, int, YourUserIdentifierProvider>(
-			builder => ... , // f.e. builder.UseSqlServer(...)
-			entityTypes
-		);
-                
-		// or
-                
-		// register IUserIdentifierProvider within extension method
-		// register as AddDbContext (with pooling)
-		services.AddDataAccessClientPool<YourDbContext, int, YourUserIdentifierProvider>(
-			builder => ... , // f.e. builder.UseSqlServer(...)
-			entityTypes
-		);
 		...
 	}
     
@@ -409,6 +402,90 @@ public class YourUserIdentifierProvider : IUserIdentifierProvider<int>
 		return await Task.FromResult(10);
 	}
 }
+...
+```
+
+Providing an implementation for interface `ITenantIdentifierProvider<TIdentifierType>`. This provider should be a singleton, so the implementation should try to return a tenant identifier of the current context
+
+```csharp
+...
+using DataAccessClient.EntityFrameworkCore.SqlServer;
+
+public class YourTenantIdentifierProvider : ITenantIdentifierProvider<int>
+{
+	public int Execute()
+	{
+		// f.e. in Asp.NET Core it could use IHttpContextAccessor.HttpContext.User.Identity to get tenant identifier via claims or your own implementation;
+
+		// return the current tenant id
+		return 1;
+	}
+}
+...
+```
+
+Providing an implementation for interface `ISoftDeletableConfiguration`. This configuration object should be a singleton, so the implementation keep the configuration of SoftDelete
+
+```csharp
+...
+using DataAccessClient.EntityFrameworkCore.SqlServer;
+
+public class YourSoftDeletableConfiguration : ISoftDeletableConfiguration
+{
+	public bool IsEnabled { get; private set; } = true;
+		
+	public RestoreAction Enable()
+	{
+		var originalIsEnabled = IsEnabled;
+		IsEnabled = true;
+		return new RestoreAction(() => IsEnabled = originalIsEnabled);
+	}
+	
+	public RestoreAction Disable()
+	{
+		var originalIsEnabled = IsEnabled;
+		IsEnabled = false;
+		return new RestoreAction(() => IsEnabled = originalIsEnabled);
+	}
+}
+
+...
+```
+
+Providing an implementation for interface `IMultiTenancyConfiguration<int>`. This configuration object should be a singleton, so the implementation keep the configuration of Multi-Tenancy
+
+```csharp
+...
+using DataAccessClient.EntityFrameworkCore.SqlServer;
+
+public class YourMultiTenancyConfiguration : IMultiTenancyConfiguration<int>
+{
+	private readonly ITenantIdentifierProvider<int> _tenantIdentifierProvider;
+
+	public bool IsEnabled { get; private set; } = true;
+	
+	public int? CurrentTenantId => _tenantIdentifierProvider.Execute();
+	
+	public YourMultiTenancyConfiguration(ITenantIdentifierProvider<int> tenantIdentifierProvider)
+	{
+		_tenantIdentifierProvider = tenantIdentifierProvider;
+	}
+	
+	public RestoreAction Enable()
+	{
+		var originalIsEnabled = IsEnabled;
+		IsEnabled = true;
+		return new RestoreAction(() => IsEnabled = originalIsEnabled);
+	}
+	
+	public RestoreAction Disable()
+	{
+		var originalIsEnabled = IsEnabled;
+		IsEnabled = false;
+		return new RestoreAction(() => IsEnabled = originalIsEnabled);
+	}
+}
+
 ...
 ```
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq.Expressions;
 using DataAccessClient.EntityBehaviors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -37,12 +38,22 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             return modelBuilder;
         }
 
-        internal static ModelBuilder ConfigureEntityBehaviorISoftDeletable<TEntity, TIdentifierType>(ModelBuilder modelBuilder)
+        internal static ModelBuilder ConfigureEntityBehaviorISoftDeletable<TEntity, TIdentifierType>(ModelBuilder modelBuilder, Expression<Func<TEntity, bool>> queryFilter)
             where TEntity : class, ISoftDeletable<TIdentifierType>
             where TIdentifierType : struct
         {
             modelBuilder.Entity<TEntity>()
-                .IsSoftDeletable<TEntity, TIdentifierType>();
+                .IsSoftDeletable<TEntity, TIdentifierType>(queryFilter);
+
+            return modelBuilder;
+        }
+        
+        internal static ModelBuilder ConfigureEntityBehaviorITenantScopable<TEntity, TIdentifierType>(ModelBuilder modelBuilder, Expression<Func<TEntity, bool>> queryFilter)
+            where TEntity : class, ITenantScopable<TIdentifierType>
+            where TIdentifierType : struct
+        {
+            modelBuilder.Entity<TEntity>()
+                .IsTenantScopable<TEntity, TIdentifierType>(queryFilter);
 
             return modelBuilder;
         }

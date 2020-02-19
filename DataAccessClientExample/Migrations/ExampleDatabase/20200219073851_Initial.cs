@@ -21,7 +21,8 @@ namespace DataAccessClientExample.Migrations.ExampleDatabase
                     DeletedOn = table.Column<DateTime>(nullable: true),
                     DeletedById = table.Column<int>(nullable: true),
                     RowVersion = table.Column<byte[]>(rowVersion: true, nullable: true),
-                    Name = table.Column<string>(nullable: true)
+                    Name = table.Column<string>(nullable: true),
+                    TenantId = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {

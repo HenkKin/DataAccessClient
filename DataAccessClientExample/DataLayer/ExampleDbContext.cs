@@ -1,5 +1,4 @@
-﻿using DataAccessClient.EntityBehaviors;
-using DataAccessClient.EntityFrameworkCore.SqlServer;
+﻿using DataAccessClient.EntityFrameworkCore.SqlServer;
 using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessClientExample.DataLayer

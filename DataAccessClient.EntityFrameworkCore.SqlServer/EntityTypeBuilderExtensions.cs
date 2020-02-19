@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Linq;
+using System.Linq.Expressions;
 using DataAccessClient.EntityBehaviors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer
@@ -21,15 +23,26 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             return entity;
         }
 
-        internal static EntityTypeBuilder<TEntity> IsSoftDeletable<TEntity, TIdentifierType>(this EntityTypeBuilder<TEntity> entity)
-            where TEntity : class, ISoftDeletable<TIdentifierType> 
+        internal static EntityTypeBuilder<TEntity> IsSoftDeletable<TEntity, TIdentifierType>(this EntityTypeBuilder<TEntity> entity, Expression<Func<TEntity, bool>> queryFilter)
+            where TEntity : class, ISoftDeletable<TIdentifierType>
             where TIdentifierType : struct
         {
             entity.Property(e => e.IsDeleted).IsRequired();
             entity.Property(e => e.DeletedOn).IsRequired(false);
             entity.Property(e => e.DeletedById).IsRequired(false);
 
-            entity.HasQueryFilter(x => x.IsDeleted == false);
+            entity.AppendQueryFilter(queryFilter);
+            return entity;
+        }
+
+        internal static EntityTypeBuilder<TEntity> IsTenantScopable<TEntity, TIdentifierType>(this EntityTypeBuilder<TEntity> entity, Expression<Func<TEntity, bool>> queryFilter)
+            where TEntity : class, ITenantScopable<TIdentifierType>
+            where TIdentifierType : struct
+        {
+            entity.Property(e => e.TenantId).IsRequired();
+
+            entity.AppendQueryFilter(queryFilter);
+
             return entity;
         }
 
@@ -95,7 +108,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             {
                 entity.OwnsOne<TranslatedProperty>(translatedProperty.Name, translatedPropertyBuilder =>
                 {
-                    translatedPropertyBuilder.OwnsMany<PropertyTranslation>(x => x.Translations, builder =>
+                    translatedPropertyBuilder.OwnsMany(x => x.Translations, builder =>
                     {
                         builder.ToTable(typeof(TEntity).Name + "_" + translatedProperty.Name + nameof(TranslatedProperty.Translations));
                         builder.WithOwner().HasForeignKey("OwnerId");
@@ -123,6 +136,27 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             });
 
             return entity;
+        }
+
+        internal static EntityTypeBuilder<TEntity> AppendQueryFilter<TEntity>(this EntityTypeBuilder<TEntity> entityTypeBuilder, Expression<Func<TEntity, bool>> expression) where TEntity : class
+        {
+            var parameterType = Expression.Parameter(entityTypeBuilder.Metadata.ClrType);
+            var expressionFilter = ReplacingExpressionVisitor.Replace(
+                expression.Parameters.Single(), parameterType, expression.Body);
+
+            var currentQueryFilter = entityTypeBuilder.Metadata.GetQueryFilter();
+
+            if (currentQueryFilter != null)
+            {
+                var currentExpressionFilter = ReplacingExpressionVisitor.Replace(
+                    currentQueryFilter.Parameters.Single(), parameterType, currentQueryFilter.Body);
+                expressionFilter = Expression.AndAlso(currentExpressionFilter, expressionFilter);
+            }
+
+            var lambdaExpression = Expression.Lambda(expressionFilter, parameterType);
+            entityTypeBuilder.HasQueryFilter(lambdaExpression);
+
+            return entityTypeBuilder;
         }
     }
 }

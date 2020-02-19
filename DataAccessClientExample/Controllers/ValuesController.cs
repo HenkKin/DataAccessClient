@@ -19,7 +19,12 @@ namespace DataAccessClientExample.Controllers
         private readonly IQueryableSearcher<ExampleEntity> _exampleEntityQueryableSearcher;
         private readonly IQueryableSearcher<ExampleSecondEntity> _exampleSecondEntityQueryableSearcher;
 
-        public ValuesController(IUnitOfWork unitOfWork, IRepository<ExampleEntity> exampleEntityRepository, IRepository<ExampleSecondEntity> exampleSecondEntityRepository, IQueryableSearcher<ExampleEntity> exampleEntityQueryableSearcher, IQueryableSearcher<ExampleSecondEntity> exampleSecondEntityQueryableSearcher)
+        public ValuesController(
+            IUnitOfWork unitOfWork, 
+            IRepository<ExampleEntity> exampleEntityRepository, 
+            IRepository<ExampleSecondEntity> exampleSecondEntityRepository, 
+            IQueryableSearcher<ExampleEntity> exampleEntityQueryableSearcher, 
+            IQueryableSearcher<ExampleSecondEntity> exampleSecondEntityQueryableSearcher)
         {
             _unitOfWork = unitOfWork;
             _exampleEntityRepository = exampleEntityRepository;
@@ -67,7 +72,7 @@ namespace DataAccessClientExample.Controllers
 
             await _unitOfWork.SaveAsync();
 
-            exampleEntity2TranslationNlNl.Description = exampleEntity2TranslationNlNl.Description + " geupdated";
+            exampleEntity2TranslationNlNl.Description += " geupdated";
             exampleEntity2.Translations.Add(new ExampleEntityTranslation{ Description = "Comment", Language = "fr-FR"});
             exampleEntity2.Name = "Updated example";
 
@@ -80,20 +85,24 @@ namespace DataAccessClientExample.Controllers
 
             await _unitOfWork.SaveAsync();
 
-            var criteria = new Criteria();
-            criteria.OrderBy = "Id";
-            criteria.OrderByDirection = OrderByDirection.Ascending;
-            criteria.Page = 1;
-            criteria.PageSize = 10;
-            criteria.Search = "Updated";
+            var criteria = new Criteria
+            {
+                OrderBy = "Id",
+                OrderByDirection = OrderByDirection.Ascending,
+                Page = 1,
+                PageSize = 10,
+                Search = "Updated"
+            };
             criteria.Includes.Add("Translations");
 
-            var secondCriteria = new Criteria();
-            criteria.OrderBy = "Id";
-            criteria.OrderByDirection = OrderByDirection.Ascending;
-            criteria.Page = 1;
-            criteria.PageSize = 10;
-            criteria.Search = "Updated";
+            var secondCriteria = new Criteria
+            {
+                OrderBy = "Id",
+                OrderByDirection = OrderByDirection.Ascending,
+                Page = 1,
+                PageSize = 10,
+                Search = "Updated"
+            };
 
             var exampleEntitiesSearchResults = await _exampleEntityQueryableSearcher.ExecuteAsync(_exampleEntityRepository.GetReadOnlyQuery(), criteria);
             var exampleSecondEntitiesSearchResults = await _exampleSecondEntityQueryableSearcher.ExecuteAsync(_exampleSecondEntityRepository.GetReadOnlyQuery(), secondCriteria);

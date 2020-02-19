@@ -55,9 +55,10 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
         {
             // Arrange
             var entityTypeBuilder = new ModelBuilder(new ConventionSet());
+            var softDeletableConfiguration = new TestSoftDeletableConfiguration();
 
             // Act
-            var result = ModelBuilderExtensions.ConfigureEntityBehaviorISoftDeletable<TestEntity, int>(entityTypeBuilder);
+            var result = ModelBuilderExtensions.ConfigureEntityBehaviorISoftDeletable<TestEntity, int>(entityTypeBuilder, x=>x.IsDeleted == false);
 
             // Assert
             var isDeleted = result.Entity<TestEntity>().Metadata.FindProperty(nameof(ISoftDeletable<int>.IsDeleted));
@@ -74,7 +75,38 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             Assert.True(deletedById.IsNullable);
 
             var deletedQueryFilter = result.Entity<TestEntity>().Metadata.GetQueryFilter();
-            Assert.Equal("x => (x.IsDeleted == False)", deletedQueryFilter.ToString());
+            Assert.Equal("Param_0 => (Param_0.IsDeleted == False)", deletedQueryFilter.ToString());
+        }
+
+        [Fact]
+        public void IsTenantScopable_WhenNotCalled_ItShouldHaveNoConfiguration()
+        {
+            // Act
+            var result = new ModelBuilder(new ConventionSet());
+
+            // Assert
+            Assert.Null(result.Entity<TestEntity>().Metadata.FindProperty(nameof(ITenantScopable<int>.TenantId)));
+
+            Assert.Null(result.Entity<TestEntity>().Metadata.GetQueryFilter());
+        }
+
+        [Fact]
+        public void IsTenantScopable_WhenCalled_ItShouldSetTenantScopableConfiguration()
+        {
+            // Arrange
+            var entityTypeBuilder = new ModelBuilder(new ConventionSet());
+            var multiTenancyConfiguration = new TestMultiTenancyConfiguration(new TestTenantIdentifierProvider());
+
+            // Act
+            var result = ModelBuilderExtensions.ConfigureEntityBehaviorITenantScopable<TestEntity, int>(entityTypeBuilder, x=>x.TenantId == 1);
+
+            // Assert
+            var tenantId = result.Entity<TestEntity>().Metadata.FindProperty(nameof(ITenantScopable<int>.TenantId));
+            Assert.Equal(nameof(ITenantScopable<int>.TenantId), tenantId.Name);
+            Assert.False(tenantId.IsNullable);
+
+            var tenantQueryFilter = result.Entity<TestEntity>().Metadata.GetQueryFilter();
+            Assert.Equal("Param_0 => (Param_0.TenantId == 1)", tenantQueryFilter.ToString());
         }
 
         [Fact]
