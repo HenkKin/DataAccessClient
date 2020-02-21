@@ -65,7 +65,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             // Arrange
             var entityType = new EntityType(typeof(TestEntity), new Model(new ConventionSet()), ConfigurationSource.Explicit);
             var entityTypeBuilder = new EntityTypeBuilder<TestEntity>(entityType);
-            var softDeletableConfiguration = new TestSoftDeletableConfiguration();
+            // var softDeletableConfiguration = new DefaultSoftDeletableConfiguration();
 
             // Act
             var result = EntityTypeBuilderExtensions.IsSoftDeletable<TestEntity, int>(entityTypeBuilder, x=>x.IsDeleted == false);
@@ -110,7 +110,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             // Arrange
             var entityType = new EntityType(typeof(TestEntity), new Model(new ConventionSet()), ConfigurationSource.Explicit);
             var entityTypeBuilder = new EntityTypeBuilder<TestEntity>(entityType);
-            var multiTenancyConfiguration = new TestMultiTenancyConfiguration(new TestTenantIdentifierProvider());
+            // var multiTenancyConfiguration = new DefaultMultiTenancyConfiguration<int>(new TestTenantIdentifierProvider());
 
             // Act
             var result = EntityTypeBuilderExtensions.IsTenantScopable<TestEntity, int>(entityTypeBuilder, x=> x.TenantId == 1);

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DataAccessClient
+namespace DataAccessClient.EntityFrameworkCore.SqlServer
 {
     public class RestoreAction : IDisposable
     {

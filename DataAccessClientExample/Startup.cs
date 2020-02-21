@@ -1,4 +1,3 @@
-using DataAccessClient;
 using DataAccessClient.EntityFrameworkCore.SqlServer;
 using DataAccessClientExample.DataLayer;
 using Microsoft.AspNetCore.Builder;
@@ -30,19 +29,17 @@ namespace DataAccessClientExample
                 options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
             });
 
-            services.AddSingleton<IUserIdentifierProvider<int>, ExampleUserIdentifierProvider>();
-            services.AddSingleton<ITenantIdentifierProvider<int>, ExampleTenantIdentifierProvider>();
-            services.AddSingleton<ISoftDeletableConfiguration, ExampleSoftDeletableConfiguration>();
-            services.AddSingleton<IMultiTenancyConfiguration<int>, ExampleMultiTenancyConfiguration>();
+            services.AddScoped<IUserIdentifierProvider<int>, ExampleUserIdentifierProvider>();
+            services.AddScoped<ITenantIdentifierProvider<int>, ExampleTenantIdentifierProvider>();
 
-            services.AddDataAccessClientPool<ExampleDbContext, int>(builder =>
+            services.AddDataAccessClientPool<ExampleDbContext, int, int>(builder =>
                     builder
                         .EnableSensitiveDataLogging()
                         .EnableDetailedErrors()
                         .UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=ExampleDataAccessClient;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False"),
                 new[] {typeof(ExampleEntity)});
 
-            services.AddDataAccessClientPool<ExampleSecondDbContext, int>(builder =>
+            services.AddDataAccessClientPool<ExampleSecondDbContext, int, int>(builder =>
                     builder
                         .EnableSensitiveDataLogging()
                         .EnableDetailedErrors()

@@ -115,14 +115,41 @@ namespace DataAccessClientExample.Controllers
         public async Task<IActionResult> GetAll()
         {
             var exampleEntities = await _exampleEntityRepository.GetReadOnlyQuery()
-                .Where(e => !e.IsDeleted)
                 .ToListAsync();
 
             var exampleSecondEntities = await _exampleSecondEntityRepository.GetReadOnlyQuery()
-                .Where(e => !e.IsDeleted)
                 .ToListAsync();
 
             return Json(new { exampleEntities, exampleSecondEntities });
+        }
+
+        [Route("get-all2")]
+        [HttpGet]
+        public async Task<IActionResult> GetAll2()
+        {
+            var criteria = new Criteria
+            {
+                OrderBy = "Id",
+                OrderByDirection = OrderByDirection.Ascending,
+                Page = 1,
+                PageSize = 10,
+                Search = "Updated"
+            };
+            criteria.Includes.Add("Translations");
+
+            var secondCriteria = new Criteria
+            {
+                OrderBy = "Id",
+                OrderByDirection = OrderByDirection.Ascending,
+                Page = 1,
+                PageSize = 10,
+                Search = "Updated"
+            };
+
+            var exampleEntitiesSearchResults = await _exampleEntityQueryableSearcher.ExecuteAsync(_exampleEntityRepository.GetReadOnlyQuery(), criteria);
+            var exampleSecondEntitiesSearchResults = await _exampleSecondEntityQueryableSearcher.ExecuteAsync(_exampleSecondEntityRepository.GetReadOnlyQuery(), secondCriteria);
+
+            return Json(new { exampleEntitiesSearchResults, exampleSecondEntitiesSearchResults });
         }
     }
 }

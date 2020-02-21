@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessClientExample.DataLayer
 {
-    internal class ExampleDbContext : SqlServerDbContext<int>
+    internal class ExampleDbContext : SqlServerDbContext<int, int>
     {
         public ExampleDbContext(DbContextOptions<ExampleDbContext> options) : base(options)
         {

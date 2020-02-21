@@ -16,10 +16,16 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             var mockRepository = new MockRepository(MockBehavior.Strict);
 
             var testDbContextMock = mockRepository.Create<TestDbContext>();
+            var serviceProviderMock = mockRepository.Create<IServiceProvider>();
+            var testDbContextResolverMock = mockRepository.Create<ISqlServerDbContextResolver<TestDbContext, int, int>>();
+
+            testDbContextResolverMock.Setup(x => x.Execute(serviceProviderMock.Object))
+                .Returns(testDbContextMock.Object);
+
             testDbContextMock.Setup(x => x.SaveChangesAsync(CancellationToken.None))
                 .ReturnsAsync(1);
 
-            var unitOfWorkPart = new UnitOfWorkPartForSqlServerDbContext<TestDbContext, int>(testDbContextMock.Object);
+            var unitOfWorkPart = new UnitOfWorkPartForSqlServerDbContext<TestDbContext, int, int>(testDbContextResolverMock.Object, serviceProviderMock.Object);
 
             // Act
             await unitOfWorkPart.SaveAsync();
@@ -38,14 +44,22 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
         {
             // Arrange
             var serviceProviderMock = new Mock<IServiceProvider>();
-            serviceProviderMock.Setup(x => x.GetService(typeof(IUserIdentifierProvider<int>)))
-                .Returns(new TestUserIdentifierProvider());
-            serviceProviderMock.Setup(x => x.GetService(typeof(ITenantIdentifierProvider<int>)))
-                .Returns(new TestTenantIdentifierProvider());
-            serviceProviderMock.Setup(x => x.GetService(typeof(ISoftDeletableConfiguration)))
-                .Returns(new TestSoftDeletableConfiguration());
-            serviceProviderMock.Setup(x => x.GetService(typeof(IMultiTenancyConfiguration<int>)))
-                .Returns(new TestMultiTenancyConfiguration(new TestTenantIdentifierProvider()));
+            //serviceProviderMock.Setup(x => x.GetService(typeof(ISqlServerDbContextData<int, int>)))
+            //    .Returns(new SqlServerDbContextData<int, int>());
+
+            var testDbContextResolverMock = new Mock<ISqlServerDbContextResolver<TestDbContext, int, int>>();
+
+ 
+
+
+            //serviceProviderMock.Setup(x => x.GetService(typeof(IUserIdentifierProvider<int>)))
+            //    .Returns(new TestUserIdentifierProvider());
+            //serviceProviderMock.Setup(x => x.GetService(typeof(ITenantIdentifierProvider<int>)))
+            //    .Returns(new TestTenantIdentifierProvider());
+            //serviceProviderMock.Setup(x => x.GetService(typeof(ISoftDeletableConfiguration)))
+            //    .Returns(new DefaultSoftDeletableConfiguration());
+            //serviceProviderMock.Setup(x => x.GetService(typeof(IMultiTenancyConfiguration<int>)))
+            //    .Returns(new DefaultMultiTenancyConfiguration<int>(new TestTenantIdentifierProvider()));
 
             var options = new DbContextOptionsBuilder<TestDbContext>()
                 .UseInMemoryDatabase(databaseName: "Reset_WhenCalled_ItShouldCallSaveChangesAsyncOnDbContext")
@@ -53,10 +67,13 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
                 .Options;
 
             var testDbContext = new TestDbContext(options);
+            testDbContextResolverMock.Setup(x => x.Execute(serviceProviderMock.Object))
+                .Returns(testDbContext);
 
             var testEntity = new TestEntity();
             testDbContext.Entry(testEntity).State = state;
-            var unitOfWorkPart = new UnitOfWorkPartForSqlServerDbContext<TestDbContext, int>(testDbContext);
+
+            var unitOfWorkPart = new UnitOfWorkPartForSqlServerDbContext<TestDbContext, int, int>(testDbContextResolverMock.Object, serviceProviderMock.Object);
 
             // Act
             unitOfWorkPart.Reset();
@@ -75,14 +92,22 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
         {
             // Arrange
             var serviceProviderMock = new Mock<IServiceProvider>();
-            serviceProviderMock.Setup(x => x.GetService(typeof(IUserIdentifierProvider<int>)))
-                .Returns(new TestUserIdentifierProvider());
-            serviceProviderMock.Setup(x => x.GetService(typeof(ITenantIdentifierProvider<int>)))
-                .Returns(new TestTenantIdentifierProvider());
-            serviceProviderMock.Setup(x => x.GetService(typeof(ISoftDeletableConfiguration)))
-                .Returns(new TestSoftDeletableConfiguration());
+
+            //serviceProviderMock.Setup(x => x.GetService(typeof(ISqlServerDbContextData<int, int>)))
+            //    .Returns(new SqlServerDbContextData<int, int>
+            //    {
+            //        TenantIdentifier = 2
+            //    });
+            //serviceProviderMock.Setup(x => x.GetService(typeof(IUserIdentifierProvider<int>)))
+            //    .Returns(new TestUserIdentifierProvider());
+            //serviceProviderMock.Setup(x => x.GetService(typeof(ITenantIdentifierProvider<int>)))
+            //    .Returns(new TestTenantIdentifierProvider());
+            //serviceProviderMock.Setup(x => x.GetService(typeof(ISoftDeletableConfiguration)))
+            //    .Returns(new DefaultSoftDeletableConfiguration());
             serviceProviderMock.Setup(x => x.GetService(typeof(IMultiTenancyConfiguration<int>)))
-                .Returns(new TestMultiTenancyConfiguration(new TestTenantIdentifierProvider()));
+                .Returns(new DefaultMultiTenancyConfiguration<int>());
+
+            var testDbContextResolverMock = new Mock<ISqlServerDbContextResolver<TestDbContext, int, int>>();
 
             var options = new DbContextOptionsBuilder<TestDbContext>()
                 .UseInMemoryDatabase(databaseName: "Reset_WhenCalled_ItShouldCallSaveChangesAsyncOnDbContext")
@@ -90,13 +115,16 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
                 .Options;
 
             var testDbContext = new TestDbContext(options);
+            testDbContext.Initialize(new TestUserIdentifierProvider(), new TestTenantIdentifierProvider(), new DefaultSoftDeletableConfiguration(), new DefaultMultiTenancyConfiguration<int>());
+            testDbContextResolverMock.Setup(x => x.Execute(serviceProviderMock.Object))
+                .Returns(testDbContext);
 
             var testEntity = new TestEntity();
             testDbContext.Add(testEntity);
             testDbContext.SaveChanges();
 
             testDbContext.Entry(testEntity).State = state;
-            var unitOfWorkPart = new UnitOfWorkPartForSqlServerDbContext<TestDbContext, int>(testDbContext);
+            var unitOfWorkPart = new UnitOfWorkPartForSqlServerDbContext<TestDbContext, int, int>(testDbContextResolverMock.Object, serviceProviderMock.Object);
 
             // Act
             unitOfWorkPart.Reset();

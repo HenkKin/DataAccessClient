@@ -7,18 +7,21 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer
 {
-    internal class SqlServerRepository<TDbContext, TEntity, TIdentifierType> : IRepository<TEntity> 
-        where TDbContext : SqlServerDbContext<TIdentifierType>
-        where TEntity : class 
-        where TIdentifierType : struct
+    internal class SqlServerRepository<TDbContext, TEntity, TUserIdentifierType, TTenantIdentifierType> : IRepository<TEntity> 
+        where TDbContext : SqlServerDbContext<TUserIdentifierType, TTenantIdentifierType>
+        where TEntity : class
+        where TUserIdentifierType : struct
+        where TTenantIdentifierType : struct
     {
         protected readonly TDbContext DbContext;
         protected readonly DbSet<TEntity> DbSet;
         private readonly PropertyInfo _primaryKeyProperty;
 
-        public SqlServerRepository(TDbContext dbContext)
+
+        public SqlServerRepository(ISqlServerDbContextResolver<TDbContext, TUserIdentifierType, TTenantIdentifierType> sqlServerDbContextResolver, IServiceProvider scopedServiceProvider)
         {
-            DbContext = dbContext;
+            DbContext = sqlServerDbContextResolver.Execute(scopedServiceProvider) ?? throw new ArgumentNullException(nameof(sqlServerDbContextResolver));
+        
             DbSet = DbContext.Set<TEntity>();
             _primaryKeyProperty = DbContext.Model.FindEntityType(typeof(TEntity)).FindPrimaryKey().Properties.Single().PropertyInfo;
         }

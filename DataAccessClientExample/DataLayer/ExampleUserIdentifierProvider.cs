@@ -1,13 +1,12 @@
-﻿using System.Threading.Tasks;
-using DataAccessClient;
+﻿using DataAccessClient.EntityFrameworkCore.SqlServer;
 
 namespace DataAccessClientExample.DataLayer
 {
     internal class ExampleUserIdentifierProvider : IUserIdentifierProvider<int>
     {
-        public async Task<int> ExecuteAsync()
+        public int? Execute()
         {
-            return await Task.FromResult(10);
+            return 10;
         }
     }
 }

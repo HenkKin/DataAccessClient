@@ -1,17 +1,8 @@
-﻿using DataAccessClient;
-
-namespace DataAccessClientExample.DataLayer
+﻿namespace DataAccessClient.EntityFrameworkCore.SqlServer
 {
-    internal class ExampleMultiTenancyConfiguration : IMultiTenancyConfiguration<int>
+    internal class DefaultMultiTenancyConfiguration<TTenantIdentifierType> : IMultiTenancyConfiguration<TTenantIdentifierType> where TTenantIdentifierType : struct
     {
-        private readonly ITenantIdentifierProvider<int> _tenantIdentifierProvider;
         public bool IsQueryFilterEnabled { get; private set; } = true;
-        public int? CurrentTenantId => _tenantIdentifierProvider.Execute();
-
-        public ExampleMultiTenancyConfiguration(ITenantIdentifierProvider<int> tenantIdentifierProvider)
-        {
-            _tenantIdentifierProvider = tenantIdentifierProvider;
-        }
 
         public RestoreAction EnableQueryFilter()
         {

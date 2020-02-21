@@ -1,12 +1,18 @@
-﻿using System.Threading.Tasks;
+﻿using System;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
 {
     public class TestUserIdentifierProvider : IUserIdentifierProvider<int>
     {
-        public Task<int> ExecuteAsync()
+        public Guid InstanceId { get; }
+        public TestUserIdentifierProvider()
         {
-            return Task.FromResult(1);
+            InstanceId = Guid.NewGuid();
+        }
+
+        public int? Execute()
+        {
+            return 1;
         }
     }
 }

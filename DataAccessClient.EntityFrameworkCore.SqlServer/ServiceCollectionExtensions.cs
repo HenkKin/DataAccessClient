@@ -12,55 +12,37 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 {
     public static class ServiceCollectionExtensions
     {
-        //public static IServiceCollection AddUserIdentifierProvider<TUserIdentifierProvider, TIdentifierType>(this IServiceCollection services)
-        //    where TUserIdentifierProvider : class, IUserIdentifierProvider<TIdentifierType>
-        //    where TIdentifierType : struct
-        //{
-        //    return services.AddSingleton<IUserIdentifierProvider<TIdentifierType>, TUserIdentifierProvider>();
-        //}
-
-        //public static IServiceCollection AddTenantIdentifierProvider<TTenantIdentifierProvider, TIdentifierType>(this IServiceCollection services)
-        //    where TTenantIdentifierProvider : class, ITenantIdentifierProvider<TIdentifierType>
-        //    where TIdentifierType : struct
-        //{
-        //    return services.AddSingleton<ITenantIdentifierProvider<TIdentifierType>, TTenantIdentifierProvider>();
-        //}
-
-        //public static IServiceCollection AddMultiTenancyConfiguration<TMultiTenancyConfiguration, TIdentifierType>(this IServiceCollection services)
-        //    where TMultiTenancyConfiguration : class, IMultiTenancyConfiguration<TIdentifierType>
-        //    where TIdentifierType : struct
-        //{
-        //    return services.AddSingleton<IMultiTenancyConfiguration<TIdentifierType>, TMultiTenancyConfiguration>();
-        //}
-        
-        //public static IServiceCollection AddSoftDeletableConfiguration<TSoftDeletableConfiguration>(this IServiceCollection services)
-        //    where TSoftDeletableConfiguration : class, ISoftDeletableConfiguration
-        //{
-        //    return services.AddSingleton<ISoftDeletableConfiguration, TSoftDeletableConfiguration>();
-        //}
-
-        public static IServiceCollection AddDataAccessClient<TDbContext, TIdentifierType>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, Type[] entityTypes)
-            where TDbContext : SqlServerDbContext<TIdentifierType>
-            where TIdentifierType : struct
+        public static IServiceCollection AddDataAccessClient<TDbContext, TUserIdentifierType, TTenantIdentifierType>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, Type[] entityTypes)
+            where TDbContext : SqlServerDbContext<TUserIdentifierType, TTenantIdentifierType>
+            where TUserIdentifierType : struct
+            where TTenantIdentifierType : struct
         {
-            return services.InternalAddDataAccessClient<TDbContext, TIdentifierType>(optionsAction, entityTypes, usePooling: false, poolSize: null);
+            return services.InternalAddDataAccessClient<TDbContext, TUserIdentifierType, TTenantIdentifierType>(optionsAction, entityTypes, usePooling: false, poolSize: null);
         }
         
-        public static IServiceCollection AddDataAccessClientPool<TDbContext, TIdentifierType>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, Type[] entityTypes, int? poolSize = null)
-            where TDbContext : SqlServerDbContext<TIdentifierType>
-            where TIdentifierType : struct
+        public static IServiceCollection AddDataAccessClientPool<TDbContext, TUserIdentifierType, TTenantIdentifierType>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, Type[] entityTypes, int? poolSize = null)
+            where TDbContext : SqlServerDbContext<TUserIdentifierType, TTenantIdentifierType>
+            where TUserIdentifierType : struct
+            where TTenantIdentifierType : struct
         {
-            return services.InternalAddDataAccessClient<TDbContext, TIdentifierType>(optionsAction, entityTypes, usePooling: true, poolSize:poolSize);
+            return services.InternalAddDataAccessClient<TDbContext, TUserIdentifierType, TTenantIdentifierType>(optionsAction, entityTypes, usePooling: true, poolSize:poolSize);
         }
 
-        private static IServiceCollection InternalAddDataAccessClient<TDbContext, TIdentifierType>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, Type[] entityTypes, bool usePooling, int? poolSize)
-            where TDbContext : SqlServerDbContext<TIdentifierType>
-            where TIdentifierType : struct
+        private static IServiceCollection InternalAddDataAccessClient<TDbContext, TUserIdentifierType, TTenantIdentifierType>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, Type[] entityTypes, bool usePooling, int? poolSize)
+            where TDbContext : SqlServerDbContext<TUserIdentifierType, TTenantIdentifierType>
+            where TUserIdentifierType : struct
+            where TTenantIdentifierType : struct
         {
-            RequireSingletonRegistrationFor<IUserIdentifierProvider<TIdentifierType>>(services, entityTypes, new[]{ typeof(ICreatable<>), typeof(IModifiable<>), typeof(ISoftDeletable<>) });
-            RequireSingletonRegistrationFor<ITenantIdentifierProvider<TIdentifierType>>(services, entityTypes, new[]{ typeof(ITenantScopable<>) });
-            RequireSingletonRegistrationFor<ISoftDeletableConfiguration>(services, entityTypes, new[]{ typeof(ISoftDeletable<>) });
-            RequireSingletonRegistrationFor<IMultiTenancyConfiguration<TIdentifierType>>(services, entityTypes, new[]{ typeof(ITenantScopable<>) });
+            services.RequireRegistrationFor<IUserIdentifierProvider<TUserIdentifierType>>(ServiceLifetime.Scoped, entityTypes, new[] { typeof(ICreatable<>), typeof(IModifiable<>), typeof(ISoftDeletable<>) });
+            services.RequireRegistrationFor<ITenantIdentifierProvider<TTenantIdentifierType>>(ServiceLifetime.Scoped, entityTypes, new[] { typeof(ITenantScopable<>) });
+
+            // services.TryAddScoped<ISqlServerDbContextData<TUserIdentifierType, TTenantIdentifierType>, SqlServerDbContextData<TUserIdentifierType, TTenantIdentifierType>>();
+            services.TryAddScoped<ISoftDeletableConfiguration, DefaultSoftDeletableConfiguration>();
+            services.TryAddScoped<IMultiTenancyConfiguration<TTenantIdentifierType>, DefaultMultiTenancyConfiguration<TTenantIdentifierType>>();
+
+            // services.RequireRegistrationFor<ISqlServerDbContextData<TUserIdentifierType, TTenantIdentifierType>>(ServiceLifetime.Scoped, entityTypes);
+            services.RequireRegistrationFor<ISoftDeletableConfiguration>(ServiceLifetime.Scoped, entityTypes, new[] { typeof(ISoftDeletable<>) });
+            services.RequireRegistrationFor<IMultiTenancyConfiguration<TTenantIdentifierType>>(ServiceLifetime.Scoped, entityTypes, new[] { typeof(ITenantScopable<>) });
 
             if (usePooling)
             {
@@ -81,42 +63,51 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             var entityTypeList = entityTypes.ToArray();
 
             services
-                .AddScoped<IUnitOfWorkPart, UnitOfWorkPartForSqlServerDbContext<TDbContext, TIdentifierType>>()
-                .AddRepositories<TDbContext, TIdentifierType>(entityTypeList)
-                .AddQueryableSearcher<TDbContext, TIdentifierType>(entityTypeList)
+                .AddScoped<IUnitOfWorkPart, UnitOfWorkPartForSqlServerDbContext<TDbContext, TUserIdentifierType, TTenantIdentifierType>>()
+                .AddRepositories<TDbContext, TUserIdentifierType, TTenantIdentifierType>(entityTypeList)
+                .AddQueryableSearchers(entityTypeList)
                 .TryAddScoped<IUnitOfWork, UnitOfWork>();
+
+            services.TryAddScoped<ISqlServerDbContextResolver<TDbContext, TUserIdentifierType, TTenantIdentifierType>, SqlServerDbContextResolver<TDbContext, TUserIdentifierType, TTenantIdentifierType>>();
+
+            // https://stackoverflow.com/questions/53385522/what-is-called-when-a-dbcontext-is-reset-when-pooling-is-used
+            // services.AddScoped<IResettableService>(sp => sp.GetRequiredService<ISoftDeletableConfiguration>());
+            // services.AddScoped<IResettableService>(sp => sp.GetRequiredService<IMultiTenancyConfiguration<TTenantIdentifierType>>());
+            // services.AddScoped<IResettableService>(sp => sp.GetRequiredService<ISqlServerDbContextData<TUserIdentifierType, TTenantIdentifierType>>());
 
             return services;
         }
 
-        private static void RequireSingletonRegistrationFor<TSingletonRegistration>(IServiceCollection services, Type[] entityTypes, Type[] entityBehaviors)
+        private static void RequireRegistrationFor<TSingletonRegistration>(this IServiceCollection services, ServiceLifetime serviceLifetime, Type[] entityTypes, Type[] entityBehaviors = null)
         {
-            var containsEntityBehaviors = entityTypes
-                .Any(c => c.GetInterfaces().Any(i => i.IsGenericType && entityBehaviors.Contains(i.GetGenericTypeDefinition())));
+            var containsEntityBehaviors = entityBehaviors != null && entityTypes
+                                              .Any(c => c.GetInterfaces().Any(i =>
+                                                  i.IsGenericType && entityBehaviors.Contains(i.GetGenericTypeDefinition())));
 
-            if (containsEntityBehaviors)
+            if (containsEntityBehaviors || entityBehaviors == null)
             {
-                var isRegisteredAsSingleTon =
+                var isRegisteredWithLifetime =
                     services.Any(s =>
                         s.ServiceType == typeof(TSingletonRegistration) &&
-                        s.Lifetime == ServiceLifetime.Singleton);
-                if (!isRegisteredAsSingleTon)
+                        s.Lifetime == serviceLifetime);
+                if (!isRegisteredWithLifetime)
                 {
                     throw new InvalidOperationException(
-                        $"No DI registration found for type {typeof(TSingletonRegistration).FullName}, please register with LifeTime Singleton in DI");
+                        $"No DI registration found for type {typeof(TSingletonRegistration).FullName}, please register with LifeTime {serviceLifetime.ToString()} in DI");
                 }
             }
         }
 
-        private static IServiceCollection AddRepositories<TDbContext, TIdentifierType>(this IServiceCollection services, IEnumerable<Type> entityTypes)
-            where TDbContext : SqlServerDbContext<TIdentifierType>
-            where TIdentifierType : struct
+        private static IServiceCollection AddRepositories<TDbContext, TUserIdentifierType, TTenantIdentifierType>(this IServiceCollection services, IEnumerable<Type> entityTypes)
+            where TDbContext : SqlServerDbContext<TUserIdentifierType, TTenantIdentifierType>
+            where TUserIdentifierType : struct
+            where TTenantIdentifierType : struct
         {
             foreach (var entityType in entityTypes)
             {
                 Type[] interfaceTypeArgs = { entityType };
-                Type[] typeArgs = { typeof(TDbContext), entityType, typeof(TIdentifierType) };
-                var typedGenericRepositoryType = typeof(SqlServerRepository<,,>).MakeGenericType(typeArgs);
+                Type[] typeArgs = { typeof(TDbContext), entityType, typeof(TUserIdentifierType), typeof(TTenantIdentifierType) };
+                var typedGenericRepositoryType = typeof(SqlServerRepository<,,,>).MakeGenericType(typeArgs);
                 var typedRepositoryInterface = typeof(IRepository<>).MakeGenericType(interfaceTypeArgs);
 
                 if (services.Any(s => s.ServiceType == typedRepositoryInterface))
@@ -124,15 +115,13 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                     throw new InvalidOperationException($"An entity type {entityType.FullName} can only registered once in one DbContext, please provide another entity type for DbContext '{typeof(TDbContext).FullName}', otherwise resolving IRepository<[EntityType]> will not work.");
                 }
 
-                services.AddScoped(typedRepositoryInterface, typedGenericRepositoryType);
+                services.TryAddScoped(typedRepositoryInterface, typedGenericRepositoryType);
             }
 
             return services;
         }
 
-        private static IServiceCollection AddQueryableSearcher<TDbContext, TIdentifierType>(this IServiceCollection services, IEnumerable<Type> entityTypes)
-            where TDbContext : SqlServerDbContext<TIdentifierType>
-            where TIdentifierType : struct
+        private static IServiceCollection AddQueryableSearchers(this IServiceCollection services, IEnumerable<Type> entityTypes)
         {
             foreach (var entityType in entityTypes)
             {
@@ -143,10 +132,10 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
                 if (services.Any(s => s.ServiceType == typedQueryableSearcherInterface))
                 {
-                    throw new InvalidOperationException($"An entity type {entityType.FullName} can only registered once in one QueryableSearcher, please provide another entity type for QueryableSearcher '{typeof(TDbContext).FullName}', otherwise resolving IQueryableSearcher<[EntityType]> will not work.");
+                    throw new InvalidOperationException($"An entity type {entityType.FullName} can only registered once in one QueryableSearcher, please provide another entity type for QueryableSearcher '{typedQueryableSearcherInterface.FullName}', otherwise resolving IQueryableSearcher<[EntityType]> will not work.");
                 }
 
-                services.AddScoped(typedQueryableSearcherInterface, typedQueryableSearcherType);
+                services.TryAddScoped(typedQueryableSearcherInterface, typedQueryableSearcherType);
             }
 
             return services;

@@ -1,8 +1,6 @@
-﻿using DataAccessClient;
-
-namespace DataAccessClientExample.DataLayer
+﻿namespace DataAccessClient.EntityFrameworkCore.SqlServer
 {
-    internal class ExampleSoftDeletableConfiguration : ISoftDeletableConfiguration
+    internal class DefaultSoftDeletableConfiguration : ISoftDeletableConfiguration
     {
         public bool IsEnabled { get; private set; } = true;
         public bool IsQueryFilterEnabled { get; private set; } = true;
@@ -11,7 +9,7 @@ namespace DataAccessClientExample.DataLayer
         {
             var originalIsEnabled = IsEnabled;
             IsEnabled = true;
-            return new RestoreAction(()=> IsEnabled = originalIsEnabled);
+            return new RestoreAction(() => IsEnabled = originalIsEnabled);
         }
 
         public RestoreAction Disable()
@@ -20,6 +18,7 @@ namespace DataAccessClientExample.DataLayer
             IsEnabled = false;
             return new RestoreAction(() => IsEnabled = originalIsEnabled);
         }
+
 
         public RestoreAction EnableQueryFilter()
         {

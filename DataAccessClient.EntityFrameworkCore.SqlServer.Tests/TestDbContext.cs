@@ -2,7 +2,7 @@
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
 {
-    public class TestDbContext : SqlServerDbContext<int>
+    public class TestDbContext : SqlServerDbContext<int, int>
     {
         public TestDbContext()
         {

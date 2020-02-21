@@ -1,4 +1,4 @@
-﻿namespace DataAccessClient
+﻿namespace DataAccessClient.EntityFrameworkCore.SqlServer
 {
     public interface ISoftDeletableConfiguration
     {
