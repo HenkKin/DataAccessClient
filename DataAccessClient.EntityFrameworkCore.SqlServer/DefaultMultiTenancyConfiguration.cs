@@ -1,6 +1,6 @@
 ﻿namespace DataAccessClient.EntityFrameworkCore.SqlServer
 {
-    internal class DefaultMultiTenancyConfiguration<TTenantIdentifierType> : IMultiTenancyConfiguration<TTenantIdentifierType> where TTenantIdentifierType : struct
+    internal class DefaultMultiTenancyConfiguration : IMultiTenancyConfiguration
     {
         public bool IsQueryFilterEnabled { get; private set; } = true;
 

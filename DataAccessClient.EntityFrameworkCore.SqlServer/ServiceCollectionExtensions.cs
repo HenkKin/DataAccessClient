@@ -38,11 +38,11 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
             // services.TryAddScoped<ISqlServerDbContextData<TUserIdentifierType, TTenantIdentifierType>, SqlServerDbContextData<TUserIdentifierType, TTenantIdentifierType>>();
             services.TryAddScoped<ISoftDeletableConfiguration, DefaultSoftDeletableConfiguration>();
-            services.TryAddScoped<IMultiTenancyConfiguration<TTenantIdentifierType>, DefaultMultiTenancyConfiguration<TTenantIdentifierType>>();
+            services.TryAddScoped<IMultiTenancyConfiguration, DefaultMultiTenancyConfiguration>();
 
             // services.RequireRegistrationFor<ISqlServerDbContextData<TUserIdentifierType, TTenantIdentifierType>>(ServiceLifetime.Scoped, entityTypes);
             services.RequireRegistrationFor<ISoftDeletableConfiguration>(ServiceLifetime.Scoped, entityTypes, new[] { typeof(ISoftDeletable<>) });
-            services.RequireRegistrationFor<IMultiTenancyConfiguration<TTenantIdentifierType>>(ServiceLifetime.Scoped, entityTypes, new[] { typeof(ITenantScopable<>) });
+            services.RequireRegistrationFor<IMultiTenancyConfiguration>(ServiceLifetime.Scoped, entityTypes, new[] { typeof(ITenantScopable<>) });
 
             if (usePooling)
             {
@@ -69,12 +69,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                 .TryAddScoped<IUnitOfWork, UnitOfWork>();
 
             services.TryAddScoped<ISqlServerDbContextResolver<TDbContext, TUserIdentifierType, TTenantIdentifierType>, SqlServerDbContextResolver<TDbContext, TUserIdentifierType, TTenantIdentifierType>>();
-
-            // https://stackoverflow.com/questions/53385522/what-is-called-when-a-dbcontext-is-reset-when-pooling-is-used
-            // services.AddScoped<IResettableService>(sp => sp.GetRequiredService<ISoftDeletableConfiguration>());
-            // services.AddScoped<IResettableService>(sp => sp.GetRequiredService<IMultiTenancyConfiguration<TTenantIdentifierType>>());
-            // services.AddScoped<IResettableService>(sp => sp.GetRequiredService<ISqlServerDbContextData<TUserIdentifierType, TTenantIdentifierType>>());
-
+            
             return services;
         }
 

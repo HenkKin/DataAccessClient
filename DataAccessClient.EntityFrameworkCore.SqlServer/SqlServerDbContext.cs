@@ -36,17 +36,15 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                 BindingFlags.Instance | BindingFlags.NonPublic);
         }
 
-        // internal readonly SqlServerDbContextData<TUserIdentifierType, TTenantIdentifierType> SqlServerDbContextData;// = new SqlServerDbContextData<TUserIdentifierType, TTenantIdentifierType>();
+        protected internal IUserIdentifierProvider<TUserIdentifierType> UserIdentifierProvider;
+        protected internal ITenantIdentifierProvider<TTenantIdentifierType> TenantIdentifierProvider;
+        protected internal ISoftDeletableConfiguration SoftDeletableConfiguration;
+        protected internal IMultiTenancyConfiguration MultiTenancyConfiguration;
 
-        protected internal IUserIdentifierProvider<TUserIdentifierType> _userIdentifierProvider;
-        protected internal ITenantIdentifierProvider<TTenantIdentifierType> _tenantIdentifierProvider;
-        protected internal ISoftDeletableConfiguration _softDeletableConfiguration;
-        protected internal IMultiTenancyConfiguration<TTenantIdentifierType> _multiTenancyConfiguration;
-
-        private bool IsSoftDeletableQueryFilterEnabled => _softDeletableConfiguration.IsQueryFilterEnabled;
-        private bool IsTenantScopableQueryFilterEnabled => _multiTenancyConfiguration.IsQueryFilterEnabled;
-        private TTenantIdentifierType? CurrentTenantIdentifier => _tenantIdentifierProvider.Execute();
-        private TUserIdentifierType? CurrentUserIdentifier => _userIdentifierProvider.Execute();
+        private bool IsSoftDeletableQueryFilterEnabled => SoftDeletableConfiguration.IsQueryFilterEnabled;
+        private bool IsTenantScopableQueryFilterEnabled => MultiTenancyConfiguration.IsQueryFilterEnabled;
+        private TTenantIdentifierType? CurrentTenantIdentifier => TenantIdentifierProvider.Execute();
+        private TUserIdentifierType? CurrentUserIdentifier => UserIdentifierProvider.Execute();
 
         private readonly Action _dbContextResetStateMethod;
         private readonly Func<CancellationToken, Task> _dbContextResetStateAsyncMethod;
@@ -64,12 +62,12 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             IUserIdentifierProvider<TUserIdentifierType> userIdentifierProvider,
             ITenantIdentifierProvider<TTenantIdentifierType> tenantIdentifierProvider,
             ISoftDeletableConfiguration softDeletableConfiguration,
-            IMultiTenancyConfiguration<TTenantIdentifierType> multiTenancyConfiguration)
+            IMultiTenancyConfiguration multiTenancyConfiguration)
         {
-            _userIdentifierProvider = userIdentifierProvider;
-            _tenantIdentifierProvider = tenantIdentifierProvider;
-            _softDeletableConfiguration = softDeletableConfiguration;
-            _multiTenancyConfiguration = multiTenancyConfiguration;
+            UserIdentifierProvider = userIdentifierProvider;
+            TenantIdentifierProvider = tenantIdentifierProvider;
+            SoftDeletableConfiguration = softDeletableConfiguration;
+            MultiTenancyConfiguration = multiTenancyConfiguration;
         }
 
         // for testing purpose
@@ -78,8 +76,10 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         protected internal SqlServerDbContext() : base()//: this(new DbContextOptions<DbContext>())
         {
         }
-        
+
         #region DbContextPooling
+
+        // https://stackoverflow.com/questions/37310896/overriding-explicit-interface-implementations
 
         /// <summary>
         ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to
@@ -144,15 +144,14 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
         private void ResetSqlServerDbContextState()
         {
-            _userIdentifierProvider = null;
-            _tenantIdentifierProvider = null;
-            _softDeletableConfiguration = null;
-            _multiTenancyConfiguration = null;
+            UserIdentifierProvider = null;
+            TenantIdentifierProvider = null;
+            SoftDeletableConfiguration = null;
+            MultiTenancyConfiguration = null;
         }
 
         #endregion
-
-
+        
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             var configureEntityBehaviorIIdentifiable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
@@ -213,8 +212,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
                 if (entityInterfaces.Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(ICreatable<>)))
                 {
-                    // RequireUserIdentifierProvider(typeof(ICreatable<>));
-
                     var identifierType = entityType.ClrType.GetInterface(typeof(ICreatable<>).Name)
                         .GenericTypeArguments[0];
                     configureEntityBehaviorICreatable.MakeGenericMethod(entityType.ClrType, identifierType)
@@ -223,8 +220,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
                 if (entityInterfaces.Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IModifiable<>)))
                 {
-                    // RequireUserIdentifierProvider(typeof(IModifiable<>));
-
                     var identifierType = entityType.ClrType.GetInterface(typeof(IModifiable<>).Name)
                         .GenericTypeArguments[0];
                     configureEntityBehaviorIModifiable.MakeGenericMethod(entityType.ClrType, identifierType)
@@ -233,9 +228,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
                 if (entityInterfaces.Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(ISoftDeletable<>)))
                 {
-                    //RequireUserIdentifierProvider(typeof(ISoftDeletable<>));
-                    //RequireSoftDeletableConfiguration(typeof(ISoftDeletable<>));
-
                     var identifierType = entityType.ClrType.GetInterface(typeof(ISoftDeletable<>).Name)
                         .GenericTypeArguments[0];
 
@@ -249,9 +241,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                 if (entityInterfaces.Any(x =>
                     x.IsGenericType && x.GetGenericTypeDefinition() == typeof(ITenantScopable<>)))
                 {
-                    //RequireTenantIdentifierProvider(typeof(ITenantScopable<>));
-                    //RequireMultiTenancyConfiguration(typeof(ITenantScopable<>));
-
                     var identifierType = entityType.ClrType.GetInterface(typeof(ITenantScopable<>).Name)
                         .GenericTypeArguments[0];
 
@@ -289,63 +278,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
             base.OnModelCreating(modelBuilder);
         }
-
-        //private void RequireUserIdentifierProvider(Type entityBehaviorType)
-        //{
-        //    if (_userIdentifierProvider == null)
-        //    {
-        //        // this is needed to support creating first pooled dbcontext
-        //        _userIdentifierProvider = this.GetService<IUserIdentifierProvider<TUserIdentifierType>>();
-        //        if (_userIdentifierProvider == null)
-        //        {
-        //            throw new InvalidOperationException(
-        //                $"No DI registration found for type '{typeof(IUserIdentifierProvider<TUserIdentifierType>).FullName}' while there is an entity with EntityBehavior '{entityBehaviorType.FullName}', please register with LifeTime Singleton in Dependency Injection");
-        //        }
-        //    }
-        //}
-
-        //private void RequireTenantIdentifierProvider(Type entityBehaviorType)
-        //{
-        //    if (_tenantIdentifierProvider == null)
-        //    {
-        //        // this is needed to support creating first pooled dbcontext
-        //        _tenantIdentifierProvider = this.GetService<ITenantIdentifierProvider<TTenantIdentifierType>>();
-        //        if (_tenantIdentifierProvider == null)
-        //        {
-        //            throw new InvalidOperationException(
-        //                $"No DI registration found for type '{typeof(ITenantIdentifierProvider<TTenantIdentifierType>).FullName}' while there is an entity with EntityBehavior '{entityBehaviorType.FullName}', please register with LifeTime Singleton in Dependency Injection");
-        //        }
-        //    }
-        //}
-
-        //private void RequireSoftDeletableConfiguration(Type entityBehaviorType)
-        //{
-        //    if (_softDeletableConfiguration == null)
-        //    {
-        //        // this is needed to support creating first pooled dbcontext
-        //        _softDeletableConfiguration = this.GetService<ISoftDeletableConfiguration>();
-        //        if (_softDeletableConfiguration == null)
-        //        {
-        //            throw new InvalidOperationException(
-        //                $"No DI registration found for type '{typeof(ISoftDeletableConfiguration).FullName}' while there is an entity with EntityBehavior '{entityBehaviorType.FullName}', please register with LifeTime Singleton in Dependency Injection");
-        //        }
-        //    }
-        //}
-
-        //private void RequireMultiTenancyConfiguration(Type entityBehaviorType)
-        //{
-        //    if (_multiTenancyConfiguration == null)
-        //    {
-        //        // this is needed to support creating first pooled dbcontext
-        //        _multiTenancyConfiguration = this.GetService<IMultiTenancyConfiguration<TTenantIdentifierType>>();
-        //        if (_multiTenancyConfiguration == null)
-        //        {
-        //            throw new InvalidOperationException(
-        //                $"No DI registration found for type '{typeof(IMultiTenancyConfiguration<TTenantIdentifierType>).FullName}' while there is an entity with EntityBehavior '{entityBehaviorType.FullName}', please register an Singleton instance via Dependency Injection");
-        //        }
-        //    }
-        //}
-
+        
         protected Expression<Func<TEntity, bool>> CreateSoftDeletableQueryFilter<TEntity, TEntityUserIdentifierType>()
             where TEntity : class, ISoftDeletable<TEntityUserIdentifierType>
             where TEntityUserIdentifierType : struct
@@ -484,7 +417,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                     rowVersionProperty.OriginalValue = rowVersion;
                 }
 
-                if (_softDeletableConfiguration.IsEnabled)
+                if (SoftDeletableConfiguration.IsEnabled)
                 {
                     foreach (var entityEntry in ChangeTracker.Entries<ISoftDeletable<TUserIdentifierType>>()
                         .Where(c => c.State == EntityState.Deleted))
@@ -516,14 +449,14 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                     var tenantId = entityEntry.Entity.TenantId;
                     if (tenantId.Equals(default(TTenantIdentifierType)))
                     {
-                        var currentTenantId = _tenantIdentifierProvider.Execute();
+                        var currentTenantId = TenantIdentifierProvider.Execute();
                         if (currentTenantId.HasValue)
                         {
                             entityEntry.Entity.TenantId = currentTenantId.Value;
                         }
                         else
                         {
-                            throw new InvalidOperationException($"CurrentTenantId is needed for new entity of type '{entityEntry.Entity.GetType().FullName}', but the '{typeof(IMultiTenancyConfiguration<>).FullName}' does not have one at this moment");
+                            throw new InvalidOperationException($"CurrentTenantId is needed for new entity of type '{entityEntry.Entity.GetType().FullName}', but the '{typeof(IMultiTenancyConfiguration).FullName}' does not have one at this moment");
                         }
                     }
                 }

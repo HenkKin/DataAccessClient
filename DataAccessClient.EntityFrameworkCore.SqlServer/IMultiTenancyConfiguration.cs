@@ -1,7 +1,6 @@
 ﻿namespace DataAccessClient.EntityFrameworkCore.SqlServer
 {
-    public interface IMultiTenancyConfiguration<TTenantIdentifierType>
-        where TTenantIdentifierType : struct
+    public interface IMultiTenancyConfiguration
     {
         bool IsQueryFilterEnabled { get; }
         RestoreAction EnableQueryFilter();

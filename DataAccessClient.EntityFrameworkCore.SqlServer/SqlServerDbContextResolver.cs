@@ -31,7 +31,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                     var softDeletableConfiguration =
                         scopedServiceProvider.GetRequiredService<ISoftDeletableConfiguration>();
                     var multiTenancyConfiguration = scopedServiceProvider
-                        .GetRequiredService<IMultiTenancyConfiguration<TTenantIdentifierType>>();
+                        .GetRequiredService<IMultiTenancyConfiguration>();
 
                     dbContext.Initialize(userIdentifierProvider, tenantIdentifierProvider, softDeletableConfiguration, multiTenancyConfiguration);
 
