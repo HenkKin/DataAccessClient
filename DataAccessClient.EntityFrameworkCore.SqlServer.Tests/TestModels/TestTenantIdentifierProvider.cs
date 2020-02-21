@@ -1,7 +1,8 @@
 ﻿
 using System;
+using DataAccessClient.Providers;
 
-namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
+namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestModels
 {
     public class TestTenantIdentifierProvider : ITenantIdentifierProvider<int>
     {

@@ -1,4 +1,6 @@
-﻿namespace DataAccessClient.EntityFrameworkCore.SqlServer
+﻿using DataAccessClient.Utilities;
+
+namespace DataAccessClient.Configuration
 {
     public interface IMultiTenancyConfiguration
     {

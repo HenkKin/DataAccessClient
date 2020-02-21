@@ -1,4 +1,4 @@
-﻿using DataAccessClient.EntityFrameworkCore.SqlServer;
+﻿using DataAccessClient.Providers;
 
 namespace DataAccessClientExample.DataLayer
 {

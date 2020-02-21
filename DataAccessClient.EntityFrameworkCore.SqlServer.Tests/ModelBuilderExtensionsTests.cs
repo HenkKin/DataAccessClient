@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using DataAccessClient.EntityBehaviors;
+using DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Xunit;
@@ -50,11 +51,10 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
         }
 
         [Fact]
-        public void IsSoftDeletable_WhenCalled_ItShouldSetIdentifiableConfiguration()
+        public void IsSoftDeletable_WhenCalled_ItShouldSetSoftDeletableConfiguration()
         {
             // Arrange
             var entityTypeBuilder = new ModelBuilder(new ConventionSet());
-            // var softDeletableConfiguration = new DefaultSoftDeletableConfiguration();
 
             // Act
             var result = ModelBuilderExtensions.ConfigureEntityBehaviorISoftDeletable<TestEntity, int>(entityTypeBuilder, x=>x.IsDeleted == false);
@@ -94,7 +94,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
         {
             // Arrange
             var entityTypeBuilder = new ModelBuilder(new ConventionSet());
-            // var multiTenancyConfiguration = new DefaultMultiTenancyConfiguration<int>(new TestTenantIdentifierProvider());
 
             // Act
             var result = ModelBuilderExtensions.ConfigureEntityBehaviorITenantScopable<TestEntity, int>(entityTypeBuilder, x=>x.TenantId == 1);

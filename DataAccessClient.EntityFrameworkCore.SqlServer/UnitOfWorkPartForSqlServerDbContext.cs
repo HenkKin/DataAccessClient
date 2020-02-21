@@ -10,9 +10,9 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
     {
         internal readonly TDbContext DbContext;
 
-        public UnitOfWorkPartForSqlServerDbContext(ISqlServerDbContextResolver<TDbContext, TUserIdentifierType, TTenantIdentifierType> sqlServerDbContextResolver, IServiceProvider scopedServiceProvider)
+        public UnitOfWorkPartForSqlServerDbContext(ISqlServerDbContextResolver<TDbContext, TUserIdentifierType, TTenantIdentifierType> sqlServerDbContextResolver)
         {
-            DbContext = sqlServerDbContextResolver.Execute(scopedServiceProvider) ?? throw new ArgumentNullException(nameof(sqlServerDbContextResolver));
+            DbContext = sqlServerDbContextResolver.Execute() ?? throw new ArgumentNullException(nameof(sqlServerDbContextResolver));
         }
 
         public async Task SaveAsync()

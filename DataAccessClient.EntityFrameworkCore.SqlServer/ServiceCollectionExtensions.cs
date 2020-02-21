@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using DataAccessClient.Configuration;
 using DataAccessClient.EntityBehaviors;
 using DataAccessClient.EntityFrameworkCore.SqlServer.Searching;
+using DataAccessClient.Providers;
 using DataAccessClient.Searching;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,11 +38,9 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             services.RequireRegistrationFor<IUserIdentifierProvider<TUserIdentifierType>>(ServiceLifetime.Scoped, entityTypes, new[] { typeof(ICreatable<>), typeof(IModifiable<>), typeof(ISoftDeletable<>) });
             services.RequireRegistrationFor<ITenantIdentifierProvider<TTenantIdentifierType>>(ServiceLifetime.Scoped, entityTypes, new[] { typeof(ITenantScopable<>) });
 
-            // services.TryAddScoped<ISqlServerDbContextData<TUserIdentifierType, TTenantIdentifierType>, SqlServerDbContextData<TUserIdentifierType, TTenantIdentifierType>>();
             services.TryAddScoped<ISoftDeletableConfiguration, DefaultSoftDeletableConfiguration>();
             services.TryAddScoped<IMultiTenancyConfiguration, DefaultMultiTenancyConfiguration>();
-
-            // services.RequireRegistrationFor<ISqlServerDbContextData<TUserIdentifierType, TTenantIdentifierType>>(ServiceLifetime.Scoped, entityTypes);
+            
             services.RequireRegistrationFor<ISoftDeletableConfiguration>(ServiceLifetime.Scoped, entityTypes, new[] { typeof(ISoftDeletable<>) });
             services.RequireRegistrationFor<IMultiTenancyConfiguration>(ServiceLifetime.Scoped, entityTypes, new[] { typeof(ITenantScopable<>) });
 

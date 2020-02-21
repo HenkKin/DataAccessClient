@@ -1,4 +1,7 @@
-﻿namespace DataAccessClient.EntityFrameworkCore.SqlServer
+﻿using DataAccessClient.Configuration;
+using DataAccessClient.Utilities;
+
+namespace DataAccessClient.EntityFrameworkCore.SqlServer
 {
     internal class DefaultMultiTenancyConfiguration : IMultiTenancyConfiguration
     {

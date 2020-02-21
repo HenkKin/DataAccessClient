@@ -18,9 +18,9 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         private readonly PropertyInfo _primaryKeyProperty;
 
 
-        public SqlServerRepository(ISqlServerDbContextResolver<TDbContext, TUserIdentifierType, TTenantIdentifierType> sqlServerDbContextResolver, IServiceProvider scopedServiceProvider)
+        public SqlServerRepository(ISqlServerDbContextResolver<TDbContext, TUserIdentifierType, TTenantIdentifierType> sqlServerDbContextResolver)
         {
-            DbContext = sqlServerDbContextResolver.Execute(scopedServiceProvider) ?? throw new ArgumentNullException(nameof(sqlServerDbContextResolver));
+            DbContext = sqlServerDbContextResolver.Execute() ?? throw new ArgumentNullException(nameof(sqlServerDbContextResolver));
         
             DbSet = DbContext.Set<TEntity>();
             _primaryKeyProperty = DbContext.Model.FindEntityType(typeof(TEntity)).FindPrimaryKey().Properties.Single().PropertyInfo;

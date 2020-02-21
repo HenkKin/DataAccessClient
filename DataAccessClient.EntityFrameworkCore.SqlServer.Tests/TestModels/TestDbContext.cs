@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
+namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestModels
 {
     public class TestDbContext : SqlServerDbContext<int, int>
     {

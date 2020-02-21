@@ -1,4 +1,6 @@
 ﻿using System;
+using DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestModels;
+using DataAccessClient.Providers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -60,7 +62,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             using var scope1 = serviceProvider.CreateScope();
             TestUserIdentifierProvider userIdentifierProvider1 = scope1.ServiceProvider.GetService<IUserIdentifierProvider<int>>() as TestUserIdentifierProvider;
             TestTenantIdentifierProvider tenantIdentifierProvider1 = scope1.ServiceProvider.GetService<ITenantIdentifierProvider<int>>() as TestTenantIdentifierProvider;
-            MyDbContext dbContext1 = scope1.ServiceProvider.GetRequiredService<ISqlServerDbContextResolver<MyDbContext, int, int>>().Execute(scope1.ServiceProvider);
+            MyDbContext dbContext1 = scope1.ServiceProvider.GetRequiredService<ISqlServerDbContextResolver<MyDbContext, int, int>>().Execute();
             dbContext1.Initialize(userIdentifierProvider1, tenantIdentifierProvider1, null, null);
 
             dbContext1.HasSameUserIdentifierProvider(userIdentifierProvider1);
@@ -69,7 +71,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             using var scope2 = scope1.ServiceProvider.CreateScope();
             TestUserIdentifierProvider userIdentifierProvider2 = scope2.ServiceProvider.GetService<IUserIdentifierProvider<int>>() as TestUserIdentifierProvider;
             TestTenantIdentifierProvider tenantIdentifierProvider2 = scope2.ServiceProvider.GetService<ITenantIdentifierProvider<int>>() as TestTenantIdentifierProvider;
-            MyDbContext dbContext2 = scope2.ServiceProvider.GetRequiredService<ISqlServerDbContextResolver<MyDbContext, int, int>>().Execute(scope2.ServiceProvider);
+            MyDbContext dbContext2 = scope2.ServiceProvider.GetRequiredService<ISqlServerDbContextResolver<MyDbContext, int, int>>().Execute();
             dbContext2.Initialize(userIdentifierProvider2, tenantIdentifierProvider2, null, null);
 
             Assert.NotSame(dbContext1, dbContext2);
@@ -81,7 +83,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             using var scope3 = scope2.ServiceProvider.CreateScope();
             TestUserIdentifierProvider userIdentifierProvider3 = scope3.ServiceProvider.GetService<IUserIdentifierProvider<int>>() as TestUserIdentifierProvider;
             TestTenantIdentifierProvider tenantIdentifierProvider3 = scope3.ServiceProvider.GetService<ITenantIdentifierProvider<int>>() as TestTenantIdentifierProvider;
-            MyDbContext dbContext3 = scope3.ServiceProvider.GetRequiredService<ISqlServerDbContextResolver<MyDbContext, int, int>>().Execute(scope3.ServiceProvider);
+            MyDbContext dbContext3 = scope3.ServiceProvider.GetRequiredService<ISqlServerDbContextResolver<MyDbContext, int, int>>().Execute();
             dbContext3.Initialize(userIdentifierProvider3, tenantIdentifierProvider3, null, null);
 
             Assert.NotSame(dbContext1, dbContext3);
@@ -102,7 +104,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
                 scope1.ServiceProvider.GetService<ITenantIdentifierProvider<int>>() as TestTenantIdentifierProvider;
             MyDbContext dbContext1 = scope1.ServiceProvider
                 .GetRequiredService<ISqlServerDbContextResolver<MyDbContext, int, int>>()
-                .Execute(scope1.ServiceProvider);
+                .Execute();
             dbContext1.Initialize(userIdentifierProvider1, tenantIdentifierProvider1, null, null);
 
             dbContext1.HasSameUserIdentifierProvider(userIdentifierProvider1);
@@ -110,7 +112,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
 
             MyDbContext dbContext2 = scope1.ServiceProvider
                 .GetRequiredService<ISqlServerDbContextResolver<MyDbContext, int, int>>()
-                .Execute(scope1.ServiceProvider);
+                .Execute();
             dbContext2.Initialize(userIdentifierProvider1, tenantIdentifierProvider1, null, null);
 
             Assert.Same(dbContext1, dbContext2);
@@ -121,7 +123,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
 
             MyDbContext dbContext3 = scope1.ServiceProvider
                 .GetRequiredService<ISqlServerDbContextResolver<MyDbContext, int, int>>()
-                .Execute(scope1.ServiceProvider);
+                .Execute();
             dbContext3.Initialize(userIdentifierProvider1, tenantIdentifierProvider1, null, null);
 
             Assert.Same(dbContext1, dbContext3);

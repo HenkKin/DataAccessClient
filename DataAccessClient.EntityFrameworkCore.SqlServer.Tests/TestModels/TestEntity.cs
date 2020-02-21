@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using DataAccessClient.EntityBehaviors;
 
-namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
+namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestModels
 {
     public class TestEntity : IIdentifiable<int>, ICreatable<int>, IModifiable<int>, ISoftDeletable<int>, IRowVersionable, ITranslatable<TestEntityTranslation, int>, ITenantScopable<int>
     {

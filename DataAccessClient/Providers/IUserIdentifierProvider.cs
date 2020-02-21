@@ -1,4 +1,4 @@
-﻿namespace DataAccessClient.EntityFrameworkCore.SqlServer
+﻿namespace DataAccessClient.Providers
 {
     public interface IUserIdentifierProvider<TIdentifierType>
         where TIdentifierType : struct

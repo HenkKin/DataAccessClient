@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System.Linq;
 using DataAccessClient.EntityBehaviors;
+using DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
@@ -60,12 +61,11 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
         }
 
         [Fact]
-        public void IsSoftDeletable_WhenCalled_ItShouldSetIdentifiableConfiguration()
+        public void IsSoftDeletable_WhenCalled_ItShouldSetSoftDeletableConfiguration()
         {
             // Arrange
             var entityType = new EntityType(typeof(TestEntity), new Model(new ConventionSet()), ConfigurationSource.Explicit);
             var entityTypeBuilder = new EntityTypeBuilder<TestEntity>(entityType);
-            // var softDeletableConfiguration = new DefaultSoftDeletableConfiguration();
 
             // Act
             var result = EntityTypeBuilderExtensions.IsSoftDeletable<TestEntity, int>(entityTypeBuilder, x=>x.IsDeleted == false);
@@ -110,7 +110,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             // Arrange
             var entityType = new EntityType(typeof(TestEntity), new Model(new ConventionSet()), ConfigurationSource.Explicit);
             var entityTypeBuilder = new EntityTypeBuilder<TestEntity>(entityType);
-            // var multiTenancyConfiguration = new DefaultMultiTenancyConfiguration<int>(new TestTenantIdentifierProvider());
 
             // Act
             var result = EntityTypeBuilderExtensions.IsTenantScopable<TestEntity, int>(entityTypeBuilder, x=> x.TenantId == 1);

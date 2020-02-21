@@ -1,4 +1,5 @@
 using DataAccessClient.EntityFrameworkCore.SqlServer;
+using DataAccessClient.Providers;
 using DataAccessClientExample.DataLayer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;

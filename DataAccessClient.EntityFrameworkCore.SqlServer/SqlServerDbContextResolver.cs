@@ -1,4 +1,6 @@
 ﻿using System;
+using DataAccessClient.Configuration;
+using DataAccessClient.Providers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer
@@ -8,10 +10,16 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         where TUserIdentifierType : struct
         where TTenantIdentifierType : struct
     {
+        private readonly IServiceProvider _scopedServiceProvider;
         private TDbContext _resolvedDbContext;
         private readonly object _lock = new object();
 
-        public TDbContext Execute(IServiceProvider scopedServiceProvider)
+        public SqlServerDbContextResolver(IServiceProvider scopedServiceProvider)
+        {
+            _scopedServiceProvider = scopedServiceProvider;
+        }
+
+        public TDbContext Execute()
         {
             if (_resolvedDbContext == null)
             {
@@ -22,16 +30,12 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                         return _resolvedDbContext;
                     }
 
-                    var dbContext = scopedServiceProvider.GetRequiredService<TDbContext>();
+                    var dbContext = _scopedServiceProvider.GetRequiredService<TDbContext>();
 
-                    var userIdentifierProvider =
-                        scopedServiceProvider.GetRequiredService<IUserIdentifierProvider<TUserIdentifierType>>();
-                    var tenantIdentifierProvider = scopedServiceProvider
-                        .GetRequiredService<ITenantIdentifierProvider<TTenantIdentifierType>>();
-                    var softDeletableConfiguration =
-                        scopedServiceProvider.GetRequiredService<ISoftDeletableConfiguration>();
-                    var multiTenancyConfiguration = scopedServiceProvider
-                        .GetRequiredService<IMultiTenancyConfiguration>();
+                    var userIdentifierProvider = _scopedServiceProvider.GetRequiredService<IUserIdentifierProvider<TUserIdentifierType>>();
+                    var tenantIdentifierProvider = _scopedServiceProvider.GetRequiredService<ITenantIdentifierProvider<TTenantIdentifierType>>();
+                    var softDeletableConfiguration = _scopedServiceProvider.GetRequiredService<ISoftDeletableConfiguration>();
+                    var multiTenancyConfiguration = _scopedServiceProvider.GetRequiredService<IMultiTenancyConfiguration>();
 
                     dbContext.Initialize(userIdentifierProvider, tenantIdentifierProvider, softDeletableConfiguration, multiTenancyConfiguration);
 
