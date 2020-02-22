@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DataAccessClient.Configuration;
 using DataAccessClient.EntityBehaviors;
+using DataAccessClient.EntityFrameworkCore.SqlServer.Resolvers;
 using DataAccessClient.EntityFrameworkCore.SqlServer.Searching;
 using DataAccessClient.Providers;
 using DataAccessClient.Searching;

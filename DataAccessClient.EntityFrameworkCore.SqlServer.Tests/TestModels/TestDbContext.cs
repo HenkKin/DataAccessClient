@@ -8,11 +8,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestModels
         public CascadeTiming CascadeDeleteTiming => ChangeTracker.CascadeDeleteTiming;
         public CascadeTiming DeleteOrphansTiming => ChangeTracker.DeleteOrphansTiming;
 
-        public TestDbContext()
-        {
-            
-        }
-
         public TestDbContext(DbContextOptions options)
             : base(options)
         {

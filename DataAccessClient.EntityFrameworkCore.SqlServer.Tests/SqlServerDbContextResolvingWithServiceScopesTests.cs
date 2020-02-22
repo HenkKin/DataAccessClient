@@ -1,4 +1,5 @@
 ﻿using System;
+using DataAccessClient.EntityFrameworkCore.SqlServer.Resolvers;
 using DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestModels;
 using DataAccessClient.Providers;
 using Microsoft.EntityFrameworkCore;

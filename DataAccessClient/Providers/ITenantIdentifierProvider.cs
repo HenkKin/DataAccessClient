@@ -1,8 +1,8 @@
 ﻿namespace DataAccessClient.Providers
 {
-    public interface ITenantIdentifierProvider<TIdentifierType>
-        where TIdentifierType : struct
+    public interface ITenantIdentifierProvider<TTenantIdentifierType>
+        where TTenantIdentifierType : struct
     {
-        TIdentifierType? Execute();
+        TTenantIdentifierType? Execute();
     }
 }

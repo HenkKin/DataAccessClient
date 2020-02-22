@@ -3,7 +3,7 @@ using DataAccessClient.Configuration;
 using DataAccessClient.Providers;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace DataAccessClient.EntityFrameworkCore.SqlServer
+namespace DataAccessClient.EntityFrameworkCore.SqlServer.Resolvers
 {
     internal class SqlServerDbContextResolver<TDbContext, TUserIdentifierType, TTenantIdentifierType> : ISqlServerDbContextResolver<TDbContext, TUserIdentifierType, TTenantIdentifierType>
         where TDbContext : SqlServerDbContext<TUserIdentifierType, TTenantIdentifierType>

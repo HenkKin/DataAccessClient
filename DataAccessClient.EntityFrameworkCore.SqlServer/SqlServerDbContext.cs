@@ -43,7 +43,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         protected internal ISoftDeletableConfiguration SoftDeletableConfiguration;
         protected internal IMultiTenancyConfiguration MultiTenancyConfiguration;
 
-        private bool IsSoftDeletableQueryFilterEnabled => SoftDeletableConfiguration.IsQueryFilterEnabled;
+        private bool IsSoftDeletableQueryFilterEnabled => SoftDeletableConfiguration.IsEnabled && SoftDeletableConfiguration.IsQueryFilterEnabled;
         private bool IsTenantScopableQueryFilterEnabled => MultiTenancyConfiguration.IsQueryFilterEnabled;
         private TTenantIdentifierType? CurrentTenantIdentifier => TenantIdentifierProvider.Execute();
         private TUserIdentifierType? CurrentUserIdentifier => UserIdentifierProvider.Execute();

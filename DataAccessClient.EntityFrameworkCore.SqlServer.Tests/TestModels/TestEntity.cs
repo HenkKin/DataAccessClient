@@ -18,6 +18,8 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestModels
         public TranslatedProperty Name { get; set; }
         public ICollection<TestEntityTranslation> Translations { get; set; }
         public int TenantId { get; set; }
+        public string Description { get; set; }
+
     }
 
     public class TestEntityTranslation : IEntityTranslation<TestEntity, int>

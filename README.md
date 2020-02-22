@@ -206,6 +206,171 @@ public class HomeController : Controller
 
 ```
 
+### SoftDelete configuration
+
+To implement SoftDelete into your application your softdeletable entities have to implement the `ISoftDeletable<TUserIdentifier>` interface. By default this is the only thing to do. If you want to control the SoftDelete behavior then you can inject `ISoftDeletableConfiguration` service into your logic classes.
+
+The `ISoftDeletableConfiguration` allows you to 
+ - Enable/Disable SoftDelete Behaviour. Disabling SoftDelete behavior also disables the SoftDeleteQueryFilters.
+ - EnableQueryFilter/DisableQueryFilter.
+
+When using multipe DbContexts, there is only one `ISoftDeletableConfiguration` per ServiceScope. Disabling QueryFilter will disable QueryFilter for all your DbContexts.
+ 
+```csharp
+...
+using DataAccessClient;
+
+public class HomeController : Controller
+{
+	private readonly IRepository<ExampleEntity> _exampleEntityRepository;
+	private readonly IQueryableSearcher<ExampleEntity> _exampleEntityQueryableSearcher;
+    private readonly ISoftDeletableConfiguration _softDeletableConfiguration;
+    
+	public HomeController(
+		IRepository<ExampleEntity> exampleEntityRepository, 
+		IQueryableSearcher<ExampleEntity> exampleEntityQueryableSearcher, 
+        ISoftDeletableConfiguration softDeletableConfiguration)
+	{
+		_exampleEntityRepository = exampleEntityRepository;
+		_exampleEntityQueryableSearcher = exampleEntityQueryableSearcher;
+        _softDeletableConfiguration = softDeletableConfiguration;
+	}
+
+	[HttpGet]
+	public async Task<IActionResult> GetAllExampleEntities()
+	{
+		var criteria = new Criteria();
+		criteria.OrderBy = "Id";
+		criteria.OrderByDirection = OrderByDirection.Ascending;
+		criteria.Page = 1;
+		criteria.PageSize = 10;
+		criteria.Search = "Data Access Client";
+
+		// start a new scope with disabled query filter for SoftDelete
+		using (_softDeletableConfiguration.DisableQueryFilter())
+        {
+		   // all queries executed here, return soft deleted entities too.
+
+			var exampleEntitiesSearchResults = await _exampleEntityQueryableSearcher.ExecuteAsync(_exampleEntityRepository.GetReadOnlyQuery(), criteria);
+			return Json(new{ exampleEntitiesSearchResults, exampleSecondEntitiesSearchResults });
+		}		
+
+		// here the SoftDeleteFilter is reset to previous state.
+	}
+}
+
+```
+
+
+### Multitenancy configuration
+
+To implement Multitenancy into your application your multitenant entities have to implement the `ITenantScopable<TTenantIdentifier>` interface. By default this is the only thing to do. If you want to control the Multitenancy behavior then you can inject `IMultiTenancyConfiguration` service into your logic classes.
+
+The `IMultiTenancyConfiguration` allows you to 
+ - EnableQueryFilter/DisableQueryFilter.
+
+Because of required TenantId property on the MultiTenancy entities, the MultiTenancy cannot be disabled, only the QueryFiltering can be disabled.
+
+When using multipe DbContexts, there is only one `IMultiTenancyConfiguration` per ServiceScope. Disabling QueryFilter will disable QueryFilter for all your DbContexts.
+
+```csharp
+...
+using DataAccessClient;
+
+public class HomeController : Controller
+{
+	private readonly IRepository<ExampleEntity> _exampleEntityRepository;
+	private readonly IQueryableSearcher<ExampleEntity> _exampleEntityQueryableSearcher;
+    private readonly IMultiTenancyConfiguration _multiTenancyConfiguration;
+    
+	public HomeController(
+		IRepository<ExampleEntity> exampleEntityRepository, 
+		IQueryableSearcher<ExampleEntity> exampleEntityQueryableSearcher, 
+        IMultiTenancyConfiguration multiTenancyConfiguration)
+	{
+		_exampleEntityRepository = exampleEntityRepository;
+		_exampleEntityQueryableSearcher = exampleEntityQueryableSearcher;
+        _multiTenancyConfiguration = multiTenancyConfiguration;
+	}
+
+	[HttpGet]
+	public async Task<IActionResult> GetAllExampleEntitiesOfAllTenants()
+	{
+		var criteria = new Criteria();
+		criteria.OrderBy = "Id";
+		criteria.OrderByDirection = OrderByDirection.Ascending;
+		criteria.Page = 1;
+		criteria.PageSize = 10;
+		criteria.Search = "Data Access Client";
+
+		// start a new scope with disabled query filter for MultiTenancy
+		using (_multiTenancyConfiguration.DisableQueryFilter())
+        {
+		   // all queries executed here, return entities of all tenants.
+
+			var exampleEntitiesSearchResults = await _exampleEntityQueryableSearcher.ExecuteAsync(_exampleEntityRepository.GetReadOnlyQuery(), criteria);
+			return Json(new{ exampleEntitiesSearchResults, exampleSecondEntitiesSearchResults });
+		}		
+
+		// here the MultiTenancy is reset to previous state.
+	}
+}
+
+```
+
+
+### Providers (Required)
+
+When using this package, there are two required implementation you have to provide for the following interfaces:
+
+ - IUserIdentifierProvider<TUserIdentifierType>
+ - ITenantIdentifierProvider<TTenantIdentifierType>
+
+These two providers have to be registered with Scoped Lifetime in DependencyInjection.
+
+#### IUserIdentifierProvider<TUserIdentifierType>
+
+Providing an implementation for interface `IUserIdentifierProvider<TUserIdentifierType>`. This provider should be a singleton, so the implementation should try to return an user identifier of the current context.
+
+```csharp
+...
+using  DataAccessClient.Providers;
+
+public class YourUserIdentifierProvider : IUserIdentifierProvider<int>
+{
+	public int? Execute()
+	{
+		// f.e. in Asp.NET Core it could use IHttpContextAccessor.HttpContext.User.Identity to get user identifier via claims or your own implementation;
+
+		// return the current user id
+		return 10;
+	}
+}
+...
+```
+
+#### ITenantIdentifierProvider<TTenantIdentifierType>
+
+Providing an implementation for interface `ITenantIdentifierProvider<TTenantIdentifierType>`. This provider should be a singleton, so the implementation should try to return a tenant identifier of the current context.
+
+```csharp
+...
+using  DataAccessClient.Providers;
+
+public class YourTenantIdentifierProvider : ITenantIdentifierProvider<int>
+{
+	public int? Execute()
+	{
+		// f.e. in Asp.NET Core it could use IHttpContextAccessor.HttpContext.User.Identity to get tenant identifier via claims or your own implementation;
+
+		// return the current tenant id
+		return 1;
+	}
+}
+...
+```
+
+
 ### Exceptions
 
 The package provides you two types of exceptions
@@ -217,6 +382,7 @@ This exception is throw when an implementation package detects an duplicate key.
 2) RowVersioningException
 
 This exception is thrown when an entity is changed during your change.
+
 
 ### Searching
 
@@ -303,9 +469,9 @@ Either commands, from Package Manager Console or .NET Core CLI, will download an
 
 IIf you're using EntityFrameworkCore.SqlServer and you want to use this Identifier type in your entities, then you can use [DataAccessClient.EntityFrameworkCore.SqlServer](https://github.com/HenkKin/DataAccessClient.EntityFrameworkCore.SqlServer/) package which includes the following registration options via extensions method:
 
-- `IServiceCollection AddDataAccessClient<TDbContext, TIdentifierType>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, IEnumerable<Type> entityTypes)`
+- `IServiceCollection AddDataAccessClient<TDbContext, TUserIdentifierType, TTenantIdentifierType>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, IEnumerable<Type> entityTypes)`
 
-- `IServiceCollection AddDataAccessClientPool<TDbContext, TIdentifierType>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, IEnumerable<Type> entityTypes)`
+- `IServiceCollection AddDataAccessClientPool<TDbContext, TUserIdentifierType, TTenantIdentifierType>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, IEnumerable<Type> entityTypes)`
 
 
 These extension methods supporting you to register all needed DbContexts, IUnitOfWorks and IRepositories for provided entity types. Calling AddDbContext or AddDbContextPool of EntityFrameworkCore is not needed and not recommended when you are using this library.
@@ -326,20 +492,14 @@ public class Startup
 		var entityTypes = new [] { typeof(Entity1), typeof(Entity2) }; // can also done by using reflection
 		...
 
-		// register IUserIdentifierProvider standalone, usefull in n-layer architectures
-		services.AddSingleton<IUserIdentifierProvider<int>, YourUserIdentifierProvider>();
+		// register IUserIdentifierProvider 
+		services.AddScoped<IUserIdentifierProvider<int>, YourUserIdentifierProvider>();
 
-		// register ITenantIdentifierProvider standalone, usefull in n-layer architectures
-		services.AddSingleton<ITenantIdentifierProvider<int>, YourTenantIdentifierProvider>();
-
-		// register ISoftDeletableConfiguration standalone, usefull in n-layer architectures
-		services.AddSingleton<ISoftDeletableConfiguration, YourSoftDeletableConfiguration>();
-
-		// register IMultiTenancyConfiguration standalone, usefull in n-layer architectures
-		services.AddSingleton<IMultiTenancyConfiguration<int>, YourMultiTenancyConfiguration>();
+		// register ITenantIdentifierProvider 
+		services.AddScoped<ITenantIdentifierProvider<int>, YourTenantIdentifierProvider>();
 
 		// register as AddDbContext (without pooling)
-		services.AddDataAccessClient<YourDbContext, int>(
+		services.AddDataAccessClient<YourDbContext, int, int>(
 			builder => ... , // f.e. builder.UseSqlServer(...)
 			entityTypes
 		);
@@ -347,7 +507,7 @@ public class Startup
 		// or
 
 		// register as AddDbContextPool (with pooling)
-		services.AddDataAccessClientPool<YourDbContext, int>(
+		services.AddDataAccessClientPool<YourDbContext, int, int>(
 			builder => ... , // f.e. builder.UseSqlServer(...)
 			entityTypes,
 			poolSize: 128 // is optional
@@ -359,13 +519,13 @@ public class Startup
     ...
 ```
 
-Using the base class `SqlServerDbContext<TIdentifierType>` on your own DbContext implementation:
+Using the base class `SqlServerDbContext<TUserIdentifierType, TTenantIdentifierType>` on your own DbContext implementation:
 
 ```csharp
 ...
 using DataAccessClient.EntityFrameworkCore.SqlServer;
 
-internal class YourDbContext : SqlServerDbContext<int>
+internal class YourDbContext : SqlServerDbContext<int, int>
 {
 	public YourDbContext(DbContextOptions<YourDbContext> options) : base(options)
 	{
@@ -386,123 +546,6 @@ internal class YourDbContext : SqlServerDbContext<int>
     ...
 ```
 
-Providing an implementation for interface `IUserIdentifierProvider<TIdentifierType>`. This provider should be a singleton, so the implementation should try to return an user identifier of the current context.
-
-```csharp
-...
-using DataAccessClient.EntityFrameworkCore.SqlServer;
-
-public class YourUserIdentifierProvider : IUserIdentifierProvider<int>
-{
-	public async Task<int> ExecuteAsync()
-	{
-		// f.e. in Asp.NET Core it could use IHttpContextAccessor.HttpContext.User.Identity to get user identifier via claims or your own implementation;
-
-		// return the current user id
-		return await Task.FromResult(10);
-	}
-}
-...
-```
-
-Providing an implementation for interface `ITenantIdentifierProvider<TIdentifierType>`. This provider should be a singleton, so the implementation should try to return a tenant identifier of the current context.
-
-```csharp
-...
-using DataAccessClient.EntityFrameworkCore.SqlServer;
-
-public class YourTenantIdentifierProvider : ITenantIdentifierProvider<int>
-{
-	public int Execute()
-	{
-		// f.e. in Asp.NET Core it could use IHttpContextAccessor.HttpContext.User.Identity to get tenant identifier via claims or your own implementation;
-
-		// return the current tenant id
-		return 1;
-	}
-}
-...
-```
-
-Providing an implementation for interface `ISoftDeletableConfiguration`. This configuration object should be a singleton, so the implementation keep the configuration of SoftDelete. The `RestoreAction` is disposable.
-
-```csharp
-...
-using DataAccessClient.EntityFrameworkCore.SqlServer;
-
-public class YourSoftDeletableConfiguration : ISoftDeletableConfiguration
-{
-	public bool IsEnabled { get; private set; } = true;
-	public bool IsQueryFilterEnabled { get; private set; } = true;
-		
-	public RestoreAction Enable()
-	{
-		var originalIsEnabled = IsEnabled;
-		IsEnabled = true;
-		return new RestoreAction(() => IsEnabled = originalIsEnabled);
-	}
-	
-	public RestoreAction Disable()
-	{
-		var originalIsEnabled = IsEnabled;
-		IsEnabled = false;
-		return new RestoreAction(() => IsEnabled = originalIsEnabled);
-	}
-	
-	public RestoreAction EnableQueryFilter()
-	{
-		var originalIsQueryFilterEnabled = IsQueryFilterEnabled;
-		IsQueryFilterEnabled = true;
-		return new RestoreAction(() => IsQueryFilterEnabled = originalIsQueryFilterEnabled);
-	}
-	
-	public RestoreAction DisableQueryFilter()
-	{
-		var originalIsQueryFilterEnabled = IsQueryFilterEnabled;
-		IsQueryFilterEnabled = false;
-		return new RestoreAction(() => IsQueryFilterEnabled = originalIsQueryFilterEnabled);
-	}
-}
-
-...
-```
-
-Providing an implementation for interface `IMultiTenancyConfiguration<int>`. This configuration object should be a singleton, so the implementation keep the configuration of Multi-Tenancy. The `RestoreAction` is disposable.
-
-```csharp
-...
-using DataAccessClient.EntityFrameworkCore.SqlServer;
-
-public class YourMultiTenancyConfiguration : IMultiTenancyConfiguration<int>
-{
-	private readonly ITenantIdentifierProvider<int> _tenantIdentifierProvider;
-
-	public bool IsQueryFilterEnabled { get; private set; } = true;
-	
-	public int? CurrentTenantId => _tenantIdentifierProvider.Execute();
-	
-	public YourMultiTenancyConfiguration(ITenantIdentifierProvider<int> tenantIdentifierProvider)
-	{
-		_tenantIdentifierProvider = tenantIdentifierProvider;
-	}
-	
-	public RestoreAction EnableQueryFilter()
-	{
-		var originalIsQueryFilterEnabled = IsQueryFilterEnabled;
-		IsQueryFilterEnabled = true;
-		return new RestoreAction(() => IsQueryFilterEnabled = originalIsQueryFilterEnabled);
-	}
-	
-	public RestoreAction DisableQueryFilter()
-	{
-		var originalIsQueryFilterEnabled = IsQueryFilterEnabled;
-		IsQueryFilterEnabled = false;
-		return new RestoreAction(() => IsQueryFilterEnabled = originalIsQueryFilterEnabled);
-	}
-}
-
-...
-```
 
 ### Supporting migrations using `dotnet ef` tooling
 

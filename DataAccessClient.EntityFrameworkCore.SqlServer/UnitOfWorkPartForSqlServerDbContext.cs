@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using DataAccessClient.EntityFrameworkCore.SqlServer.Resolvers;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer
 {

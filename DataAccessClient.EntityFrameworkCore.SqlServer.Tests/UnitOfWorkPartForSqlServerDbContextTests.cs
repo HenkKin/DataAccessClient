@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using DataAccessClient.Configuration;
+using DataAccessClient.EntityFrameworkCore.SqlServer.Resolvers;
 using DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestModels;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -17,7 +18,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             // Arrange
             var mockRepository = new MockRepository(MockBehavior.Strict);
 
-            var testDbContextMock = mockRepository.Create<TestDbContext>();
+            var testDbContextMock = mockRepository.Create<TestDbContext>(new DbContextOptions<TestDbContext>());
             var testDbContextResolverMock = mockRepository.Create<ISqlServerDbContextResolver<TestDbContext, int, int>>();
 
             testDbContextResolverMock.Setup(x => x.Execute())

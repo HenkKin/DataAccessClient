@@ -1,8 +1,8 @@
 ﻿namespace DataAccessClient.Providers
 {
-    public interface IUserIdentifierProvider<TIdentifierType>
-        where TIdentifierType : struct
+    public interface IUserIdentifierProvider<TUserIdentifierType>
+        where TUserIdentifierType : struct
     {
-        TIdentifierType? Execute();
+        TUserIdentifierType? Execute();
     }
 }

@@ -19,7 +19,7 @@ namespace DataAccessClientExample.Controllers
         private readonly IQueryableSearcher<ExampleEntity> _exampleEntityQueryableSearcher;
         private readonly IQueryableSearcher<ExampleSecondEntity> _exampleSecondEntityQueryableSearcher;
         private readonly ISoftDeletableConfiguration _softDeletableConfiguration;
-        private readonly IMultiTenancyConfiguration _multiTenancyConfiguration;
+        // private readonly IMultiTenancyConfiguration _multiTenancyConfiguration;
 
         public ValuesController(
             IUnitOfWork unitOfWork, 
@@ -27,8 +27,8 @@ namespace DataAccessClientExample.Controllers
             IRepository<ExampleSecondEntity> exampleSecondEntityRepository, 
             IQueryableSearcher<ExampleEntity> exampleEntityQueryableSearcher, 
             IQueryableSearcher<ExampleSecondEntity> exampleSecondEntityQueryableSearcher,
-            ISoftDeletableConfiguration softDeletableConfiguration,
-            IMultiTenancyConfiguration multiTenancyConfiguration)
+            ISoftDeletableConfiguration softDeletableConfiguration) //,
+            // IMultiTenancyConfiguration multiTenancyConfiguration)
         {
             _unitOfWork = unitOfWork;
             _exampleEntityRepository = exampleEntityRepository;
@@ -36,7 +36,7 @@ namespace DataAccessClientExample.Controllers
             _exampleEntityQueryableSearcher = exampleEntityQueryableSearcher;
             _exampleSecondEntityQueryableSearcher = exampleSecondEntityQueryableSearcher;
             _softDeletableConfiguration = softDeletableConfiguration;
-            _multiTenancyConfiguration = multiTenancyConfiguration;
+            // _multiTenancyConfiguration = multiTenancyConfiguration;
         }
 
         [Route("Test")]
