@@ -211,7 +211,7 @@ public class HomeController : Controller
 To implement SoftDelete into your application your softdeletable entities have to implement the `ISoftDeletable<TUserIdentifier>` interface. By default this is the only thing to do. If you want to control the SoftDelete behavior then you can inject `ISoftDeletableConfiguration` service into your logic classes.
 
 The `ISoftDeletableConfiguration` allows you to 
- - Enable/Disable SoftDelete Behaviour. Disabling SoftDelete behavior also disables the SoftDeleteQueryFilters.
+ - Enable/Disable SoftDelete Behavior. Disabling SoftDelete behavior also disables the SoftDeleteQueryFilters.
  - EnableQueryFilter/DisableQueryFilter.
 
 When using multipe DbContexts, there is only one `ISoftDeletableConfiguration` per ServiceScope. Disabling QueryFilter will disable QueryFilter for all your DbContexts.
@@ -224,16 +224,16 @@ public class HomeController : Controller
 {
 	private readonly IRepository<ExampleEntity> _exampleEntityRepository;
 	private readonly IQueryableSearcher<ExampleEntity> _exampleEntityQueryableSearcher;
-    private readonly ISoftDeletableConfiguration _softDeletableConfiguration;
+	private readonly ISoftDeletableConfiguration _softDeletableConfiguration;
     
 	public HomeController(
 		IRepository<ExampleEntity> exampleEntityRepository, 
 		IQueryableSearcher<ExampleEntity> exampleEntityQueryableSearcher, 
-        ISoftDeletableConfiguration softDeletableConfiguration)
+		ISoftDeletableConfiguration softDeletableConfiguration)
 	{
 		_exampleEntityRepository = exampleEntityRepository;
 		_exampleEntityQueryableSearcher = exampleEntityQueryableSearcher;
-        _softDeletableConfiguration = softDeletableConfiguration;
+		_softDeletableConfiguration = softDeletableConfiguration;
 	}
 
 	[HttpGet]
@@ -248,9 +248,9 @@ public class HomeController : Controller
 
 		// start a new scope with disabled query filter for SoftDelete
 		using (_softDeletableConfiguration.DisableQueryFilter())
-        {
-		   // all queries executed here, return soft deleted entities too.
-
+		{
+			// all queries executed here, return soft deleted entities too.
+			
 			var exampleEntitiesSearchResults = await _exampleEntityQueryableSearcher.ExecuteAsync(_exampleEntityRepository.GetReadOnlyQuery(), criteria);
 			return Json(new{ exampleEntitiesSearchResults, exampleSecondEntitiesSearchResults });
 		}		
@@ -281,16 +281,16 @@ public class HomeController : Controller
 {
 	private readonly IRepository<ExampleEntity> _exampleEntityRepository;
 	private readonly IQueryableSearcher<ExampleEntity> _exampleEntityQueryableSearcher;
-    private readonly IMultiTenancyConfiguration _multiTenancyConfiguration;
-    
+	private readonly IMultiTenancyConfiguration _multiTenancyConfiguration;
+	
 	public HomeController(
 		IRepository<ExampleEntity> exampleEntityRepository, 
 		IQueryableSearcher<ExampleEntity> exampleEntityQueryableSearcher, 
-        IMultiTenancyConfiguration multiTenancyConfiguration)
+		IMultiTenancyConfiguration multiTenancyConfiguration)
 	{
 		_exampleEntityRepository = exampleEntityRepository;
 		_exampleEntityQueryableSearcher = exampleEntityQueryableSearcher;
-        _multiTenancyConfiguration = multiTenancyConfiguration;
+		_multiTenancyConfiguration = multiTenancyConfiguration;
 	}
 
 	[HttpGet]
@@ -305,9 +305,9 @@ public class HomeController : Controller
 
 		// start a new scope with disabled query filter for MultiTenancy
 		using (_multiTenancyConfiguration.DisableQueryFilter())
-        {
-		   // all queries executed here, return entities of all tenants.
-
+		{
+			// all queries executed here, return entities of all tenants.
+			
 			var exampleEntitiesSearchResults = await _exampleEntityQueryableSearcher.ExecuteAsync(_exampleEntityRepository.GetReadOnlyQuery(), criteria);
 			return Json(new{ exampleEntitiesSearchResults, exampleSecondEntitiesSearchResults });
 		}		
@@ -330,7 +330,7 @@ These two providers have to be registered with Scoped Lifetime in DependencyInje
 
 #### IUserIdentifierProvider<TUserIdentifierType>
 
-Providing an implementation for interface `IUserIdentifierProvider<TUserIdentifierType>`. This provider should be a singleton, so the implementation should try to return an user identifier of the current context.
+Providing an implementation for interface `IUserIdentifierProvider<TUserIdentifierType>`. This provider should try to return an user identifier of the current context.
 
 ```csharp
 ...
@@ -351,7 +351,7 @@ public class YourUserIdentifierProvider : IUserIdentifierProvider<int>
 
 #### ITenantIdentifierProvider<TTenantIdentifierType>
 
-Providing an implementation for interface `ITenantIdentifierProvider<TTenantIdentifierType>`. This provider should be a singleton, so the implementation should try to return a tenant identifier of the current context.
+Providing an implementation for interface `ITenantIdentifierProvider<TTenantIdentifierType>`. This provider should try to return a tenant identifier of the current context.
 
 ```csharp
 ...
