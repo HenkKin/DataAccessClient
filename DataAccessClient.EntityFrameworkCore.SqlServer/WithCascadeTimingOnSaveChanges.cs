@@ -19,6 +19,9 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         {
             _originalCascadeDeleteTiming = _dbContext.ChangeTracker.CascadeDeleteTiming;
             _originalDeleteOrphansTiming = _dbContext.ChangeTracker.DeleteOrphansTiming;
+
+            _dbContext.ChangeTracker.CascadeDeleteTiming = CascadeTiming.OnSaveChanges;
+            _dbContext.ChangeTracker.DeleteOrphansTiming = CascadeTiming.OnSaveChanges;
             work?.Invoke();
         }
 

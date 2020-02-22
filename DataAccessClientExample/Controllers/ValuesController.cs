@@ -187,7 +187,7 @@ namespace DataAccessClientExample.Controllers
             bool beforeIsQueryFilterEnabled = _softDeletableConfiguration.IsQueryFilterEnabled;
             bool duringIsQueryFilterEnabled;
 
-            using (var disabledQueryFilter = _softDeletableConfiguration.DisableQueryFilter())
+            using (_softDeletableConfiguration.DisableQueryFilter())
             {
                 duringIsQueryFilterEnabled = _softDeletableConfiguration.IsQueryFilterEnabled;
 
@@ -195,7 +195,6 @@ namespace DataAccessClientExample.Controllers
                 exampleSecondEntitiesSearchResults = await _exampleSecondEntityQueryableSearcher.ExecuteAsync(_exampleSecondEntityRepository.GetReadOnlyQuery(), secondCriteria);
             }
             bool afterIsQueryFilterEnabled = _softDeletableConfiguration.IsQueryFilterEnabled;
-
 
             return Json(new { exampleEntitiesSearchResults, exampleSecondEntitiesSearchResults,
                 BeforeIsQueryFilterEnabled = beforeIsQueryFilterEnabled,
