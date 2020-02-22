@@ -588,8 +588,11 @@ Debug => Options => Debugging => General
 
 Set the following settings:
 
-[ ] Enable Just My Code
+[&nbsp;&nbsp;] Enable Just My Code
+
 [X] Enable source server support
+
 [X] Enable source link support
+
 
 Now you can use 'step into' (F11).
