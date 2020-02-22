@@ -578,3 +578,18 @@ Updating database to target migration (up or down)
 `dotnet ef database update [migrationname] --context YourDbContext`
 
 Note: when only one DbContext exists in your project, you can skip te --context and the --output-dir (default folder will be: Migrations)
+
+
+### Debugging
+
+If you want to debug the source code, thats possible. [SourceLink](https://github.com/dotnet/sourcelink) is enabled. To use it, you  have to change Visual Studio Debugging options:
+
+Debug => Options => Debugging => General
+
+Set the following settings:
+
+[ ] Enable Just My Code
+[X] Enable source server support
+[X] Enable source link support
+
+Now you can use 'step into' (F11).

@@ -4,7 +4,7 @@ namespace DataAccessClientExample.DataLayer
 {
     internal class ExampleTenantIdentifierProvider : ITenantIdentifierProvider<int>
     {
-        public int? TenantId { get; private set; }
+        public int? TenantId { get; private set; } = 1;
         public int? Execute()
         {
             return TenantId;
