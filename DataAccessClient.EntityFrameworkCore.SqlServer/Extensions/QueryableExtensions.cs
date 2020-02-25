@@ -31,6 +31,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Extensions
 
                     foreach (var property in textProperties)
                     {
+                        // TODO: possible SQL injection, needs to be converted to use parameters
                         fieldsPerSearchKeywordFilters.Add($@"{alias}.{property.Name}.Contains(""{searchKeyword}"")");
                     }
 

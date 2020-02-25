@@ -1,30 +1,38 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Transactions;
 
 namespace DataAccessClient
 {
     internal class UnitOfWork : IUnitOfWork
     {
-        private readonly IEnumerable<IUnitOfWorkPart> _unitofWorkParts;
+        private readonly IUnitOfWorkPart[] _unitofWorkParts;
 
         public UnitOfWork(IEnumerable<IUnitOfWorkPart> unitofWorkParts)
         {
-            _unitofWorkParts = unitofWorkParts;
+            _unitofWorkParts = unitofWorkParts.ToArray();
         }
         public async Task SaveAsync()
         {
-            // TODO: add transacion management
-            // https://docs.microsoft.com/en-gb/azure/architecture/patterns/compensating-transaction
-            // https://docs.microsoft.com/en-us/ef/core/saving/transactions
-            var saveTasks = _unitofWorkParts.Select(part => part.SaveAsync()).ToList();
+            if (_unitofWorkParts.Length > 1)
+            {
+                using var transactionScope = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled);
+                
+                var saveTasks = _unitofWorkParts.Select(part => part.SaveAsync()).ToList();
+                await Task.WhenAll(saveTasks);
 
-            await Task.WhenAll(saveTasks);
+                transactionScope.Complete();
+            }
+            else
+            {
+                var saveTasks = _unitofWorkParts.Select(part => part.SaveAsync()).ToList();
+                await Task.WhenAll(saveTasks);
+            }
         }
 
         public void Reset()
         {
-            // TODO: add transacion management
             _unitofWorkParts.ToList().ForEach(part => part.Reset());
         }
     }

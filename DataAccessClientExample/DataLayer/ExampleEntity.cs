@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using DataAccessClient;
 using DataAccessClient.EntityBehaviors;
 
 namespace DataAccessClientExample.DataLayer
 {
-    public class ExampleEntity : IIdentifiable<int>, ICreatable<int>, IModifiable<int>, ISoftDeletable<int>, IRowVersionable, ITranslatable<ExampleEntityTranslation, int>, ITenantScopable<int>
+    public interface IEntity : IIdentifiable<int>, ICreatable<int>, IModifiable<int>, ISoftDeletable<int>, IRowVersionable, ITranslatable<ExampleEntityTranslation, int>, ITenantScopable<int>
+    {
+
+    }
+    public abstract class BaseEntity : IEntity
     {
         public int Id { get; set; }
         public DateTime CreatedOn { get; set; }
@@ -16,9 +19,12 @@ namespace DataAccessClientExample.DataLayer
         public DateTime? DeletedOn { get; set; }
         public int? DeletedById { get; set; }
         public byte[] RowVersion { get; set; }
-        public string Name { get; set; }
         public ICollection<ExampleEntityTranslation> Translations { get; set; }
         public int TenantId { get; set; }
+    }
+    public class ExampleEntity : BaseEntity
+    {
+        public string Name { get; set; }
     }
 
     public class ExampleEntityTranslation : IEntityTranslation<ExampleEntity, int>
