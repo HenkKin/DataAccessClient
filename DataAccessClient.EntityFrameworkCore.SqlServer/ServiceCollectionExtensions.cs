@@ -137,4 +137,13 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             return services;
         }
     }
+
+    public static class SqlServerDbContextOptionsExtensions
+    {
+        public static DbContextOptionsBuilder UseMultiTenancy<TTenantIdentifierType>(this DbContextOptionsBuilder optionsBuilder)
+            where TTenantIdentifierType : struct
+        {
+            return optionsBuilder;
+        }
+    }
 }
