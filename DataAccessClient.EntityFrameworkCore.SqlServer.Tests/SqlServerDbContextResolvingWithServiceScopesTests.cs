@@ -20,7 +20,19 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             IServiceCollection serviceCollection = new ServiceCollection();
             serviceCollection.AddScoped<IUserIdentifierProvider<int>, TestUserIdentifierProvider>();
             serviceCollection.AddScoped<ITenantIdentifierProvider<int>, TestTenantIdentifierProvider>();
-            serviceCollection.AddDataAccessClientPool<MyDbContext, int, int>(o => { o.UseInMemoryDatabase(nameof(WithDbContextPooling_WhenHavingNestedChildScopes_ItShouldResolveDbContextPerChildScope)); }, new[] { typeof(Entity) });
+            serviceCollection.AddDataAccessClient<MyDbContext>(
+                conf => conf
+                    .WithUserIdentifierType<int>()
+                    .WithTenantIdentifierType<int>()
+                    .WithPooling(true)
+                    .WithEntityTypes(new[] {typeof(Entity)})
+                    .WithDbContextOptions(
+                        o =>
+                        {
+                            o.UseInMemoryDatabase(nameof(WithDbContextPooling_WhenHavingNestedChildScopes_ItShouldResolveDbContextPerChildScope));
+                        })
+            );
+
             IServiceProvider serviceProvider = serviceCollection.BuildServiceProvider();
             RunNestedChildScopes(serviceProvider);
         }
@@ -31,7 +43,20 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             IServiceCollection serviceCollection = new ServiceCollection();
             serviceCollection.AddScoped<IUserIdentifierProvider<int>, TestUserIdentifierProvider>();
             serviceCollection.AddScoped<ITenantIdentifierProvider<int>, TestTenantIdentifierProvider>();
-            serviceCollection.AddDataAccessClient<MyDbContext, int, int>(o => { o.UseInMemoryDatabase(nameof(WithoutDbContextPooling_WhenHavingChildScope_ItShouldResolveDbContextPerChildScope)); }, new[] { typeof(Entity) });
+
+            serviceCollection.AddDataAccessClient<MyDbContext>(
+                conf => conf
+                    .WithUserIdentifierType<int>()
+                    .WithTenantIdentifierType<int>()
+                    .WithPooling(false)
+                    .WithEntityTypes(new[] { typeof(Entity) })
+                    .WithDbContextOptions(
+                        o =>
+                        {
+                            o.UseInMemoryDatabase(nameof(WithoutDbContextPooling_WhenHavingChildScope_ItShouldResolveDbContextPerChildScope));
+                        })
+            );
+
             IServiceProvider serviceProvider = serviceCollection.BuildServiceProvider();
             RunNestedChildScopes(serviceProvider);
         }
@@ -42,7 +67,18 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             IServiceCollection serviceCollection = new ServiceCollection();
             serviceCollection.AddScoped<IUserIdentifierProvider<int>, TestUserIdentifierProvider>();
             serviceCollection.AddScoped<ITenantIdentifierProvider<int>, TestTenantIdentifierProvider>();
-            serviceCollection.AddDataAccessClientPool<MyDbContext, int, int>(o => { o.UseInMemoryDatabase(nameof(WithDbContextPooling_WhenMultipleDbContextAreResolvedFromSameScope_ItShouldReturnSameDbContextInstance)); }, new[] { typeof(Entity) });
+            serviceCollection.AddDataAccessClient<MyDbContext>(
+                conf => conf
+                    .WithUserIdentifierType<int>()
+                    .WithTenantIdentifierType<int>()
+                    .WithPooling(true)
+                    .WithEntityTypes(new[] { typeof(Entity) })
+                    .WithDbContextOptions(
+                        o =>
+                        {
+                            o.UseInMemoryDatabase(nameof(WithDbContextPooling_WhenMultipleDbContextAreResolvedFromSameScope_ItShouldReturnSameDbContextInstance));
+                        })
+            );
             IServiceProvider serviceProvider = serviceCollection.BuildServiceProvider();
             RunMultipleResolvesOfServiceScope(serviceProvider);
         }
@@ -53,7 +89,18 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             IServiceCollection serviceCollection = new ServiceCollection();
             serviceCollection.AddScoped<IUserIdentifierProvider<int>, TestUserIdentifierProvider>();
             serviceCollection.AddScoped<ITenantIdentifierProvider<int>, TestTenantIdentifierProvider>();
-            serviceCollection.AddDataAccessClient<MyDbContext, int, int>(o => { o.UseInMemoryDatabase(nameof(WithoutDbContextPooling_WhenMultipleDbContextAreResolvedFromSameScope_ItShouldReturnSameDbContextInstance)); }, new[] { typeof(Entity) });
+            serviceCollection.AddDataAccessClient<MyDbContext>(
+                conf => conf
+                    .WithUserIdentifierType<int>()
+                    .WithTenantIdentifierType<int>()
+                    .WithPooling(false)
+                    .WithEntityTypes(new[] { typeof(Entity) })
+                    .WithDbContextOptions(
+                        o =>
+                        {
+                            o.UseInMemoryDatabase(nameof(WithoutDbContextPooling_WhenMultipleDbContextAreResolvedFromSameScope_ItShouldReturnSameDbContextInstance));
+                        })
+            );
             IServiceProvider serviceProvider = serviceCollection.BuildServiceProvider();
             RunMultipleResolvesOfServiceScope(serviceProvider);
         }

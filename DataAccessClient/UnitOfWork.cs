@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Transactions;
 
 namespace DataAccessClient
 {
@@ -17,12 +16,13 @@ namespace DataAccessClient
         {
             if (_unitofWorkParts.Length > 1)
             {
-                using var transactionScope = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled);
-                
+                // System.PlatformNotSupportedException: 'This platform does not support distributed transactions.'
+                // using var transactionScope = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted }, TransactionScopeAsyncFlowOption.Enabled);
+
                 var saveTasks = _unitofWorkParts.Select(part => part.SaveAsync()).ToList();
                 await Task.WhenAll(saveTasks);
 
-                transactionScope.Complete();
+                // transactionScope.Complete();
             }
             else
             {

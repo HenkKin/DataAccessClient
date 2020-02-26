@@ -33,20 +33,31 @@ namespace DataAccessClientExample
             services.AddScoped<IUserIdentifierProvider<int>, ExampleUserIdentifierProvider>();
             services.AddScoped<ITenantIdentifierProvider<int>, ExampleTenantIdentifierProvider>();
 
-            services.AddDataAccessClientPool<ExampleDbContext, int, int>(builder =>
+            services.AddDataAccessClient<ExampleDbContext>(conf => conf
+                .WithUserIdentifierType<int>()
+                .WithTenantIdentifierType<int>()
+                .WithPooling(true)
+                .WithEntityTypes(new[] {typeof(ExampleEntity)})
+                .WithDbContextOptions(builder =>
                     builder
                         .EnableSensitiveDataLogging()
                         .EnableDetailedErrors()
-                        .UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=ExampleDataAccessClient;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False"),
-                new[] {typeof(ExampleEntity)});
+                        .UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=ExampleDataAccessClient;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False")
+                )
+            );
 
-            services.AddDataAccessClientPool<ExampleSecondDbContext, int, int>(builder =>
+            services.AddDataAccessClient<ExampleSecondDbContext>(conf => conf
+                .WithUserIdentifierType<int>()
+                .WithTenantIdentifierType<int>()
+                .WithPooling(true)
+                .WithEntityTypes(new[] {typeof(ExampleSecondEntity)})
+                .WithDbContextOptions(builder =>
                     builder
                         .EnableSensitiveDataLogging()
                         .EnableDetailedErrors()
-                        .UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=ExampleSecondDataAccessClient;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False"),
-                new[] {typeof(ExampleSecondEntity)});
-
+                        .UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=ExampleSecondDataAccessClient;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False")
+                )
+            );
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

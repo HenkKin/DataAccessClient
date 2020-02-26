@@ -17,7 +17,19 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestBase
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddScoped<IUserIdentifierProvider<int>, TestUserIdentifierProvider>();
             serviceCollection.AddScoped<ITenantIdentifierProvider<int>, TestTenantIdentifierProvider>();
-            serviceCollection.AddDataAccessClientPool<TestDbContext, int, int>(o => { o.UseInMemoryDatabase(testName); }, new[] { typeof(TestEntity), typeof(TestEntityTranslation) });
+
+            serviceCollection.AddDataAccessClient<TestDbContext>(
+                conf => conf
+                    .WithUserIdentifierType<int>()
+                    .WithTenantIdentifierType<int>()
+                    .WithPooling(true)
+                    .WithEntityTypes(new[] { typeof(TestEntity), typeof(TestEntityTranslation)})
+                    .WithDbContextOptions(
+                        o =>
+                        {
+                            o.UseInMemoryDatabase(testName);
+                        })
+            );
             ServiceProvider = serviceCollection.BuildServiceProvider().CreateScope().ServiceProvider;
             UnitOfWork = ServiceProvider.GetRequiredService<IUnitOfWork>();
             TestEntityRepository = ServiceProvider.GetRequiredService<IRepository<TestEntity>>();
