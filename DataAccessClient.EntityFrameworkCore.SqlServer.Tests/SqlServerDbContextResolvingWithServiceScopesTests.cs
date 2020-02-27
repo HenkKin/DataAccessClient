@@ -18,19 +18,16 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
         public void WithDbContextPooling_WhenHavingNestedChildScopes_ItShouldResolveDbContextPerChildScope()
         {
             IServiceCollection serviceCollection = new ServiceCollection();
+
             serviceCollection.AddScoped<IUserIdentifierProvider<int>, TestUserIdentifierProvider>();
             serviceCollection.AddScoped<ITenantIdentifierProvider<int>, TestTenantIdentifierProvider>();
             serviceCollection.AddDataAccessClient<MyDbContext>(
                 conf => conf
-                    .WithUserIdentifierType<int>()
-                    .WithTenantIdentifierType<int>()
-                    .WithPooling(true)
-                    .WithEntityTypes(new[] {typeof(Entity)})
-                    .WithDbContextOptions(
-                        o =>
-                        {
-                            o.UseInMemoryDatabase(nameof(WithDbContextPooling_WhenHavingNestedChildScopes_ItShouldResolveDbContextPerChildScope));
-                        })
+                    .UsePooling(true)
+                    .ConfigureEntityTypes(new[] {typeof(Entity)})
+                    .ConfigureDbContextOptions(builder => builder
+                        .UseInMemoryDatabase(nameof(WithDbContextPooling_WhenHavingNestedChildScopes_ItShouldResolveDbContextPerChildScope))
+                    )
             );
 
             IServiceProvider serviceProvider = serviceCollection.BuildServiceProvider();
@@ -41,20 +38,17 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
         public void WithoutDbContextPooling_WhenHavingChildScope_ItShouldResolveDbContextPerChildScope()
         {
             IServiceCollection serviceCollection = new ServiceCollection();
+
             serviceCollection.AddScoped<IUserIdentifierProvider<int>, TestUserIdentifierProvider>();
             serviceCollection.AddScoped<ITenantIdentifierProvider<int>, TestTenantIdentifierProvider>();
 
             serviceCollection.AddDataAccessClient<MyDbContext>(
                 conf => conf
-                    .WithUserIdentifierType<int>()
-                    .WithTenantIdentifierType<int>()
-                    .WithPooling(false)
-                    .WithEntityTypes(new[] { typeof(Entity) })
-                    .WithDbContextOptions(
-                        o =>
-                        {
-                            o.UseInMemoryDatabase(nameof(WithoutDbContextPooling_WhenHavingChildScope_ItShouldResolveDbContextPerChildScope));
-                        })
+                    .UsePooling(false)
+                    .ConfigureEntityTypes(new[] { typeof(Entity) })
+                    .ConfigureDbContextOptions(builder => builder
+                        .UseInMemoryDatabase(nameof(WithoutDbContextPooling_WhenHavingChildScope_ItShouldResolveDbContextPerChildScope))
+                    )
             );
 
             IServiceProvider serviceProvider = serviceCollection.BuildServiceProvider();
@@ -65,19 +59,16 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
         public void WithDbContextPooling_WhenMultipleDbContextAreResolvedFromSameScope_ItShouldReturnSameDbContextInstance()
         {
             IServiceCollection serviceCollection = new ServiceCollection();
+
             serviceCollection.AddScoped<IUserIdentifierProvider<int>, TestUserIdentifierProvider>();
             serviceCollection.AddScoped<ITenantIdentifierProvider<int>, TestTenantIdentifierProvider>();
             serviceCollection.AddDataAccessClient<MyDbContext>(
                 conf => conf
-                    .WithUserIdentifierType<int>()
-                    .WithTenantIdentifierType<int>()
-                    .WithPooling(true)
-                    .WithEntityTypes(new[] { typeof(Entity) })
-                    .WithDbContextOptions(
-                        o =>
-                        {
-                            o.UseInMemoryDatabase(nameof(WithDbContextPooling_WhenMultipleDbContextAreResolvedFromSameScope_ItShouldReturnSameDbContextInstance));
-                        })
+                    .UsePooling(true)
+                    .ConfigureEntityTypes(new[] { typeof(Entity) })
+                    .ConfigureDbContextOptions(builder => builder
+                        .UseInMemoryDatabase(nameof(WithDbContextPooling_WhenMultipleDbContextAreResolvedFromSameScope_ItShouldReturnSameDbContextInstance))
+                    )
             );
             IServiceProvider serviceProvider = serviceCollection.BuildServiceProvider();
             RunMultipleResolvesOfServiceScope(serviceProvider);
@@ -87,19 +78,16 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
         public void WithoutDbContextPooling_WhenMultipleDbContextAreResolvedFromSameScope_ItShouldReturnSameDbContextInstance()
         {
             IServiceCollection serviceCollection = new ServiceCollection();
+
             serviceCollection.AddScoped<IUserIdentifierProvider<int>, TestUserIdentifierProvider>();
             serviceCollection.AddScoped<ITenantIdentifierProvider<int>, TestTenantIdentifierProvider>();
             serviceCollection.AddDataAccessClient<MyDbContext>(
                 conf => conf
-                    .WithUserIdentifierType<int>()
-                    .WithTenantIdentifierType<int>()
-                    .WithPooling(false)
-                    .WithEntityTypes(new[] { typeof(Entity) })
-                    .WithDbContextOptions(
-                        o =>
-                        {
-                            o.UseInMemoryDatabase(nameof(WithoutDbContextPooling_WhenMultipleDbContextAreResolvedFromSameScope_ItShouldReturnSameDbContextInstance));
-                        })
+                    .UsePooling(false)
+                    .ConfigureEntityTypes(new[] { typeof(Entity) })
+                    .ConfigureDbContextOptions(builder => builder
+                        .UseInMemoryDatabase(nameof(WithoutDbContextPooling_WhenMultipleDbContextAreResolvedFromSameScope_ItShouldReturnSameDbContextInstance))
+                    )
             );
             IServiceProvider serviceProvider = serviceCollection.BuildServiceProvider();
             RunMultipleResolvesOfServiceScope(serviceProvider);
@@ -108,39 +96,47 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
         static void RunNestedChildScopes(IServiceProvider serviceProvider)
         {
             using var scope1 = serviceProvider.CreateScope();
-            TestUserIdentifierProvider userIdentifierProvider1 = scope1.ServiceProvider.GetService<IUserIdentifierProvider<int>>() as TestUserIdentifierProvider;
-            TestTenantIdentifierProvider tenantIdentifierProvider1 = scope1.ServiceProvider.GetService<ITenantIdentifierProvider<int>>() as TestTenantIdentifierProvider;
-            MyDbContext dbContext1 = scope1.ServiceProvider.GetRequiredService<ISqlServerDbContextResolver<MyDbContext, int, int>>().Execute();
-            dbContext1.Initialize(userIdentifierProvider1, tenantIdentifierProvider1, null, null);
+            TestUserIdentifierProvider userIdentifierProvider1 = scope1.ServiceProvider.GetRequiredService<IUserIdentifierProvider<int>>() as TestUserIdentifierProvider;
+            TestTenantIdentifierProvider tenantIdentifierProvider1 = scope1.ServiceProvider.GetRequiredService<ITenantIdentifierProvider<int>>() as TestTenantIdentifierProvider;
+            MyDbContext dbContext1 = scope1.ServiceProvider.GetRequiredService<ISqlServerDbContextResolver<MyDbContext>>().Execute();
 
-            dbContext1.HasSameUserIdentifierProvider(userIdentifierProvider1);
-            dbContext1.HasSameTenantIdentifierProvider(tenantIdentifierProvider1);
+            object UserIdentifierProvider1Func() => userIdentifierProvider1?.Execute();
+            object TenantIdentifierProvider1Func() => tenantIdentifierProvider1?.Execute();
+            dbContext1.Initialize(UserIdentifierProvider1Func, TenantIdentifierProvider1Func, null, null);
+
+            dbContext1.HasSameUserIdentifierProvider(UserIdentifierProvider1Func);
+            dbContext1.HasSameTenantIdentifierProvider(TenantIdentifierProvider1Func);
 
             using var scope2 = scope1.ServiceProvider.CreateScope();
-            TestUserIdentifierProvider userIdentifierProvider2 = scope2.ServiceProvider.GetService<IUserIdentifierProvider<int>>() as TestUserIdentifierProvider;
-            TestTenantIdentifierProvider tenantIdentifierProvider2 = scope2.ServiceProvider.GetService<ITenantIdentifierProvider<int>>() as TestTenantIdentifierProvider;
-            MyDbContext dbContext2 = scope2.ServiceProvider.GetRequiredService<ISqlServerDbContextResolver<MyDbContext, int, int>>().Execute();
-            dbContext2.Initialize(userIdentifierProvider2, tenantIdentifierProvider2, null, null);
+            TestUserIdentifierProvider userIdentifierProvider2 = scope2.ServiceProvider.GetRequiredService<IUserIdentifierProvider<int>>() as TestUserIdentifierProvider;
+            TestTenantIdentifierProvider tenantIdentifierProvider2 = scope2.ServiceProvider.GetRequiredService<ITenantIdentifierProvider<int>>() as TestTenantIdentifierProvider;
+            MyDbContext dbContext2 = scope2.ServiceProvider.GetRequiredService<ISqlServerDbContextResolver<MyDbContext>>().Execute();
+            object UserIdentifierProvider2Func() => userIdentifierProvider2?.Execute();
+            object TenantIdentifierProvider2Func() => tenantIdentifierProvider2?.Execute();
+            dbContext2.Initialize(UserIdentifierProvider2Func, TenantIdentifierProvider2Func, null, null);
 
             Assert.NotSame(dbContext1, dbContext2);
             Assert.NotEqual(dbContext1.ContextId, dbContext2.ContextId);
 
-            dbContext2.HasSameUserIdentifierProvider(userIdentifierProvider2);
-            dbContext2.HasSameTenantIdentifierProvider(tenantIdentifierProvider2);
+            dbContext2.HasSameUserIdentifierProvider(UserIdentifierProvider2Func);
+            dbContext2.HasSameTenantIdentifierProvider(TenantIdentifierProvider2Func);
 
             using var scope3 = scope2.ServiceProvider.CreateScope();
             TestUserIdentifierProvider userIdentifierProvider3 = scope3.ServiceProvider.GetService<IUserIdentifierProvider<int>>() as TestUserIdentifierProvider;
             TestTenantIdentifierProvider tenantIdentifierProvider3 = scope3.ServiceProvider.GetService<ITenantIdentifierProvider<int>>() as TestTenantIdentifierProvider;
-            MyDbContext dbContext3 = scope3.ServiceProvider.GetRequiredService<ISqlServerDbContextResolver<MyDbContext, int, int>>().Execute();
-            dbContext3.Initialize(userIdentifierProvider3, tenantIdentifierProvider3, null, null);
+            MyDbContext dbContext3 = scope3.ServiceProvider.GetRequiredService<ISqlServerDbContextResolver<MyDbContext>>().Execute();
+
+            object UserIdentifierProvider3Func() => userIdentifierProvider3?.Execute();
+            object TenantIdentifierProvider3Func() => tenantIdentifierProvider3?.Execute();
+            dbContext3.Initialize(UserIdentifierProvider3Func, TenantIdentifierProvider3Func, null, null);
 
             Assert.NotSame(dbContext1, dbContext3);
             Assert.NotEqual(dbContext1.ContextId, dbContext3.ContextId);
             Assert.NotSame(dbContext2, dbContext3);
             Assert.NotEqual(dbContext2.ContextId, dbContext3.ContextId);
 
-            dbContext3.HasSameUserIdentifierProvider(userIdentifierProvider3);
-            dbContext3.HasSameTenantIdentifierProvider(tenantIdentifierProvider3);
+            dbContext3.HasSameUserIdentifierProvider(UserIdentifierProvider3Func);
+            dbContext3.HasSameTenantIdentifierProvider(TenantIdentifierProvider3Func);
         }
 
         static void RunMultipleResolvesOfServiceScope(IServiceProvider serviceProvider)
@@ -151,36 +147,40 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             TestTenantIdentifierProvider tenantIdentifierProvider1 =
                 scope1.ServiceProvider.GetService<ITenantIdentifierProvider<int>>() as TestTenantIdentifierProvider;
             MyDbContext dbContext1 = scope1.ServiceProvider
-                .GetRequiredService<ISqlServerDbContextResolver<MyDbContext, int, int>>()
+                .GetRequiredService<ISqlServerDbContextResolver<MyDbContext>>()
                 .Execute();
-            dbContext1.Initialize(userIdentifierProvider1, tenantIdentifierProvider1, null, null);
 
-            dbContext1.HasSameUserIdentifierProvider(userIdentifierProvider1);
-            dbContext1.HasSameTenantIdentifierProvider(tenantIdentifierProvider1);
+            object UserIdentifierProvider1Func() => userIdentifierProvider1?.Execute();
+            object TenantIdentifierProvider1Func() => tenantIdentifierProvider1?.Execute();
+            dbContext1.Initialize(UserIdentifierProvider1Func, TenantIdentifierProvider1Func, null, null);
+
+            dbContext1.HasSameUserIdentifierProvider(UserIdentifierProvider1Func);
+            dbContext1.HasSameTenantIdentifierProvider(TenantIdentifierProvider1Func);
 
             MyDbContext dbContext2 = scope1.ServiceProvider
-                .GetRequiredService<ISqlServerDbContextResolver<MyDbContext, int, int>>()
+                .GetRequiredService<ISqlServerDbContextResolver<MyDbContext>>()
                 .Execute();
-            dbContext2.Initialize(userIdentifierProvider1, tenantIdentifierProvider1, null, null);
+
+            dbContext2.Initialize(UserIdentifierProvider1Func, TenantIdentifierProvider1Func, null, null);
 
             Assert.Same(dbContext1, dbContext2);
             Assert.Equal(dbContext1.ContextId, dbContext2.ContextId);
 
-            dbContext2.HasSameUserIdentifierProvider(userIdentifierProvider1);
-            dbContext2.HasSameTenantIdentifierProvider(tenantIdentifierProvider1);
+            dbContext2.HasSameUserIdentifierProvider(UserIdentifierProvider1Func);
+            dbContext2.HasSameTenantIdentifierProvider(TenantIdentifierProvider1Func);
 
             MyDbContext dbContext3 = scope1.ServiceProvider
-                .GetRequiredService<ISqlServerDbContextResolver<MyDbContext, int, int>>()
+                .GetRequiredService<ISqlServerDbContextResolver<MyDbContext>>()
                 .Execute();
-            dbContext3.Initialize(userIdentifierProvider1, tenantIdentifierProvider1, null, null);
+            dbContext3.Initialize(UserIdentifierProvider1Func, TenantIdentifierProvider1Func, null, null);
 
             Assert.Same(dbContext1, dbContext3);
             Assert.Equal(dbContext1.ContextId, dbContext3.ContextId);
             Assert.Same(dbContext2, dbContext3);
             Assert.Equal(dbContext2.ContextId, dbContext3.ContextId);
 
-            dbContext3.HasSameUserIdentifierProvider(userIdentifierProvider1);
-            dbContext3.HasSameTenantIdentifierProvider(tenantIdentifierProvider1);
+            dbContext3.HasSameUserIdentifierProvider(UserIdentifierProvider1Func);
+            dbContext3.HasSameTenantIdentifierProvider(TenantIdentifierProvider1Func);
         }
 
         class Entity
@@ -189,23 +189,24 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             public string Name { get; set; }
         }
 
-        private class MyDbContext : SqlServerDbContext<int, int>
+        private class MyDbContext : SqlServerDbContext
         {
             public MyDbContext(DbContextOptions<MyDbContext> options) : base(options)
             { }
 
             public DbSet<Entity> Entities { get; set; }
 
-            public void HasSameUserIdentifierProvider(TestUserIdentifierProvider expectedUserIdentifierProvider)
+            public void HasSameUserIdentifierProvider(Func<object> expectedUserIdentifierProvider)
             {
-                Assert.Same(expectedUserIdentifierProvider, (UserIdentifierProvider as TestUserIdentifierProvider));
-                Assert.Equal(expectedUserIdentifierProvider.InstanceId, ((TestUserIdentifierProvider) UserIdentifierProvider).InstanceId);
+                //Assert.Same(expectedUserIdentifierProvider, UserIdentifierProvider);
+                Assert.Equal(expectedUserIdentifierProvider(), UserIdentifierProvider());
             }
 
-            public void HasSameTenantIdentifierProvider(TestTenantIdentifierProvider expectedTenantIdentifierProvider)
+            public void HasSameTenantIdentifierProvider(Func<object> expectedTenantIdentifierProvider)
             {
-                Assert.Same(expectedTenantIdentifierProvider, TenantIdentifierProvider as TestTenantIdentifierProvider);
-                Assert.Equal(expectedTenantIdentifierProvider.InstanceId, ((TestTenantIdentifierProvider) TenantIdentifierProvider).InstanceId);
+                //Assert.Same(expectedTenantIdentifierProvider, TenantIdentifierProvider);
+                // Assert.Equal(expectedTenantIdentifierProvider.InstanceId, ((TestTenantIdentifierProvider) TenantIdentifierProvider).InstanceId);
+                Assert.Equal(expectedTenantIdentifierProvider(), TenantIdentifierProvider());
             }
         }
     }

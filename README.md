@@ -469,12 +469,9 @@ Either commands, from Package Manager Console or .NET Core CLI, will download an
 
 IIf you're using EntityFrameworkCore.SqlServer and you want to use this Identifier type in your entities, then you can use [DataAccessClient.EntityFrameworkCore.SqlServer](https://github.com/HenkKin/DataAccessClient.EntityFrameworkCore.SqlServer/) package which includes the following registration options via extensions method:
 
-- `IServiceCollection AddDataAccessClient<TDbContext, TUserIdentifierType, TTenantIdentifierType>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, IEnumerable<Type> entityTypes)`
+- `IServiceCollection AddDataAccessClient<TDbContext>(this IServiceCollection services, Action<DataAccessClientOptionsBuilder> dataAccessClientOptionsBuilderAction)`
 
-- `IServiceCollection AddDataAccessClientPool<TDbContext, TUserIdentifierType, TTenantIdentifierType>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, IEnumerable<Type> entityTypes)`
-
-
-These extension methods supporting you to register all needed DbContexts, IUnitOfWorks and IRepositories for provided entity types. Calling AddDbContext or AddDbContextPool of EntityFrameworkCore is not needed and not recommended when you are using this library.
+These extension method supports you to register all needed DbContexts, IUnitOfWorks and IRepositories for provided entity types. Calling AddDbContext or AddDbContextPool of EntityFrameworkCore is not needed and not recommended when you are using this library.
 
 To use it:
 
@@ -498,19 +495,18 @@ public class Startup
 		// register ITenantIdentifierProvider 
 		services.AddScoped<ITenantIdentifierProvider<int>, YourTenantIdentifierProvider>();
 
-		// register as AddDbContext (without pooling)
-		services.AddDataAccessClient<YourDbContext, int, int>(
-			builder => ... , // f.e. builder.UseSqlServer(...)
-			entityTypes
-		);
-                
-		// or
-
-		// register as AddDbContextPool (with pooling)
-		services.AddDataAccessClientPool<YourDbContext, int, int>(
-			builder => ... , // f.e. builder.UseSqlServer(...)
-			entityTypes,
-			poolSize: 128 // is optional
+		services.AddScoped<IUserIdentifierProvider<int>, ExampleUserIdentifierProvider>();
+		services.AddScoped<ITenantIdentifierProvider<int>, ExampleTenantIdentifierProvider>();
+		
+		// register as DataAccessClient
+		services.AddDataAccessClient<ExampleDbContext>(conf => conf
+            .UsePooling(true)
+            .ConfigureEntityTypes(new[] { typeof(ExampleEntity) })
+            .ConfigureDbContextOptions(builder => builder
+                .EnableSensitiveDataLogging()
+                .EnableDetailedErrors()
+                .UseSqlServer("[Your connectionstring]")
+            )
 		);
                 
 		...
@@ -519,13 +515,13 @@ public class Startup
     ...
 ```
 
-Using the base class `SqlServerDbContext<TUserIdentifierType, TTenantIdentifierType>` on your own DbContext implementation:
+Using the base class `SqlServerDbContext` on your own DbContext implementation:
 
 ```csharp
 ...
 using DataAccessClient.EntityFrameworkCore.SqlServer;
 
-internal class YourDbContext : SqlServerDbContext<int, int>
+internal class YourDbContext : SqlServerDbContext
 {
 	public YourDbContext(DbContextOptions<YourDbContext> options) : base(options)
 	{
@@ -537,8 +533,12 @@ internal class YourDbContext : SqlServerDbContext<int, int>
 		modelBuilder.Entity<ExampleEntity>()
 				.ToTable("ExampleEntities");
 		// OR
-		// Register your entities to the DbContext using EntityEntityTypeConfiguration class
+		// Register your entities to the DbContext using EntityTypeConfiguration class
 		modelBuilder.ApplyConfiguration(new ExampleEntityEntityTypeConfiguration());
+
+		// OR
+		// Register your entities to the DbContext using IEntityTypeConfiguration 
+ 		modelBuilder.ApplyConfigurationsFromAssembly(typeof(AssemblyInfo).Assembly);
 
 		base.OnModelCreating(modelBuilder);
 	}

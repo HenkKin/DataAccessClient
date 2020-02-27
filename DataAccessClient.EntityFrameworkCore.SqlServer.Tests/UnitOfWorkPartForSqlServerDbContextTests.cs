@@ -18,8 +18,13 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             // Arrange
             var mockRepository = new MockRepository(MockBehavior.Strict);
 
-            var testDbContextMock = mockRepository.Create<TestDbContext>(new DbContextOptions<TestDbContext>());
-            var testDbContextResolverMock = mockRepository.Create<ISqlServerDbContextResolver<TestDbContext, int, int>>();
+            var options = new DbContextOptionsBuilder<TestDbContext>()
+                .WithUserIdentifierType(typeof(int))
+                .WithTenantIdentifierType(typeof(int))
+                .Options;
+
+            var testDbContextMock = mockRepository.Create<TestDbContext>(options);
+            var testDbContextResolverMock = mockRepository.Create<ISqlServerDbContextResolver<TestDbContext>>();
 
             testDbContextResolverMock.Setup(x => x.Execute())
                 .Returns(testDbContextMock.Object);
@@ -27,7 +32,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             testDbContextMock.Setup(x => x.SaveChangesAsync(CancellationToken.None))
                 .ReturnsAsync(1);
 
-            var unitOfWorkPart = new UnitOfWorkPartForSqlServerDbContext<TestDbContext, int, int>(testDbContextResolverMock.Object);
+            var unitOfWorkPart = new UnitOfWorkPartForSqlServerDbContext<TestDbContext>(testDbContextResolverMock.Object);
 
             // Act
             await unitOfWorkPart.SaveAsync();
@@ -47,9 +52,11 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             // Arrange
             var serviceProviderMock = new Mock<IServiceProvider>();
 
-            var testDbContextResolverMock = new Mock<ISqlServerDbContextResolver<TestDbContext, int, int>>();
+            var testDbContextResolverMock = new Mock<ISqlServerDbContextResolver<TestDbContext>>();
 
             var options = new DbContextOptionsBuilder<TestDbContext>()
+                .WithUserIdentifierType(typeof(int))
+                .WithTenantIdentifierType(typeof(int))
                 .UseInMemoryDatabase(databaseName: "Reset_WhenCalled_ItShouldCallSaveChangesAsyncOnDbContext")
                 .UseApplicationServiceProvider(serviceProviderMock.Object)
                 .Options;
@@ -61,7 +68,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             var testEntity = new TestEntity();
             testDbContext.Entry(testEntity).State = state;
 
-            var unitOfWorkPart = new UnitOfWorkPartForSqlServerDbContext<TestDbContext, int, int>(testDbContextResolverMock.Object);
+            var unitOfWorkPart = new UnitOfWorkPartForSqlServerDbContext<TestDbContext>(testDbContextResolverMock.Object);
 
             // Act
             unitOfWorkPart.Reset();
@@ -84,15 +91,19 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             serviceProviderMock.Setup(x => x.GetService(typeof(IMultiTenancyConfiguration)))
                 .Returns(new DefaultMultiTenancyConfiguration());
 
-            var testDbContextResolverMock = new Mock<ISqlServerDbContextResolver<TestDbContext, int, int>>();
+            var testDbContextResolverMock = new Mock<ISqlServerDbContextResolver<TestDbContext>>();
 
             var options = new DbContextOptionsBuilder<TestDbContext>()
+                .WithUserIdentifierType(typeof(int))
+                .WithTenantIdentifierType(typeof(int))
                 .UseInMemoryDatabase(databaseName: "Reset_WhenCalled_ItShouldCallSaveChangesAsyncOnDbContext")
                 .UseApplicationServiceProvider(serviceProviderMock.Object)
                 .Options;
 
             var testDbContext = new TestDbContext(options);
-            testDbContext.Initialize(new TestUserIdentifierProvider(), new TestTenantIdentifierProvider(), new DefaultSoftDeletableConfiguration(), new DefaultMultiTenancyConfiguration());
+            var testUserIdentifierProvider = new TestUserIdentifierProvider();
+            var testTenantIdentifierProvider = new TestTenantIdentifierProvider();
+            testDbContext.Initialize(()=> testUserIdentifierProvider.Execute(), ()=> testTenantIdentifierProvider.Execute(), new DefaultSoftDeletableConfiguration(), new DefaultMultiTenancyConfiguration());
             testDbContextResolverMock.Setup(x => x.Execute())
                 .Returns(testDbContext);
 
@@ -101,7 +112,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             testDbContext.SaveChanges();
 
             testDbContext.Entry(testEntity).State = state;
-            var unitOfWorkPart = new UnitOfWorkPartForSqlServerDbContext<TestDbContext, int, int>(testDbContextResolverMock.Object);
+            var unitOfWorkPart = new UnitOfWorkPartForSqlServerDbContext<TestDbContext>(testDbContextResolverMock.Object);
 
             // Act
             unitOfWorkPart.Reset();

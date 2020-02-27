@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer
 {
     public class DataAccessClientOptionsBuilder
     {
-
         private readonly DataAccessClientOptions _options;
 
         public DataAccessClientOptionsBuilder()
@@ -14,53 +12,26 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         {
         }
 
-        public DataAccessClientOptionsBuilder([NotNull] DataAccessClientOptions options)
+        public DataAccessClientOptionsBuilder(DataAccessClientOptions options)
         {
-            _options = options ?? throw new ArgumentNullException(nameof(options));
+            _options = options;
         }
-        
+
         public virtual DataAccessClientOptions Options => _options;
 
-
-        public DataAccessClientOptionsBuilder WithDbContextOptions(Action<DbContextOptionsBuilder> dbContextOptionsBuilder)
+        public virtual DataAccessClientOptionsBuilder ConfigureDbContextOptions(Action<DbContextOptionsBuilder> dbContextOptionsBuilder)
         {
             _options.DbContextOptionsBuilder = dbContextOptionsBuilder;
             return this;
         }
 
-        public DataAccessClientOptionsBuilder WithUserIdentifierType<TUserIdentifierType>()
-            where TUserIdentifierType : struct
-        {
-            _options.UserIdentifierType = typeof(TUserIdentifierType);
-            return this;
-        }
-
-        public DataAccessClientOptionsBuilder WithUserIdentifierType(Type userIdentifierType)
-        {
-            _options.UserIdentifierType = userIdentifierType;
-            return this;
-        }
-
-        public DataAccessClientOptionsBuilder WithTenantIdentifierType<TTenantIdentifierType>()
-            where TTenantIdentifierType : struct
-        {
-            _options.TenantIdentifierType = typeof(TTenantIdentifierType);
-            return this;
-        }
-
-        public DataAccessClientOptionsBuilder WithTenantIdentifierType(Type tenantIdentifierType)
-        {
-            _options.TenantIdentifierType = tenantIdentifierType;
-            return this;
-        }
-
-        public DataAccessClientOptionsBuilder WithEntityTypes(Type[] entityTypes)
+        public virtual DataAccessClientOptionsBuilder ConfigureEntityTypes(Type[] entityTypes)
         {
             _options.EntityTypes = entityTypes;
             return this;
         }
 
-        public DataAccessClientOptionsBuilder WithPooling(bool usePooling, int? poolSize = null)
+        public virtual DataAccessClientOptionsBuilder UsePooling(bool usePooling, int? poolSize = null)
         {
             _options.UsePooling = usePooling;
             _options.PoolSize = poolSize;

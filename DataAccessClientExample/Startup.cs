@@ -33,30 +33,25 @@ namespace DataAccessClientExample
             services.AddScoped<IUserIdentifierProvider<int>, ExampleUserIdentifierProvider>();
             services.AddScoped<ITenantIdentifierProvider<int>, ExampleTenantIdentifierProvider>();
 
+
             services.AddDataAccessClient<ExampleDbContext>(conf => conf
-                .WithUserIdentifierType<int>()
-                .WithTenantIdentifierType<int>()
-                .WithPooling(true)
-                .WithEntityTypes(new[] {typeof(ExampleEntity)})
-                .WithDbContextOptions(builder =>
-                    builder
+                    .UsePooling(true)
+                    .ConfigureEntityTypes(new[] { typeof(ExampleEntity) })
+                    .ConfigureDbContextOptions(builder => builder
                         .EnableSensitiveDataLogging()
                         .EnableDetailedErrors()
                         .UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=ExampleDataAccessClient;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False")
-                )
+                    )
             );
 
             services.AddDataAccessClient<ExampleSecondDbContext>(conf => conf
-                .WithUserIdentifierType<int>()
-                .WithTenantIdentifierType<int>()
-                .WithPooling(true)
-                .WithEntityTypes(new[] {typeof(ExampleSecondEntity)})
-                .WithDbContextOptions(builder =>
-                    builder
+                    .UsePooling(true)
+                    .ConfigureEntityTypes(new[] { typeof(ExampleSecondEntity) })
+                    .ConfigureDbContextOptions(builder => builder
                         .EnableSensitiveDataLogging()
                         .EnableDetailedErrors()
                         .UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=ExampleSecondDataAccessClient;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False")
-                )
+                    )
             );
         }
 

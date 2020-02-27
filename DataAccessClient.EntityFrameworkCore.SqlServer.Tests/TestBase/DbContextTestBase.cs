@@ -20,15 +20,11 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestBase
 
             serviceCollection.AddDataAccessClient<TestDbContext>(
                 conf => conf
-                    .WithUserIdentifierType<int>()
-                    .WithTenantIdentifierType<int>()
-                    .WithPooling(true)
-                    .WithEntityTypes(new[] { typeof(TestEntity), typeof(TestEntityTranslation)})
-                    .WithDbContextOptions(
-                        o =>
-                        {
-                            o.UseInMemoryDatabase(testName);
-                        })
+                    .UsePooling(true)
+                    .ConfigureEntityTypes(new[] { typeof(TestEntity), typeof(TestEntityTranslation) })
+                    .ConfigureDbContextOptions(builder => builder
+                        .UseInMemoryDatabase(testName)
+                    )
             );
             ServiceProvider = serviceCollection.BuildServiceProvider().CreateScope().ServiceProvider;
             UnitOfWork = ServiceProvider.GetRequiredService<IUnitOfWork>();

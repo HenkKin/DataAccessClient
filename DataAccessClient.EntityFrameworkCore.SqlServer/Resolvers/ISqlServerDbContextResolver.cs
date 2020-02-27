@@ -1,9 +1,7 @@
 ﻿namespace DataAccessClient.EntityFrameworkCore.SqlServer.Resolvers
 {
-    internal interface ISqlServerDbContextResolver<TDbContext, TUserIdentifierType, TTenantIdentifierType>
-        where TDbContext : SqlServerDbContext<TUserIdentifierType, TTenantIdentifierType>
-        where TUserIdentifierType : struct
-        where TTenantIdentifierType : struct
+    internal interface ISqlServerDbContextResolver<TDbContext>
+        where TDbContext : SqlServerDbContext
     {
         TDbContext Execute();
     }

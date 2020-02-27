@@ -11,16 +11,16 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestModels
             InstanceId = Guid.NewGuid();
         }
 
-        public int? TenantId { get; private set; } = 1;
+        public int? UserId { get; private set; } = 1;
 
         public int? Execute()
         {
-            return TenantId;
+            return UserId;
         }
 
-        public void ChangeUserIdentifier(int? tenantIdentifier)
+        public void ChangeUserIdentifier(int? userIdentifier)
         {
-            TenantId = tenantIdentifier;
+            UserId = userIdentifier;
         }
     }
 }

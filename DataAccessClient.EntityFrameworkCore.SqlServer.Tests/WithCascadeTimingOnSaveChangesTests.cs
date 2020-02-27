@@ -13,11 +13,12 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
         {
             // Arrange
             IServiceCollection services = new ServiceCollection();
-            services.AddDbContext<TestDbContext>(o =>
-            {
-                o.UseInMemoryDatabase(
-                    nameof(WhenWorkIsDoneWithCascadeTimingOnSaveChanges_ItShouldResetToCascadeTimingImmediate));
-            });
+
+            services.AddDbContext<TestDbContext>(builder => builder
+                .WithUserIdentifierType(typeof(int))
+                .WithTenantIdentifierType(typeof(int))
+                .UseInMemoryDatabase(nameof(WhenWorkIsDoneWithCascadeTimingOnSaveChanges_ItShouldResetToCascadeTimingImmediate))
+            );
 
             var serviceProvider = services.BuildServiceProvider().CreateScope();
 

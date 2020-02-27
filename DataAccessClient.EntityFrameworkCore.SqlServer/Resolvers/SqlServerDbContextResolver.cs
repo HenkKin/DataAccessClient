@@ -1,14 +1,13 @@
 ﻿using System;
+using System.Reflection;
 using DataAccessClient.Configuration;
 using DataAccessClient.Providers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Resolvers
 {
-    internal class SqlServerDbContextResolver<TDbContext, TUserIdentifierType, TTenantIdentifierType> : ISqlServerDbContextResolver<TDbContext, TUserIdentifierType, TTenantIdentifierType>
-        where TDbContext : SqlServerDbContext<TUserIdentifierType, TTenantIdentifierType>
-        where TUserIdentifierType : struct
-        where TTenantIdentifierType : struct
+    internal class SqlServerDbContextResolver<TDbContext> : ISqlServerDbContextResolver<TDbContext>
+        where TDbContext : SqlServerDbContext
     {
         private readonly IServiceProvider _scopedServiceProvider;
         private TDbContext _resolvedDbContext;
@@ -32,12 +31,22 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Resolvers
 
                     var dbContext = _scopedServiceProvider.GetRequiredService<TDbContext>();
 
-                    var userIdentifierProvider = _scopedServiceProvider.GetRequiredService<IUserIdentifierProvider<TUserIdentifierType>>();
-                    var tenantIdentifierProvider = _scopedServiceProvider.GetRequiredService<ITenantIdentifierProvider<TTenantIdentifierType>>();
+                    var userIdentifierProviderType = typeof(IUserIdentifierProvider<>).MakeGenericType(dbContext.DataAccessClientOptionsExtension.UserIdentifierType);
+                    var tenantIdentifierProviderType = typeof(ITenantIdentifierProvider<>).MakeGenericType(dbContext.DataAccessClientOptionsExtension.TenantIdentifierType);
+
+                    var executeUserIdentifierProviderTypeMethod = userIdentifierProviderType.GetMethod(nameof(IUserIdentifierProvider<int>.Execute), BindingFlags.Instance | BindingFlags.Public);
+                    var executeTenantIdentifierProviderTypeMethod = tenantIdentifierProviderType.GetMethod(nameof(ITenantIdentifierProvider<int>.Execute), BindingFlags.Instance | BindingFlags.Public);
+
+                    var userIdentifierProvider = _scopedServiceProvider.GetRequiredService(userIdentifierProviderType);
+                    var tenantIdentifierProvider = _scopedServiceProvider.GetRequiredService(tenantIdentifierProviderType);
                     var softDeletableConfiguration = _scopedServiceProvider.GetRequiredService<ISoftDeletableConfiguration>();
                     var multiTenancyConfiguration = _scopedServiceProvider.GetRequiredService<IMultiTenancyConfiguration>();
 
-                    dbContext.Initialize(userIdentifierProvider, tenantIdentifierProvider, softDeletableConfiguration, multiTenancyConfiguration);
+                    dbContext.Initialize(
+                        () => executeUserIdentifierProviderTypeMethod.Invoke(userIdentifierProvider, new object[0]),
+                        () => executeTenantIdentifierProviderTypeMethod.Invoke(tenantIdentifierProvider, new object[0]),
+                        softDeletableConfiguration,
+                        multiTenancyConfiguration);
 
                     _resolvedDbContext = dbContext;
                 }

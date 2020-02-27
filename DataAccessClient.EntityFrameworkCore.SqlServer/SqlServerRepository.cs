@@ -8,18 +8,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer
 {
-    internal class SqlServerRepository<TDbContext, TEntity, TUserIdentifierType, TTenantIdentifierType> : IRepository<TEntity> 
-        where TDbContext : SqlServerDbContext<TUserIdentifierType, TTenantIdentifierType>
+    internal class SqlServerRepository<TDbContext, TEntity> : IRepository<TEntity> 
+        where TDbContext : SqlServerDbContext
         where TEntity : class
-        where TUserIdentifierType : struct
-        where TTenantIdentifierType : struct
     {
         protected readonly TDbContext DbContext;
         protected readonly DbSet<TEntity> DbSet;
         private readonly PropertyInfo _primaryKeyProperty;
 
 
-        public SqlServerRepository(ISqlServerDbContextResolver<TDbContext, TUserIdentifierType, TTenantIdentifierType> sqlServerDbContextResolver)
+        public SqlServerRepository(ISqlServerDbContextResolver<TDbContext> sqlServerDbContextResolver)
         {
             DbContext = sqlServerDbContextResolver.Execute() ?? throw new ArgumentNullException(nameof(sqlServerDbContextResolver));
         

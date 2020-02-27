@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
+using System.Text;
 using DataAccessClient.Configuration;
 using DataAccessClient.EntityBehaviors;
 using DataAccessClient.EntityFrameworkCore.SqlServer.Resolvers;
@@ -16,132 +16,177 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 {
     public static class ServiceCollectionExtensions
     {
-        private static readonly MethodInfo InternalAddDataAccessClientMethodInfo;
-
-        static ServiceCollectionExtensions()
+        public static IServiceCollection AddDataAccessClient<TDbContext>(this IServiceCollection services, Action<DataAccessClientOptionsBuilder> dataAccessClientOptionsBuilderAction)
+            where TDbContext : SqlServerDbContext
         {
-            InternalAddDataAccessClientMethodInfo = typeof(ServiceCollectionExtensions).GetMethod(nameof(InternalAddDataAccessClient), BindingFlags.Static | BindingFlags.NonPublic);
-        }
-
-        [Obsolete("Please use `IServiceCollection AddDataAccessClient<TDbContext>(this IServiceCollection services, Action<DataAccessClientOptionsBuilder> optionsAction)`")]
-        public static IServiceCollection AddDataAccessClient<TDbContext, TUserIdentifierType, TTenantIdentifierType>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, Type[] entityTypes)
-            where TDbContext : SqlServerDbContext<TUserIdentifierType, TTenantIdentifierType>
-            where TUserIdentifierType : struct
-            where TTenantIdentifierType : struct
-        {
-            return services.InternalAddDataAccessClient<TDbContext, TUserIdentifierType, TTenantIdentifierType>(optionsAction, entityTypes, usePooling: false, poolSize: null);
-        }
-
-        [Obsolete("Please use `IServiceCollection AddDataAccessClient<TDbContext>(this IServiceCollection services, Action<DataAccessClientOptionsBuilder> optionsAction)`")]
-        public static IServiceCollection AddDataAccessClientPool<TDbContext, TUserIdentifierType, TTenantIdentifierType>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, Type[] entityTypes, int? poolSize = null)
-            where TDbContext : SqlServerDbContext<TUserIdentifierType, TTenantIdentifierType>
-            where TUserIdentifierType : struct
-            where TTenantIdentifierType : struct
-        {
-            return services.InternalAddDataAccessClient<TDbContext, TUserIdentifierType, TTenantIdentifierType>(optionsAction, entityTypes, usePooling: true, poolSize: poolSize);
-        }
-
-        public static IServiceCollection AddDataAccessClient<TDbContext>(this IServiceCollection services, Action<DataAccessClientOptionsBuilder> optionsAction)
-            where TDbContext : SqlServerDbContextBase
-        {
-            if (!typeof(TDbContext).IsSubclassOfRawGeneric(typeof(SqlServerDbContext<,>)))
-            {
-                throw new ArgumentException($"Generic parameter {nameof(TDbContext)} in method {nameof(ServiceCollectionExtensions)}.{nameof(ServiceCollectionExtensions.AddDataAccessClient)} is not sub class of {typeof(SqlServerDbContext<,>).FullName}");
-            }
             var dataAccessClientOptionsBuilder = new DataAccessClientOptionsBuilder();
-            optionsAction.Invoke(dataAccessClientOptionsBuilder);
+            dataAccessClientOptionsBuilderAction.Invoke(dataAccessClientOptionsBuilder);
 
-            var options = dataAccessClientOptionsBuilder.Options;
+            var userIdentifierType = services.GetUserIdentifierType() ?? typeof(int);
+            var tenantIdentifierType = services.GetTenantIdentifierType() ?? typeof(int);
+            
+            var dataAccessClientOptions = dataAccessClientOptionsBuilder.Options;
 
-            if (options.EntityTypes == null)
+            services.ValidateDataAccessClientOptions(dataAccessClientOptions, userIdentifierType, tenantIdentifierType);
+
+            void ExtendedDbContextOptionsBuilder(DbContextOptionsBuilder dbContextOptionsBuilder)
             {
-                throw new ArgumentException($"{nameof(DataAccessClientOptionsBuilder)}.{nameof(DataAccessClientOptionsBuilder.WithEntityTypes)} is not specified");
+                dbContextOptionsBuilder.WithTenantIdentifierType(tenantIdentifierType);
+                dbContextOptionsBuilder.WithUserIdentifierType(userIdentifierType);
+
+                dataAccessClientOptions.DbContextOptionsBuilder(dbContextOptionsBuilder);
             }
 
-            if (options.DbContextOptionsBuilder == null)
-            {
-                throw new ArgumentException($"{nameof(DataAccessClientOptionsBuilder)}.{nameof(DataAccessClientOptionsBuilder.WithDbContextOptions)} is not specified");
-            }
-
-            var userIdentifierRelatedEntityBehaviors = new[] {typeof(ICreatable<>), typeof(IModifiable<>), typeof(ISoftDeletable<>)};
-
-            var userIdentifierType = options.UserIdentifierType ?? typeof(int);
-            var userIdentifierProviderType = typeof(IUserIdentifierProvider<>).MakeGenericType(userIdentifierType);
-            bool hasEntityBehaviorsWithUserIdentifier = ContainsEntityBehaviors(options.EntityTypes, userIdentifierRelatedEntityBehaviors);
-            if (hasEntityBehaviorsWithUserIdentifier )
-            {
-                if (options.UserIdentifierType == null)
-                {
-                    throw new ArgumentException($"{nameof(DataAccessClientOptionsBuilder)}.{nameof(DataAccessClientOptionsBuilder.WithUserIdentifierType)} is not specified");
-                }
-
-                services.RequireRegistrationFor(userIdentifierProviderType, ServiceLifetime.Scoped);
-            }
-
-            var tenantIdentifierRelatedEntityBehaviors = new[] { typeof(ITenantScopable<>) };
-
-            var tenantIdentifierType = options.TenantIdentifierType ?? typeof(int);
-            var tenantIdentifierProviderType = typeof(ITenantIdentifierProvider<>).MakeGenericType(tenantIdentifierType);
-            bool hasEntityBehaviorsWithTenantIdentifier = ContainsEntityBehaviors(options.EntityTypes, tenantIdentifierRelatedEntityBehaviors);
-            if (hasEntityBehaviorsWithTenantIdentifier)
-            {
-                if (options.TenantIdentifierType == null)
-                {
-                    throw new ArgumentException($"{nameof(DataAccessClientOptionsBuilder)}.{nameof(DataAccessClientOptionsBuilder.WithTenantIdentifierType)} is not specified");
-                }
-
-                services.RequireRegistrationFor(tenantIdentifierProviderType, ServiceLifetime.Scoped);
-            }
-    
-            return (IServiceCollection)InternalAddDataAccessClientMethodInfo.MakeGenericMethod(typeof(TDbContext), options.UserIdentifierType, options.TenantIdentifierType)
-                .Invoke(null, new object[]{services, options.DbContextOptionsBuilder, options.EntityTypes, options.UsePooling, options.PoolSize});
-        }
-
-        private static IServiceCollection InternalAddDataAccessClient<TDbContext, TUserIdentifierType, TTenantIdentifierType>(this IServiceCollection services, Action<DbContextOptionsBuilder> optionsAction, Type[] entityTypes, bool usePooling, int? poolSize)
-            where TDbContext : SqlServerDbContext<TUserIdentifierType, TTenantIdentifierType>
-            where TUserIdentifierType : struct
-            where TTenantIdentifierType : struct
-        {
             services.TryAddScoped<ISoftDeletableConfiguration, DefaultSoftDeletableConfiguration>();
             services.TryAddScoped<IMultiTenancyConfiguration, DefaultMultiTenancyConfiguration>();
 
-            if (ContainsEntityBehaviors(entityTypes, new[] {typeof(ISoftDeletable<>)}))
+            if (ContainsEntityBehaviors(dataAccessClientOptions.EntityTypes, new[] { typeof(ISoftDeletable<>) }))
             {
                 services.RequireRegistrationFor<ISoftDeletableConfiguration>(ServiceLifetime.Scoped);
             }
 
-            if (ContainsEntityBehaviors(entityTypes, new[] {typeof(ITenantScopable<>)}))
+            if (ContainsEntityBehaviors(dataAccessClientOptions.EntityTypes, new[] { typeof(ITenantScopable<>) }))
             {
                 services.RequireRegistrationFor<IMultiTenancyConfiguration>(ServiceLifetime.Scoped);
             }
-            
-            if (usePooling)
+
+            if (dataAccessClientOptions.UsePooling)
             {
-                if (poolSize.HasValue)
+                if (dataAccessClientOptions.PoolSize.HasValue)
                 {
-                    services.AddDbContextPool<TDbContext>(optionsAction, poolSize.Value);
+                    services.AddDbContextPool<TDbContext>(ExtendedDbContextOptionsBuilder, dataAccessClientOptions.PoolSize.Value);
                 }
                 else
                 {
-                    services.AddDbContextPool<TDbContext>(optionsAction);
+                    services.AddDbContextPool<TDbContext>(ExtendedDbContextOptionsBuilder);
                 }
             }
             else
             {
-                services.AddDbContext<TDbContext>(optionsAction);
+                services.AddDbContext<TDbContext>(ExtendedDbContextOptionsBuilder);
             }
 
-            var entityTypeList = entityTypes.ToArray();
-
             services
-                .AddScoped<IUnitOfWorkPart, UnitOfWorkPartForSqlServerDbContext<TDbContext, TUserIdentifierType, TTenantIdentifierType>>()
-                .AddRepositories<TDbContext, TUserIdentifierType, TTenantIdentifierType>(entityTypeList)
-                .AddQueryableSearchers(entityTypeList)
+                .AddScoped<IUnitOfWorkPart, UnitOfWorkPartForSqlServerDbContext<TDbContext>>()
+                .AddRepositories<TDbContext>(dataAccessClientOptions.EntityTypes)
+                .AddQueryableSearchers(dataAccessClientOptions.EntityTypes)
                 .TryAddScoped<IUnitOfWork, UnitOfWork>();
 
-            services.TryAddScoped<ISqlServerDbContextResolver<TDbContext, TUserIdentifierType, TTenantIdentifierType>, SqlServerDbContextResolver<TDbContext, TUserIdentifierType, TTenantIdentifierType>>();
-            
+            services.TryAddScoped<ISqlServerDbContextResolver<TDbContext>, SqlServerDbContextResolver<TDbContext>>();
+
             return services;
+        }
+
+        private static void ValidateDataAccessClientOptions(this IServiceCollection services, DataAccessClientOptions dataAccessClientOptions, Type userIdentifierType, Type tenantIdentifierType)
+        {
+            if (dataAccessClientOptions.EntityTypes == null)
+            {
+                throw new ArgumentException(
+                    $"{nameof(DataAccessClientOptionsBuilder)}.{nameof(DataAccessClientOptionsBuilder.ConfigureEntityTypes)} is not specified");
+            }
+
+            var userIdentifierRelatedEntityBehaviors =
+                new[] {typeof(ICreatable<>), typeof(IModifiable<>), typeof(ISoftDeletable<>)};
+
+
+            bool hasEntityBehaviorsWithUserIdentifier =
+                ContainsEntityBehaviors(dataAccessClientOptions.EntityTypes, userIdentifierRelatedEntityBehaviors);
+            if (hasEntityBehaviorsWithUserIdentifier)
+            {
+                services.RequireRegistrationForGeneric(typeof(IUserIdentifierProvider<>), ServiceLifetime.Scoped);
+
+                var userIdentifierProviderType = typeof(IUserIdentifierProvider<>).MakeGenericType(userIdentifierType);
+                services.RequireRegistrationFor(userIdentifierProviderType, ServiceLifetime.Scoped);
+
+                var entityBehaviorsWithWrongUserIdentifierType = new Dictionary<Type, List<Type>>();
+                foreach (var userIdentifierRelatedEntityBehavior in userIdentifierRelatedEntityBehaviors)
+                {
+                    var types = GetEntityTypesWithWrongIdentifierTypeInEntityBehavior(
+                        dataAccessClientOptions.EntityTypes, userIdentifierRelatedEntityBehavior,
+                        userIdentifierType);
+
+                    if (types.Any())
+                    {
+                        if (entityBehaviorsWithWrongUserIdentifierType.ContainsKey(userIdentifierRelatedEntityBehavior))
+                        {
+                            entityBehaviorsWithWrongUserIdentifierType[userIdentifierRelatedEntityBehavior]
+                                .AddRange(types);
+                        }
+                        else
+                        {
+                            entityBehaviorsWithWrongUserIdentifierType.Add(userIdentifierRelatedEntityBehavior, types);
+                        }
+                    }
+                }
+
+                if (entityBehaviorsWithWrongUserIdentifierType.Any())
+                {
+                    var errorMessage = new StringBuilder();
+                    errorMessage.AppendLine(
+                        $"The current UserIdentifier type is: {userIdentifierType.Name}, the following entity types have implemented the entityhavior interface with a wrong user identifier type:");
+                    foreach (var entityBehaviorWithWrongUserIdentifierType in entityBehaviorsWithWrongUserIdentifierType)
+                    {
+                        errorMessage.AppendLine($"EntityBehavior: {entityBehaviorWithWrongUserIdentifierType.Key.Name}");
+                        foreach (var type in entityBehaviorWithWrongUserIdentifierType.Value)
+                        {
+                            errorMessage.AppendLine($"- {type.Name} ({type.FullName})");
+                        }
+                    }
+
+                    throw new InvalidOperationException(errorMessage.ToString());
+                }
+            }
+
+            var tenantIdentifierRelatedEntityBehaviors = new[] {typeof(ITenantScopable<>)};
+
+
+            bool hasEntityBehaviorsWithTenantIdentifier =
+                ContainsEntityBehaviors(dataAccessClientOptions.EntityTypes, tenantIdentifierRelatedEntityBehaviors);
+            if (hasEntityBehaviorsWithTenantIdentifier)
+            {
+                services.RequireRegistrationForGeneric(typeof(ITenantIdentifierProvider<>), ServiceLifetime.Scoped);
+
+                var tenantIdentifierProviderType = typeof(ITenantIdentifierProvider<>).MakeGenericType(tenantIdentifierType);
+                services.RequireRegistrationFor(tenantIdentifierProviderType, ServiceLifetime.Scoped);
+
+                var entityBehaviorsWithWrongTenantIdentifierType = new Dictionary<Type, List<Type>>();
+                foreach (var tenantIdentifierRelatedEntityBehavior in tenantIdentifierRelatedEntityBehaviors)
+                {
+                    var types = GetEntityTypesWithWrongIdentifierTypeInEntityBehavior(
+                        dataAccessClientOptions.EntityTypes, tenantIdentifierRelatedEntityBehavior,
+                        userIdentifierType);
+
+                    if (types.Any())
+                    {
+                        if (entityBehaviorsWithWrongTenantIdentifierType.ContainsKey(tenantIdentifierRelatedEntityBehavior))
+                        {
+                            entityBehaviorsWithWrongTenantIdentifierType[tenantIdentifierRelatedEntityBehavior]
+                                .AddRange(types);
+                        }
+                        else
+                        {
+                            entityBehaviorsWithWrongTenantIdentifierType.Add(tenantIdentifierRelatedEntityBehavior, types);
+                        }
+                    }
+                }
+
+                if (entityBehaviorsWithWrongTenantIdentifierType.Any())
+                {
+                    var errorMessage = new StringBuilder();
+                    errorMessage.AppendLine(
+                        $"The following entity types have implemented the entityhavior interface with a wrong user identifier type:");
+                    foreach (var entityBehaviorWithWrongTenantIdentifierType in entityBehaviorsWithWrongTenantIdentifierType)
+                    {
+                        errorMessage.AppendLine($"EntityBehavior: {entityBehaviorWithWrongTenantIdentifierType.Key.Name}");
+                        foreach (var type in entityBehaviorWithWrongTenantIdentifierType.Value)
+                        {
+                            errorMessage.AppendLine($"- {type.Name} ({type.FullName})");
+                        }
+                    }
+
+                    throw new InvalidOperationException(errorMessage.ToString());
+                }
+            }
         }
 
         private static void RequireRegistrationFor<TRegistrationType>(this IServiceCollection services,
@@ -154,6 +199,39 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             if (!isRegisteredWithLifetime)
             {
                 ThrowNoRegistrationFoundException(typeof(TRegistrationType), serviceLifetime);
+            }
+        }
+
+        private static Type GetUserIdentifierType(this IServiceCollection services)
+        {
+            var registration =
+                services.SingleOrDefault(s =>
+                    s.ServiceType.IsGenericType &&
+                    s.ServiceType.GetGenericTypeDefinition() == typeof(IUserIdentifierProvider<>) &&
+                    s.Lifetime == ServiceLifetime.Scoped);
+            return registration?.ServiceType.GenericTypeArguments[0]; 
+        }
+
+        private static Type GetTenantIdentifierType(this IServiceCollection services)
+        {
+            var registration =
+                services.SingleOrDefault(s =>
+                    s.ServiceType.IsGenericType &&
+                    s.ServiceType.GetGenericTypeDefinition() == typeof(ITenantIdentifierProvider<>) &&
+                    s.Lifetime == ServiceLifetime.Scoped);
+            return registration?.ServiceType.GenericTypeArguments[0];
+        }
+
+        private static void RequireRegistrationForGeneric(this IServiceCollection services, Type registrationType, ServiceLifetime serviceLifetime)
+        {
+            var isRegisteredWithLifetime =
+                services.Any(s =>
+                    s.ServiceType.IsGenericType &&
+                    s.ServiceType.GetGenericTypeDefinition() == registrationType &&
+                    s.Lifetime == serviceLifetime);
+            if (!isRegisteredWithLifetime)
+            {
+                ThrowNoRegistrationFoundException(registrationType, serviceLifetime);
             }
         }
 
@@ -184,17 +262,26 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
             return containsEntityBehaviors;
         }
-        
-        private static IServiceCollection AddRepositories<TDbContext, TUserIdentifierType, TTenantIdentifierType>(this IServiceCollection services, IEnumerable<Type> entityTypes)
-            where TDbContext : SqlServerDbContext<TUserIdentifierType, TTenantIdentifierType>
-            where TUserIdentifierType : struct
-            where TTenantIdentifierType : struct
+
+        private static List<Type> GetEntityTypesWithWrongIdentifierTypeInEntityBehavior(Type[] entityTypes, Type entityBehavior, Type identifierType)
+        {
+            var entityTypesWithWrongIdentifierTypeInEntityBehavior = entityTypes
+                                              .Where(c => c.GetInterfaces().Any(i =>
+                                                  i.IsGenericType && 
+                                                  i.GetGenericTypeDefinition() == entityBehavior &&
+                                                  i.GenericTypeArguments[0] != identifierType)).ToList();
+
+            return entityTypesWithWrongIdentifierTypeInEntityBehavior;
+        }
+
+        private static IServiceCollection AddRepositories<TDbContext>(this IServiceCollection services, IEnumerable<Type> entityTypes)
+            where TDbContext : SqlServerDbContext
         {
             foreach (var entityType in entityTypes)
             {
                 Type[] interfaceTypeArgs = { entityType };
-                Type[] typeArgs = { typeof(TDbContext), entityType, typeof(TUserIdentifierType), typeof(TTenantIdentifierType) };
-                var typedGenericRepositoryType = typeof(SqlServerRepository<,,,>).MakeGenericType(typeArgs);
+                Type[] typeArgs = { typeof(TDbContext), entityType };
+                var typedGenericRepositoryType = typeof(SqlServerRepository<,>).MakeGenericType(typeArgs);
                 var typedRepositoryInterface = typeof(IRepository<>).MakeGenericType(interfaceTypeArgs);
 
                 if (services.Any(s => s.ServiceType == typedRepositoryInterface))
@@ -226,20 +313,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             }
 
             return services;
-        }
-
-        private static bool IsSubclassOfRawGeneric(this Type toCheck, Type generic)
-        {
-            while (toCheck != null && toCheck != typeof(object))
-            {
-                var cur = toCheck.IsGenericType ? toCheck.GetGenericTypeDefinition() : toCheck;
-                if (generic == cur)
-                {
-                    return true;
-                }
-                toCheck = toCheck.BaseType;
-            }
-            return false;
         }
     }
 }
