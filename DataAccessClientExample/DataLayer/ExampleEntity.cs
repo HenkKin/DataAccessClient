@@ -4,7 +4,7 @@ using DataAccessClient.EntityBehaviors;
 
 namespace DataAccessClientExample.DataLayer
 {
-    public interface IEntity : IIdentifiable<int>, ICreatable<int>, IModifiable<int>, ISoftDeletable<int>, IRowVersionable, ITranslatable<ExampleEntityTranslation, int>, ITenantScopable<int>
+    public interface IEntity : IIdentifiable<int>, ICreatable<int>, IModifiable<int>, ISoftDeletable<int>, IRowVersionable, ITranslatable<ExampleEntityTranslation, int, string>, ITenantScopable<int>
     {
 
     }
@@ -27,10 +27,18 @@ namespace DataAccessClientExample.DataLayer
         public string Name { get; set; }
     }
 
-    public class ExampleEntityTranslation : IEntityTranslation<ExampleEntity, int>
+    public class ExampleEntityView : ILocalizable<string>
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public string LocaleId { get; set; }
+    }
+
+    public class ExampleEntityTranslation : IEntityTranslation<ExampleEntity, int, string>
     {
         public string Description { get; set; }
-        public string Language { get; set; }
+        public string LocaleId { get; set; }
         public ExampleEntity TranslatedEntity { get; set; }
         public int TranslatedEntityId { get; set; }
     }

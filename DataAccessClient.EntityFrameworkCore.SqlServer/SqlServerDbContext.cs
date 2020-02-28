@@ -46,13 +46,14 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
         protected internal ISoftDeletableConfiguration SoftDeletableConfiguration;
         protected internal IMultiTenancyConfiguration MultiTenancyConfiguration;
+        protected internal ILocalizationConfiguration LocalizationConfiguration;
         protected Func<dynamic> UserIdentifierProvider;
         protected Func<dynamic> TenantIdentifierProvider;
+        protected Func<dynamic> LocaleIdentifierProvider;
 
-        protected internal bool IsSoftDeletableQueryFilterEnabled =>
-            SoftDeletableConfiguration.IsEnabled && SoftDeletableConfiguration.IsQueryFilterEnabled;
-
+        protected internal bool IsSoftDeletableQueryFilterEnabled => SoftDeletableConfiguration.IsEnabled && SoftDeletableConfiguration.IsQueryFilterEnabled;
         protected internal bool IsTenantScopableQueryFilterEnabled => MultiTenancyConfiguration.IsQueryFilterEnabled;
+        protected internal bool IsLocalizationQueryFilterEnabled => LocalizationConfiguration.IsQueryFilterEnabled;
 
         protected TUserIdentifierType? CurrentUserIdentifier<TUserIdentifierType>()
             where TUserIdentifierType : struct
@@ -61,6 +62,10 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         protected TTenantIdentifierType? CurrentTenantIdentifier<TTenantIdentifierType>()
             where TTenantIdentifierType : struct
             => TenantIdentifierProvider();
+
+        protected TLocaleIdentifierType CurrentLocaleIdentifier<TLocaleIdentifierType>()
+            where TLocaleIdentifierType : IConvertible
+            => LocaleIdentifierProvider();
 
         private readonly Action _dbContextResetStateMethod;
         private readonly Func<CancellationToken, Task> _dbContextResetStateAsyncMethod;
@@ -160,8 +165,10 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         {
             UserIdentifierProvider = null;
             TenantIdentifierProvider = null;
+            LocaleIdentifierProvider = null;
             SoftDeletableConfiguration = null;
             MultiTenancyConfiguration = null;
+            LocalizationConfiguration = null;
         }
 
         #endregion
@@ -169,13 +176,17 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         internal void Initialize(
             Func<dynamic> userIdentifierProvider,
             Func<dynamic> tenantIdentifierProvider,
+            Func<dynamic> localeIdentifierProvider,
             ISoftDeletableConfiguration softDeletableConfiguration,
-            IMultiTenancyConfiguration multiTenancyConfiguration)
+            IMultiTenancyConfiguration multiTenancyConfiguration,
+            ILocalizationConfiguration localizationConfiguration)
         {
             UserIdentifierProvider = userIdentifierProvider;
             TenantIdentifierProvider = tenantIdentifierProvider;
+            LocaleIdentifierProvider = localeIdentifierProvider;
             SoftDeletableConfiguration = softDeletableConfiguration;
             MultiTenancyConfiguration = multiTenancyConfiguration;
+            LocalizationConfiguration = localizationConfiguration;
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -190,12 +201,13 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                 .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorISoftDeletable));
             var configureEntityBehaviorITenantScopable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
                 .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorITenantScopable));
+            var configureEntityBehaviorILocalizable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
+                .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorILocalizable));
             var configureEntityBehaviorIRowVersionable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
                 .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorIRowVersionable));
             var configureEntityBehaviorITranslatable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
                 .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorITranslatable));
-            var configureEntityBehaviorTranslatedProperties = typeof(ModelBuilderExtensions).GetTypeInfo()
-                .DeclaredMethods
+            var configureEntityBehaviorTranslatedProperties = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
                 .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorTranslatedProperties));
             var configureHasUtcDateTimeProperties = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
                 .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureHasUtcDateTimeProperties));
@@ -216,16 +228,25 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                     $"Can not find method {nameof(CreateTenantScopableQueryFilter)} on class {GetType().FullName}");
             }
 
+            var createLocalizableQueryFilter = GetType().GetMethod(nameof(CreateLocalizationQueryFilter),
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            if (createLocalizableQueryFilter == null)
+            {
+                throw new InvalidOperationException(
+                    $"Can not find method {nameof(CreateLocalizationQueryFilter)} on class {GetType().FullName}");
+            }
+
             var args = new object[] {modelBuilder};
 
             var ignoredEntityTypes = new[]
             {
-                typeof(PropertyTranslation),
-                typeof(TranslatedProperty),
+                typeof(PropertyTranslation<>),
+                typeof(TranslatedProperty<>),
             };
 
             var entityTypes = modelBuilder.Model.GetEntityTypes()
-                .Where(p => !ignoredEntityTypes.Contains(p.ClrType))
+                .Where(p => (!p.ClrType.IsGenericType && !ignoredEntityTypes.Contains(p.ClrType)) ||
+                            (p.ClrType.IsGenericType && !ignoredEntityTypes.Contains(p.ClrType.GetGenericTypeDefinition())))
                 .ToList();
 
             var utcDateTimeValueConverter = new UtcDateTimeValueConverter();
@@ -284,7 +305,21 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                     var tenantScopableQueryFilter = tenantScopableQueryFilterMethod.Invoke(this, null);
 
                     configureEntityBehaviorITenantScopable.MakeGenericMethod(entityType.ClrType, identifierType)
-                        .Invoke(null, new[] {modelBuilder, tenantScopableQueryFilter});
+                        .Invoke(null, new[] { modelBuilder, tenantScopableQueryFilter });
+                }
+
+                if (entityInterfaces.Any(x =>
+                    x.IsGenericType && x.GetGenericTypeDefinition() == typeof(ILocalizable<>)))
+                {
+                    var identifierType = entityType.ClrType.GetInterface(typeof(ILocalizable<>).Name)
+                        .GenericTypeArguments[0];
+
+                    var localizableQueryFilterMethod =
+                        createLocalizableQueryFilter.MakeGenericMethod(entityType.ClrType, identifierType);
+                    var localizableQueryFilter = localizableQueryFilterMethod.Invoke(this, null);
+
+                    configureEntityBehaviorILocalizable.MakeGenericMethod(entityType.ClrType, identifierType)
+                        .Invoke(null, new[] { modelBuilder, localizableQueryFilter });
                 }
 
                 if (entityInterfaces.Any(x => !x.IsGenericType && x == typeof(IRowVersionable)))
@@ -293,15 +328,17 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                 }
 
                 if (entityInterfaces.Any(x =>
-                    x.IsGenericType && x.GetGenericTypeDefinition() == typeof(ITranslatable<,>)))
+                    x.IsGenericType && x.GetGenericTypeDefinition() == typeof(ITranslatable<,,>)))
                 {
-                    var entityTranslationType = entityType.ClrType.GetInterface(typeof(ITranslatable<,>).Name)
+                    var entityTranslationType = entityType.ClrType.GetInterface(typeof(ITranslatable<,,>).Name)
                         .GenericTypeArguments[0];
-                    var identifierType = entityType.ClrType.GetInterface(typeof(ITranslatable<,>).Name)
+                    var identifierType = entityType.ClrType.GetInterface(typeof(ITranslatable<,,>).Name)
                         .GenericTypeArguments[1];
+                    var localeType = entityType.ClrType.GetInterface(typeof(ITranslatable<,,>).Name)
+                        .GenericTypeArguments[2];
 
                     configureEntityBehaviorITranslatable
-                        .MakeGenericMethod(entityType.ClrType, entityTranslationType, identifierType)
+                        .MakeGenericMethod(entityType.ClrType, entityTranslationType, identifierType, localeType)
                         .Invoke(null, args);
                 }
 
@@ -316,9 +353,9 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         }
 
         protected internal Expression<Func<TEntity, bool>> CreateSoftDeletableQueryFilter<TEntity,
-            TEntityUserIdentifierType>()
-            where TEntity : class, ISoftDeletable<TEntityUserIdentifierType>
-            where TEntityUserIdentifierType : struct
+            TUserIdentifierType>()
+            where TEntity : class, ISoftDeletable<TUserIdentifierType>
+            where TUserIdentifierType : struct
         {
             Expression<Func<TEntity, bool>> softDeletableQueryFilter =
                 e => !e.IsDeleted || e.IsDeleted != IsSoftDeletableQueryFilterEnabled;
@@ -326,14 +363,27 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         }
 
         protected internal Expression<Func<TEntity, bool>> CreateTenantScopableQueryFilter<TEntity,
-            TEntityTenantIdentifierType>()
-            where TEntity : class, ITenantScopable<TEntityTenantIdentifierType>
-            where TEntityTenantIdentifierType : struct
+            TTenantIdentifierType>()
+            where TEntity : class, ITenantScopable<TTenantIdentifierType>
+            where TTenantIdentifierType : struct
         {
             Expression<Func<TEntity, bool>> tenantScopableQueryFilter = e =>
-                e.TenantId.Equals(CurrentTenantIdentifier<TEntityTenantIdentifierType>()) ||
-                e.TenantId.Equals(CurrentTenantIdentifier<TEntityTenantIdentifierType>()) ==
+                e.TenantId.Equals(CurrentTenantIdentifier<TTenantIdentifierType>()) ||
+                e.TenantId.Equals(CurrentTenantIdentifier<TTenantIdentifierType>()) ==
                 IsTenantScopableQueryFilterEnabled;
+
+            return tenantScopableQueryFilter;
+        }
+
+        protected internal Expression<Func<TEntity, bool>> CreateLocalizationQueryFilter<TEntity,
+            TLocaleIdentifierType>()
+            where TEntity : class, ILocalizable<TLocaleIdentifierType>
+            where TLocaleIdentifierType : IConvertible
+        {
+            Expression<Func<TEntity, bool>> tenantScopableQueryFilter = e =>
+                e.LocaleId.Equals(CurrentLocaleIdentifier<TLocaleIdentifierType>()) ||
+                e.LocaleId.Equals(CurrentLocaleIdentifier<TLocaleIdentifierType>()) ==
+                IsLocalizationQueryFilterEnabled;
 
             return tenantScopableQueryFilter;
         }

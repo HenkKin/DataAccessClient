@@ -1,12 +1,16 @@
-﻿namespace DataAccessClient.EntityBehaviors
+﻿using System;
+
+namespace DataAccessClient.EntityBehaviors
 {
     /// <summary>
     /// DO NOT USE this interface. It is only used as marker interface for ITranslatable generic where clause
     /// </summary>
-    public interface IEntityTranslation<TIdentifierType> where TIdentifierType : struct
+    public interface IEntityTranslation<TIdentifierType, TLocaleIdentifierType> 
+        where TIdentifierType : struct
+        where TLocaleIdentifierType : IConvertible
     {
         TIdentifierType TranslatedEntityId { get; set; }
-        string Language { get; set; }
+        TLocaleIdentifierType LocaleId { get; set; }
     }
 
     /// <summary>
@@ -14,9 +18,11 @@
     /// </summary>
     /// <typeparam name="TEntity"></typeparam>
     /// <typeparam name="TIdentifierType"></typeparam>
-    public interface IEntityTranslation<TEntity, TIdentifierType> : IEntityTranslation<TIdentifierType>
-            where TEntity : class
-            where TIdentifierType : struct
+    /// <typeparam name="TLocaleIdentifierType"></typeparam>
+    public interface IEntityTranslation<TEntity, TIdentifierType, TLocaleIdentifierType> : IEntityTranslation<TIdentifierType, TLocaleIdentifierType>
+        where TEntity : class
+        where TIdentifierType : struct
+        where TLocaleIdentifierType : IConvertible
     {
         TEntity TranslatedEntity { get; set; }
     }

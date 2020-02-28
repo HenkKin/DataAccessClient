@@ -46,6 +46,17 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             return entity;
         }
 
+        internal static EntityTypeBuilder<TEntity> IsLocalizable<TEntity, TIdentifierType>(this EntityTypeBuilder<TEntity> entity, Expression<Func<TEntity, bool>> queryFilter)
+            where TEntity : class, ILocalizable<TIdentifierType>
+            where TIdentifierType : IConvertible
+        {
+            entity.Property(e => e.LocaleId).IsRequired();
+
+            entity.AppendQueryFilter(queryFilter);
+
+            return entity;
+        }
+
         internal static EntityTypeBuilder<TEntity> IsRowVersionable<TEntity>(this EntityTypeBuilder<TEntity> entity)
             where TEntity : class, IRowVersionable
         {
@@ -71,10 +82,11 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             return entity;
         }
 
-        internal static EntityTypeBuilder<TEntity> IsTranslatable<TEntity, TEntityTranslation, TIdentifierType>(this EntityTypeBuilder<TEntity> entity)
-            where TEntity : class, ITranslatable<TEntityTranslation, TIdentifierType>
-            where TEntityTranslation : class, IEntityTranslation<TEntity, TIdentifierType>
+        internal static EntityTypeBuilder<TEntity> IsTranslatable<TEntity, TEntityTranslation, TIdentifierType, TLocaleIdentifierType>(this EntityTypeBuilder<TEntity> entity)
+            where TEntity : class, ITranslatable<TEntityTranslation, TIdentifierType, TLocaleIdentifierType>
+            where TEntityTranslation : class, IEntityTranslation<TEntity, TIdentifierType, TLocaleIdentifierType>
             where TIdentifierType : struct
+            where TLocaleIdentifierType : IConvertible
         {
             entity.HasMany(x => x.Translations)
                 .WithOne(x => x.TranslatedEntity)
@@ -83,19 +95,20 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             return entity;
         }
 
-        internal static EntityTypeBuilder<TEntity> IsEntityTranslation<TEntity, TTranslatableEntity, TIdentifierType>(this EntityTypeBuilder<TEntity> entity)
-            where TEntity : class, IEntityTranslation<TTranslatableEntity, TIdentifierType>
-            where TTranslatableEntity : class, ITranslatable<TEntity, TIdentifierType>
+        internal static EntityTypeBuilder<TEntity> IsEntityTranslation<TEntity, TTranslatableEntity, TIdentifierType, TLocaleIdentifierType>(this EntityTypeBuilder<TEntity> entity)
+            where TEntity : class, IEntityTranslation<TTranslatableEntity, TIdentifierType, TLocaleIdentifierType>
+            where TTranslatableEntity : class, ITranslatable<TEntity, TIdentifierType, TLocaleIdentifierType>
             where TIdentifierType : struct
+            where TLocaleIdentifierType : IConvertible
         {
             entity.HasOne(x => x.TranslatedEntity)
                 .WithMany(x => x.Translations)
                 .HasForeignKey(x => x.TranslatedEntityId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasKey(e => new { e.TranslatedEntityId, e.Language });
+            entity.HasKey(e => new { e.TranslatedEntityId, Language = e.LocaleId });
             entity.Property(e => e.TranslatedEntityId).IsRequired();
-            entity.Property(e => e.Language).IsRequired();
+            entity.Property(e => e.LocaleId).IsRequired();
 
             return entity;
         }
@@ -103,18 +116,23 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         internal static EntityTypeBuilder<TEntity> HasTranslatedProperties<TEntity>(this EntityTypeBuilder<TEntity> entity)
             where TEntity : class
         {
-            var translatedProperties = typeof(TEntity).GetProperties().Where(p => p.PropertyType == typeof(TranslatedProperty));
+            var translatedProperties = typeof(TEntity).GetProperties().Where(p => p.PropertyType.IsGenericType && p.PropertyType.GetGenericTypeDefinition() == typeof(TranslatedProperty<>));
             foreach (var translatedProperty in translatedProperties)
             {
-                entity.OwnsOne<TranslatedProperty>(translatedProperty.Name, translatedPropertyBuilder =>
+                var localeIdentifierType = translatedProperty.PropertyType.GenericTypeArguments[0];
+                var ownsOneType = typeof(TranslatedProperty<>).MakeGenericType(localeIdentifierType);
+                entity.OwnsOne(ownsOneType, translatedProperty.Name, translatedPropertyBuilder =>
                 {
-                    translatedPropertyBuilder.OwnsMany(x => x.Translations, builder =>
-                    {
-                        builder.ToTable(typeof(TEntity).Name + "_" + translatedProperty.Name + nameof(TranslatedProperty.Translations));
-                        builder.WithOwner().HasForeignKey("OwnerId");
-                        builder.Property(x => x.Language).IsRequired();
-                        builder.Property(x => x.Translation).IsRequired();
-                    });
+                    var propertyTranslationType = typeof(PropertyTranslation<>).MakeGenericType(localeIdentifierType);
+                    translatedPropertyBuilder.OwnsMany(propertyTranslationType,
+                        nameof(TranslatedProperty<int>.Translations), builder =>
+                        {
+                            builder.ToTable(typeof(TEntity).Name + "_" + translatedProperty.Name + nameof(TranslatedProperty<int>.Translations));
+                            builder.WithOwner().HasForeignKey("OwnerId");
+                            builder.Property(nameof(PropertyTranslation<int>.LocaleId)).IsRequired();
+                            builder.Property(nameof(PropertyTranslation<int>.Translation)).IsRequired();
+                        }
+                    );
                 });
             }
 

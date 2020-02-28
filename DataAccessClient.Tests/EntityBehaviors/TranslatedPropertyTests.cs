@@ -11,11 +11,11 @@ namespace DataAccessClient.Tests.EntityBehaviors
         public void WhenPropertyTranslationIsSet_ItShouldHaveValues()
         {
             // Arrange
-            var translatedProperty = new TranslatedProperty();
-            var propertyTranslation = new PropertyTranslation();
+            var translatedProperty = new TranslatedProperty<string>();
+            var propertyTranslation = new PropertyTranslation<string>();
             
             // Act
-            translatedProperty.Translations = new List<PropertyTranslation>{ propertyTranslation };
+            translatedProperty.Translations = new List<PropertyTranslation<string>>{ propertyTranslation };
 
             // Assert
             Assert.Same(propertyTranslation, translatedProperty.Translations.Single());

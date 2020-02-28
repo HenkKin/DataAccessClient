@@ -47,13 +47,23 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
             return modelBuilder;
         }
-        
+
         internal static ModelBuilder ConfigureEntityBehaviorITenantScopable<TEntity, TIdentifierType>(ModelBuilder modelBuilder, Expression<Func<TEntity, bool>> queryFilter)
             where TEntity : class, ITenantScopable<TIdentifierType>
             where TIdentifierType : struct
         {
             modelBuilder.Entity<TEntity>()
                 .IsTenantScopable<TEntity, TIdentifierType>(queryFilter);
+
+            return modelBuilder;
+        }
+
+        internal static ModelBuilder ConfigureEntityBehaviorILocalizable<TEntity, TIdentifierType>(ModelBuilder modelBuilder, Expression<Func<TEntity, bool>> queryFilter)
+            where TEntity : class, ILocalizable<TIdentifierType>
+            where TIdentifierType : IConvertible
+        {
+            modelBuilder.Entity<TEntity>()
+                .IsLocalizable<TEntity, TIdentifierType>(queryFilter);
 
             return modelBuilder;
         }
@@ -68,17 +78,18 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         }
 
 
-        internal static ModelBuilder ConfigureEntityBehaviorITranslatable<TEntity, TEntityTranslation, TIdentifierType>(
+        internal static ModelBuilder ConfigureEntityBehaviorITranslatable<TEntity, TEntityTranslation, TIdentifierType, TLocaleIdentifierType>(
             ModelBuilder modelBuilder)
-            where TEntity : class, ITranslatable<TEntityTranslation, TIdentifierType>
-            where TEntityTranslation : class, IEntityTranslation<TEntity, TIdentifierType>
+            where TEntity : class, ITranslatable<TEntityTranslation, TIdentifierType, TLocaleIdentifierType>
+            where TEntityTranslation : class, IEntityTranslation<TEntity, TIdentifierType, TLocaleIdentifierType>
             where TIdentifierType : struct
+            where TLocaleIdentifierType : IConvertible
         {
             modelBuilder.Entity<TEntity>()
-                .IsTranslatable<TEntity, TEntityTranslation, TIdentifierType>();
+                .IsTranslatable<TEntity, TEntityTranslation, TIdentifierType, TLocaleIdentifierType>();
 
             modelBuilder.Entity<TEntityTranslation>()
-                .IsEntityTranslation<TEntityTranslation, TEntity, TIdentifierType>();
+                .IsEntityTranslation<TEntityTranslation, TEntity, TIdentifierType, TLocaleIdentifierType>();
 
             return modelBuilder;
         }

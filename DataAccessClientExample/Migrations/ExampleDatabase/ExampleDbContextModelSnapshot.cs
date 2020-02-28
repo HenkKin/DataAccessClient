@@ -15,7 +15,7 @@ namespace DataAccessClientExample.Migrations.ExampleDatabase
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "3.1.1")
+                .HasAnnotation("ProductVersion", "3.1.2")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
@@ -68,13 +68,13 @@ namespace DataAccessClientExample.Migrations.ExampleDatabase
                     b.Property<int>("TranslatedEntityId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Language")
+                    b.Property<string>("LocaleId")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("TranslatedEntityId", "Language");
+                    b.HasKey("TranslatedEntityId", "LocaleId");
 
                     b.ToTable("ExampleEntityTranslation");
                 });

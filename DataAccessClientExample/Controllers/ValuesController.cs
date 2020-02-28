@@ -15,6 +15,7 @@ namespace DataAccessClientExample.Controllers
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IRepository<ExampleEntity> _exampleEntityRepository;
+        private readonly IRepository<ExampleEntityView> _exampleEntityViewRepository;
         private readonly IRepository<ExampleSecondEntity> _exampleSecondEntityRepository;
         private readonly IQueryableSearcher<ExampleEntity> _exampleEntityQueryableSearcher;
         private readonly IQueryableSearcher<ExampleSecondEntity> _exampleSecondEntityQueryableSearcher;
@@ -24,6 +25,7 @@ namespace DataAccessClientExample.Controllers
         public ValuesController(
             IUnitOfWork unitOfWork, 
             IRepository<ExampleEntity> exampleEntityRepository, 
+            IRepository<ExampleEntityView> exampleEntityViewRepository,
             IRepository<ExampleSecondEntity> exampleSecondEntityRepository, 
             IQueryableSearcher<ExampleEntity> exampleEntityQueryableSearcher, 
             IQueryableSearcher<ExampleSecondEntity> exampleSecondEntityQueryableSearcher,
@@ -32,6 +34,7 @@ namespace DataAccessClientExample.Controllers
         {
             _unitOfWork = unitOfWork;
             _exampleEntityRepository = exampleEntityRepository;
+            _exampleEntityViewRepository = exampleEntityViewRepository;
             _exampleSecondEntityRepository = exampleSecondEntityRepository;
             _exampleEntityQueryableSearcher = exampleEntityQueryableSearcher;
             _exampleSecondEntityQueryableSearcher = exampleSecondEntityQueryableSearcher;
@@ -48,8 +51,8 @@ namespace DataAccessClientExample.Controllers
                 Name = "Henk Kin"
             };
 
-            var exampleEntity2TranslationNlNl = new ExampleEntityTranslation { Description = "Omschrijving", Language = "nl-NL" };
-            var exampleEntity2TranslationEnGb = new ExampleEntityTranslation { Description = "Description", Language = "en-GB" };
+            var exampleEntity2TranslationNlNl = new ExampleEntityTranslation { Description = "Omschrijving", LocaleId = "nl-NL" };
+            var exampleEntity2TranslationEnGb = new ExampleEntityTranslation { Description = "Description", LocaleId = "en-GB" };
             var exampleEntity2 = new ExampleEntity
             {
                 Name = "Kin Henk",
@@ -79,7 +82,7 @@ namespace DataAccessClientExample.Controllers
             await _unitOfWork.SaveAsync();
 
             exampleEntity2TranslationNlNl.Description += " geupdated";
-            exampleEntity2.Translations.Add(new ExampleEntityTranslation{ Description = "Comment", Language = "fr-FR"});
+            exampleEntity2.Translations.Add(new ExampleEntityTranslation{ Description = "Comment", LocaleId = "fr-FR"});
             exampleEntity2.Name = "Updated example";
 
             exampleSecondEntity2.Name = "Updated example second";
@@ -196,11 +199,28 @@ namespace DataAccessClientExample.Controllers
             }
             bool afterIsQueryFilterEnabled = _softDeletableConfiguration.IsQueryFilterEnabled;
 
-            return Json(new { exampleEntitiesSearchResults, exampleSecondEntitiesSearchResults,
+            return Json(new
+            {
+                exampleEntitiesSearchResults,
+                exampleSecondEntitiesSearchResults,
                 BeforeIsQueryFilterEnabled = beforeIsQueryFilterEnabled,
                 DuringIsQueryFilterEnabled = duringIsQueryFilterEnabled,
                 AfterIsQueryFilterEnabled = afterIsQueryFilterEnabled
             });
+
+        }
+
+        [Route("test-view")]
+        [HttpGet]
+        public async Task<IActionResult> TestView()
+        {
+            var exampleEntities = await _exampleEntityRepository.GetReadOnlyQuery()
+                .ToListAsync();
+
+            var exampleEntityViews = await _exampleEntityViewRepository.GetReadOnlyQuery()
+                .ToListAsync();
+
+            return Json(new { exampleEntities, exampleEntityViews });
 
         }
     }

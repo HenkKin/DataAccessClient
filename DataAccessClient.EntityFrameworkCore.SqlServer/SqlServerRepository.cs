@@ -20,16 +20,15 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         public SqlServerRepository(ISqlServerDbContextResolver<TDbContext> sqlServerDbContextResolver)
         {
             DbContext = sqlServerDbContextResolver.Execute() ?? throw new ArgumentNullException(nameof(sqlServerDbContextResolver));
-        
             DbSet = DbContext.Set<TEntity>();
-            _primaryKeyProperty = DbContext.Model.FindEntityType(typeof(TEntity)).FindPrimaryKey().Properties.Single().PropertyInfo;
+            _primaryKeyProperty = DbContext.Model.FindEntityType(typeof(TEntity)).FindPrimaryKey()?.Properties?.SingleOrDefault()?.PropertyInfo;
         }
 
         public IQueryable<TEntity> GetReadOnlyQuery()
         {
             return DbSet.AsNoTracking();
         }
-
+        
         public IQueryable<TEntity> GetChangeTrackingQuery()
         {
             return DbSet.AsTracking();

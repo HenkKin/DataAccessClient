@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace DataAccessClient.EntityBehaviors
 {
@@ -7,9 +8,12 @@ namespace DataAccessClient.EntityBehaviors
     /// </summary>
     /// <typeparam name="TEntityTranslation"></typeparam>
     /// <typeparam name="TIdentifierType"></typeparam>
-    public interface ITranslatable<TEntityTranslation, TIdentifierType>
-        where TEntityTranslation : class, IEntityTranslation<TIdentifierType>
+    /// <typeparam name="TLocaleIdentifierType"></typeparam>
+    public interface ITranslatable<TEntityTranslation, TIdentifierType, TLocaleIdentifierType>
+        where TEntityTranslation : class, IEntityTranslation<TIdentifierType, TLocaleIdentifierType>
         where TIdentifierType : struct
+        where TLocaleIdentifierType : IConvertible
+
     {
         ICollection<TEntityTranslation> Translations { get; set; }
     }

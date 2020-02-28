@@ -1,9 +1,9 @@
 ﻿using System;
 using DataAccessClient.EntityBehaviors;
 
-namespace DataAccessClientExample.DataLayer
+namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestModels
 {
-    public class ExampleSecondEntity : IIdentifiable<int>, ICreatable<int>, IModifiable<int>, ISoftDeletable<int>, IRowVersionable, ITenantScopable<int>
+    public class TestEntityView : ILocalizable<string>//  : ISoftDeletable<int>, IRowVersionable, ITenantScopable<int>, ILocalizable<string>
     {
         public int Id { get; set; }
         public DateTime CreatedOn { get; set; }
@@ -15,8 +15,8 @@ namespace DataAccessClientExample.DataLayer
         public int? DeletedById { get; set; }
         public byte[] RowVersion { get; set; }
         public string Name { get; set; }
-        public TranslatedProperty<string> Description { get; set; }
-        public TranslatedProperty<string> Code { get; set; }
         public int TenantId { get; set; }
+        public string LocaleId { get; set; }
+        public string Description { get; set; }
     }
 }

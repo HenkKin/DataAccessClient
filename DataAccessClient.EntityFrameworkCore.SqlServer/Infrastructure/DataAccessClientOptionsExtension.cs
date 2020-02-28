@@ -14,6 +14,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure
 
         public Type UserIdentifierType { get; private set; }
         public Type TenantIdentifierType { get; private set; }
+        public Type LocaleIdentifierType { get; private set; }
 
         public DataAccessClientOptionsExtension WithUserIdentifierType(Type userIdentifierType)
         {
@@ -28,6 +29,13 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure
             return clone;
         }
 
+        public DataAccessClientOptionsExtension WithLocaleIdentifierType(Type localeIdentifierType)
+        {
+            var clone = Clone();
+            clone.LocaleIdentifierType = localeIdentifierType;
+            return clone;
+        }
+
         public DataAccessClientOptionsExtension()
         {
         }
@@ -36,6 +44,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure
         {
             UserIdentifierType = copyFrom.UserIdentifierType;
             TenantIdentifierType = copyFrom.TenantIdentifierType;
+            LocaleIdentifierType = copyFrom.LocaleIdentifierType;
         }
 
         public virtual DbContextOptionsExtensionInfo Info
@@ -57,6 +66,11 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure
             if (TenantIdentifierType == null)
             {
                 throw new InvalidOperationException($"{nameof(TenantIdentifierType)} is not set");
+            }
+
+            if (LocaleIdentifierType == null)
+            {
+                throw new InvalidOperationException($"{nameof(LocaleIdentifierType)} is not set");
             }
         }
 
@@ -93,6 +107,11 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure
                             builder.Append($"{nameof(Extension.TenantIdentifierType)}={Extension.TenantIdentifierType.FullName}; ");
                         }
 
+                        if (Extension.LocaleIdentifierType != null)
+                        {
+                            builder.Append($"{nameof(Extension.LocaleIdentifierType)}={Extension.LocaleIdentifierType.FullName}; ");
+                        }
+
                         _logFragment = builder.ToString();
                     }
 
@@ -107,6 +126,8 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure
                     (Extension.UserIdentifierType?.GetHashCode() ?? 0L).ToString(CultureInfo.InvariantCulture);
                 debugInfo["DataAccessClient:" + nameof(TenantIdentifierType)] =
                     Extension.TenantIdentifierType.GetHashCode().ToString(CultureInfo.InvariantCulture);
+                debugInfo["DataAccessClient:" + nameof(LocaleIdentifierType)] =
+                    Extension.LocaleIdentifierType.GetHashCode().ToString(CultureInfo.InvariantCulture);
             }
 
             public override long GetServiceProviderHashCode()
@@ -115,6 +136,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure
                 {
                     var hashCode = Extension.UserIdentifierType?.GetHashCode() ?? 0L;
                     hashCode = (hashCode * 3) ^ Extension.TenantIdentifierType.GetHashCode();
+                    hashCode = (hashCode * 3) ^ Extension.LocaleIdentifierType.GetHashCode();
 
                     _serviceProviderHash = hashCode;
                 }

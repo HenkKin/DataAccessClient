@@ -1,15 +1,19 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace DataAccessClient.EntityBehaviors
 {
-    public class TranslatedProperty
+    public class TranslatedProperty<TLocaleIdentifierType>
+        where TLocaleIdentifierType : IConvertible
     {
-        public ICollection<PropertyTranslation> Translations { get; set; } = new List<PropertyTranslation>();
+        public ICollection<PropertyTranslation<TLocaleIdentifierType>> Translations { get; set; } = new List<PropertyTranslation<TLocaleIdentifierType>>();
     }
 
-    public class PropertyTranslation
+    public class PropertyTranslation<TLocaleIdentifierType>
+        where TLocaleIdentifierType : IConvertible
+
     {
         public string Translation { get; set; }
-        public string Language { get; set; }
+        public TLocaleIdentifierType LocaleId { get; set; }
     }
 }

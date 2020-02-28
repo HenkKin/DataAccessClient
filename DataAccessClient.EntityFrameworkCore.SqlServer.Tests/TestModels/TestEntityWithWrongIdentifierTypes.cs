@@ -14,7 +14,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestModels
         public DateTime? DeletedOn { get; set; }
         public long? DeletedById { get; set; }
         public byte[] RowVersion { get; set; }
-        public TranslatedProperty Name { get; set; }
+        public TranslatedProperty<string> Name { get; set; }
         public long TenantId { get; set; }
         public string Description { get; set; }
 

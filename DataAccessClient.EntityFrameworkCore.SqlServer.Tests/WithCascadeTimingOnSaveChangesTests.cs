@@ -17,6 +17,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             services.AddDbContext<TestDbContext>(builder => builder
                 .WithUserIdentifierType(typeof(int))
                 .WithTenantIdentifierType(typeof(int))
+                .WithLocaleIdentifierType(typeof(string))
                 .UseInMemoryDatabase(nameof(WhenWorkIsDoneWithCascadeTimingOnSaveChanges_ItShouldResetToCascadeTimingImmediate))
             );
 

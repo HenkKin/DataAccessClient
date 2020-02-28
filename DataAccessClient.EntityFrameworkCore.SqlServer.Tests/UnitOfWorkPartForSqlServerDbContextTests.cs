@@ -21,6 +21,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             var options = new DbContextOptionsBuilder<TestDbContext>()
                 .WithUserIdentifierType(typeof(int))
                 .WithTenantIdentifierType(typeof(int))
+                .WithLocaleIdentifierType(typeof(string))
                 .Options;
 
             var testDbContextMock = mockRepository.Create<TestDbContext>(options);
@@ -57,6 +58,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             var options = new DbContextOptionsBuilder<TestDbContext>()
                 .WithUserIdentifierType(typeof(int))
                 .WithTenantIdentifierType(typeof(int))
+                .WithLocaleIdentifierType(typeof(string))
                 .UseInMemoryDatabase(databaseName: "Reset_WhenCalled_ItShouldCallSaveChangesAsyncOnDbContext")
                 .UseApplicationServiceProvider(serviceProviderMock.Object)
                 .Options;
@@ -96,6 +98,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             var options = new DbContextOptionsBuilder<TestDbContext>()
                 .WithUserIdentifierType(typeof(int))
                 .WithTenantIdentifierType(typeof(int))
+                .WithLocaleIdentifierType(typeof(string))
                 .UseInMemoryDatabase(databaseName: "Reset_WhenCalled_ItShouldCallSaveChangesAsyncOnDbContext")
                 .UseApplicationServiceProvider(serviceProviderMock.Object)
                 .Options;
@@ -103,7 +106,8 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             var testDbContext = new TestDbContext(options);
             var testUserIdentifierProvider = new TestUserIdentifierProvider();
             var testTenantIdentifierProvider = new TestTenantIdentifierProvider();
-            testDbContext.Initialize(()=> testUserIdentifierProvider.Execute(), ()=> testTenantIdentifierProvider.Execute(), new DefaultSoftDeletableConfiguration(), new DefaultMultiTenancyConfiguration());
+            var testLocaleIdentifierProvider = new TestLocaleIdentifierProvider();
+            testDbContext.Initialize(()=> testUserIdentifierProvider.Execute(), ()=> testTenantIdentifierProvider.Execute(), () => testLocaleIdentifierProvider.Execute(), new DefaultSoftDeletableConfiguration(), new DefaultMultiTenancyConfiguration(), new DefaultLocalizationConfiguration());
             testDbContextResolverMock.Setup(x => x.Execute())
                 .Returns(testDbContext);
 

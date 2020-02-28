@@ -32,11 +32,12 @@ namespace DataAccessClientExample
 
             services.AddScoped<IUserIdentifierProvider<int>, ExampleUserIdentifierProvider>();
             services.AddScoped<ITenantIdentifierProvider<int>, ExampleTenantIdentifierProvider>();
+            services.AddScoped<ILocaleIdentifierProvider<string>, ExampleLocaleIdentifierProvider>();
 
 
             services.AddDataAccessClient<ExampleDbContext>(conf => conf
                     .UsePooling(true)
-                    .ConfigureEntityTypes(new[] { typeof(ExampleEntity) })
+                    .ConfigureEntityTypes(new[] { typeof(ExampleEntity), typeof(ExampleEntityView) })
                     .ConfigureDbContextOptions(builder => builder
                         .EnableSensitiveDataLogging()
                         .EnableDetailedErrors()

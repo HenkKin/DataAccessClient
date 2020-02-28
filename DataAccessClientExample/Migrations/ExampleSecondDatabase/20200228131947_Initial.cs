@@ -37,7 +37,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                     Id = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Translation = table.Column<string>(nullable: false),
-                    Language = table.Column<string>(nullable: false)
+                    LocaleId = table.Column<string>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -58,7 +58,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                     Id = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Translation = table.Column<string>(nullable: false),
-                    Language = table.Column<string>(nullable: false)
+                    LocaleId = table.Column<string>(nullable: false)
                 },
                 constraints: table =>
                 {

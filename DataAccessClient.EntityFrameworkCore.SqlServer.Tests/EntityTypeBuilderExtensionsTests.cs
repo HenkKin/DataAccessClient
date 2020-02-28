@@ -123,6 +123,42 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             Assert.Equal("Param_0 => (Param_0.TenantId == 1)", tenantQueryFilter.ToString());
         }
 
+
+
+        [Fact]
+        public void IsLocalizable_WhenNotCalled_ItShouldHaveNoConfiguration()
+        {
+            // Arrange
+            var entityType = new EntityType(typeof(TestEntity), new Model(new ConventionSet()), ConfigurationSource.Explicit);
+
+            // Act
+            var result = new EntityTypeBuilder<TestEntityView>(entityType);
+
+            // Assert
+            Assert.Null(result.Metadata.FindProperty(nameof(ILocalizable<string>.LocaleId)));
+
+            Assert.Null(result.Metadata.GetQueryFilter());
+        }
+
+        [Fact]
+        public void IsLocalizable_WhenCalled_ItShouldSetLocalizableConfiguration()
+        {
+            // Arrange
+            var entityType = new EntityType(typeof(TestEntityView), new Model(new ConventionSet()), ConfigurationSource.Explicit);
+            var entityTypeBuilder = new EntityTypeBuilder<TestEntityView>(entityType);
+
+            // Act
+            var result = EntityTypeBuilderExtensions.IsLocalizable<TestEntityView, string>(entityTypeBuilder, x => x.LocaleId == "nl-NL");
+
+            // Assert
+            var localeId = result.Metadata.FindProperty(nameof(ILocalizable<string>.LocaleId));
+            Assert.Equal(nameof(ILocalizable<string>.LocaleId), localeId.Name);
+            Assert.False(localeId.IsNullable);
+
+            var localeQueryFilter = result.Metadata.GetQueryFilter();
+            Assert.Equal("Param_0 => (Param_0.LocaleId == \"nl-NL\")", localeQueryFilter.ToString());
+        }
+
         [Fact]
         public void IsCreatable_WhenNotCalled_ItShouldHaveNoConfiguration()
         {
@@ -231,7 +267,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             var result = new EntityTypeBuilder<TestEntity>(entityType);
 
             // Assert
-            Assert.Null(result.Metadata.FindNavigation(nameof(ITranslatable<TestEntityTranslation, int>.Translations)));
+            Assert.Null(result.Metadata.FindNavigation(nameof(ITranslatable<TestEntityTranslation, int, string>.Translations)));
         }
 
         [Fact]
@@ -242,10 +278,10 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             var entityTypeBuilder = new EntityTypeBuilder<TestEntity>(entityType);
 
             // Act
-            var result = EntityTypeBuilderExtensions.IsTranslatable<TestEntity, TestEntityTranslation, int>(entityTypeBuilder);
+            var result = EntityTypeBuilderExtensions.IsTranslatable<TestEntity, TestEntityTranslation, int, string>(entityTypeBuilder);
 
             // Assert
-            Assert.NotNull(result.Metadata.FindNavigation(nameof(ITranslatable<TestEntityTranslation, int>.Translations)));
+            Assert.NotNull(result.Metadata.FindNavigation(nameof(ITranslatable<TestEntityTranslation, int, string>.Translations)));
         }
 
 
@@ -259,8 +295,8 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             var result = new EntityTypeBuilder<TestEntityTranslation>(entityType);
 
             // Assert
-            Assert.Null(result.Metadata.FindProperty(nameof(IEntityTranslation<int>.TranslatedEntityId)));
-            Assert.Null(result.Metadata.FindProperty(nameof(IEntityTranslation<int>.Language)));
+            Assert.Null(result.Metadata.FindProperty(nameof(IEntityTranslation<int, string>.TranslatedEntityId)));
+            Assert.Null(result.Metadata.FindProperty(nameof(IEntityTranslation<int, string>.LocaleId)));
             Assert.Null(result.Metadata.FindPrimaryKey());
         }
 
@@ -272,15 +308,15 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             var entityTypeBuilder = new EntityTypeBuilder<TestEntityTranslation>(entityType);
 
             // Act
-            var result = EntityTypeBuilderExtensions.IsEntityTranslation<TestEntityTranslation, TestEntity, int>(entityTypeBuilder);
+            var result = EntityTypeBuilderExtensions.IsEntityTranslation<TestEntityTranslation, TestEntity, int, string>(entityTypeBuilder);
 
             // Assert
-            Assert.NotNull(result.Metadata.FindProperty(nameof(IEntityTranslation<int>.TranslatedEntityId)));
-            Assert.NotNull(result.Metadata.FindProperty(nameof(IEntityTranslation<int>.Language)));
+            Assert.NotNull(result.Metadata.FindProperty(nameof(IEntityTranslation<int, string>.TranslatedEntityId)));
+            Assert.NotNull(result.Metadata.FindProperty(nameof(IEntityTranslation<int, string>.LocaleId)));
 
             Assert.Equal(2, result.Metadata.FindPrimaryKey().Properties.Count);
-            Assert.Contains(result.Metadata.FindPrimaryKey().Properties, x => x.Name == nameof(IEntityTranslation<TestEntity, int>.TranslatedEntityId));
-            Assert.Contains(result.Metadata.FindPrimaryKey().Properties, x => x.Name == nameof(IEntityTranslation<TestEntity, int>.Language));
+            Assert.Contains(result.Metadata.FindPrimaryKey().Properties, x => x.Name == nameof(IEntityTranslation<TestEntity, int, string>.TranslatedEntityId));
+            Assert.Contains(result.Metadata.FindPrimaryKey().Properties, x => x.Name == nameof(IEntityTranslation<TestEntity, int, string>.LocaleId));
         }
 
 
@@ -306,11 +342,11 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             var entityTypeBuilder = new EntityTypeBuilder<TestEntity>(entityType);
 
             // Act
-            var result = EntityTypeBuilderExtensions.HasTranslatedProperties(entityTypeBuilder);
+            var result = EntityTypeBuilderExtensions.HasTranslatedProperties<TestEntity>(entityTypeBuilder);
 
             // Assert
             Assert.NotNull(result.Metadata.FindNavigation(nameof(TestEntity.Name)));
-            Assert.Equal(typeof(TranslatedProperty),result.Metadata.FindNavigation(nameof(TestEntity.Name)).ForeignKey.PrincipalToDependent.ClrType);
+            Assert.Equal(typeof(TranslatedProperty<string>),result.Metadata.FindNavigation(nameof(TestEntity.Name)).ForeignKey.PrincipalToDependent.ClrType);
         }
 
         [Fact]

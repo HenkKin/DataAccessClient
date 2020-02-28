@@ -15,7 +15,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "3.1.1")
+                .HasAnnotation("ProductVersion", "3.1.2")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
@@ -65,7 +65,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
 
             modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleSecondEntity", b =>
                 {
-                    b.OwnsOne("DataAccessClient.EntityBehaviors.TranslatedProperty", "Code", b1 =>
+                    b.OwnsOne("DataAccessClient.EntityBehaviors.TranslatedProperty<string>", "Code", b1 =>
                         {
                             b1.Property<int>("ExampleSecondEntityId")
                                 .ValueGeneratedOnAdd()
@@ -79,7 +79,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                             b1.WithOwner()
                                 .HasForeignKey("ExampleSecondEntityId");
 
-                            b1.OwnsMany("DataAccessClient.EntityBehaviors.PropertyTranslation", "Translations", b2 =>
+                            b1.OwnsMany("DataAccessClient.EntityBehaviors.PropertyTranslation<string>", "Translations", b2 =>
                                 {
                                     b2.Property<int>("OwnerId")
                                         .HasColumnType("int");
@@ -89,7 +89,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                                         .HasColumnType("int")
                                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                                    b2.Property<string>("Language")
+                                    b2.Property<string>("LocaleId")
                                         .IsRequired()
                                         .HasColumnType("nvarchar(max)");
 
@@ -106,7 +106,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                                 });
                         });
 
-                    b.OwnsOne("DataAccessClient.EntityBehaviors.TranslatedProperty", "Description", b1 =>
+                    b.OwnsOne("DataAccessClient.EntityBehaviors.TranslatedProperty<string>", "Description", b1 =>
                         {
                             b1.Property<int>("ExampleSecondEntityId")
                                 .ValueGeneratedOnAdd()
@@ -120,7 +120,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                             b1.WithOwner()
                                 .HasForeignKey("ExampleSecondEntityId");
 
-                            b1.OwnsMany("DataAccessClient.EntityBehaviors.PropertyTranslation", "Translations", b2 =>
+                            b1.OwnsMany("DataAccessClient.EntityBehaviors.PropertyTranslation<string>", "Translations", b2 =>
                                 {
                                     b2.Property<int>("OwnerId")
                                         .HasColumnType("int");
@@ -130,7 +130,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                                         .HasColumnType("int")
                                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                                    b2.Property<string>("Language")
+                                    b2.Property<string>("LocaleId")
                                         .IsRequired()
                                         .HasColumnType("nvarchar(max)");
 

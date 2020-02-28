@@ -24,21 +24,24 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
             var userIdentifierType = services.GetUserIdentifierType() ?? typeof(int);
             var tenantIdentifierType = services.GetTenantIdentifierType() ?? typeof(int);
-            
+            var localeIdentifierType = services.GetLocaleIdentifierType() ?? typeof(string);
+
             var dataAccessClientOptions = dataAccessClientOptionsBuilder.Options;
 
-            services.ValidateDataAccessClientOptions(dataAccessClientOptions, userIdentifierType, tenantIdentifierType);
+            services.ValidateDataAccessClientOptions(dataAccessClientOptions, userIdentifierType, tenantIdentifierType, localeIdentifierType);
 
             void ExtendedDbContextOptionsBuilder(DbContextOptionsBuilder dbContextOptionsBuilder)
             {
                 dbContextOptionsBuilder.WithTenantIdentifierType(tenantIdentifierType);
                 dbContextOptionsBuilder.WithUserIdentifierType(userIdentifierType);
+                dbContextOptionsBuilder.WithLocaleIdentifierType(localeIdentifierType);
 
                 dataAccessClientOptions.DbContextOptionsBuilder(dbContextOptionsBuilder);
             }
 
             services.TryAddScoped<ISoftDeletableConfiguration, DefaultSoftDeletableConfiguration>();
             services.TryAddScoped<IMultiTenancyConfiguration, DefaultMultiTenancyConfiguration>();
+            services.TryAddScoped<ILocalizationConfiguration, DefaultLocalizationConfiguration>();
 
             if (ContainsEntityBehaviors(dataAccessClientOptions.EntityTypes, new[] { typeof(ISoftDeletable<>) }))
             {
@@ -48,6 +51,11 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             if (ContainsEntityBehaviors(dataAccessClientOptions.EntityTypes, new[] { typeof(ITenantScopable<>) }))
             {
                 services.RequireRegistrationFor<IMultiTenancyConfiguration>(ServiceLifetime.Scoped);
+            }
+
+            if (ContainsEntityBehaviors(dataAccessClientOptions.EntityTypes, new[] { typeof(ILocalizable<>) }))
+            {
+                services.RequireRegistrationFor<ILocalizationConfiguration>(ServiceLifetime.Scoped);
             }
 
             if (dataAccessClientOptions.UsePooling)
@@ -77,7 +85,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             return services;
         }
 
-        private static void ValidateDataAccessClientOptions(this IServiceCollection services, DataAccessClientOptions dataAccessClientOptions, Type userIdentifierType, Type tenantIdentifierType)
+        private static void ValidateDataAccessClientOptions(this IServiceCollection services, DataAccessClientOptions dataAccessClientOptions, Type userIdentifierType, Type tenantIdentifierType, Type localeIdentifierType)
         {
             if (dataAccessClientOptions.EntityTypes == null)
             {
@@ -85,8 +93,71 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                     $"{nameof(DataAccessClientOptionsBuilder)}.{nameof(DataAccessClientOptionsBuilder.ConfigureEntityTypes)} is not specified");
             }
 
+            ValidateUserIdentifierType(services, dataAccessClientOptions, userIdentifierType);
+
+            ValidateTenantIdentifierType(services, dataAccessClientOptions, tenantIdentifierType);
+
+            ValidateLocaleIdentifierType(services, dataAccessClientOptions, localeIdentifierType);
+        }
+
+        private static void ValidateTenantIdentifierType(IServiceCollection services, DataAccessClientOptions dataAccessClientOptions, Type tenantIdentifierType)
+        {
+            var tenantIdentifierRelatedEntityBehaviors = new[] {typeof(ITenantScopable<>)};
+
+
+            bool hasEntityBehaviorsWithTenantIdentifier =
+                ContainsEntityBehaviors(dataAccessClientOptions.EntityTypes, tenantIdentifierRelatedEntityBehaviors);
+            if (hasEntityBehaviorsWithTenantIdentifier)
+            {
+                services.RequireRegistrationForGeneric(typeof(ITenantIdentifierProvider<>), ServiceLifetime.Scoped);
+
+                var tenantIdentifierProviderType = typeof(ITenantIdentifierProvider<>).MakeGenericType(tenantIdentifierType);
+                services.RequireRegistrationFor(tenantIdentifierProviderType, ServiceLifetime.Scoped);
+
+                var entityBehaviorsWithWrongTenantIdentifierType = new Dictionary<Type, List<Type>>();
+                foreach (var tenantIdentifierRelatedEntityBehavior in tenantIdentifierRelatedEntityBehaviors)
+                {
+                    var types = GetEntityTypesWithWrongIdentifierTypeInEntityBehavior(
+                        dataAccessClientOptions.EntityTypes, tenantIdentifierRelatedEntityBehavior,
+                        tenantIdentifierType);
+
+                    if (types.Any())
+                    {
+                        if (entityBehaviorsWithWrongTenantIdentifierType.ContainsKey(tenantIdentifierRelatedEntityBehavior))
+                        {
+                            entityBehaviorsWithWrongTenantIdentifierType[tenantIdentifierRelatedEntityBehavior]
+                                .AddRange(types);
+                        }
+                        else
+                        {
+                            entityBehaviorsWithWrongTenantIdentifierType.Add(tenantIdentifierRelatedEntityBehavior, types);
+                        }
+                    }
+                }
+
+                if (entityBehaviorsWithWrongTenantIdentifierType.Any())
+                {
+                    var errorMessage = new StringBuilder();
+                    errorMessage.AppendLine(
+                        $"The following entity types have implemented the entityhavior interface with a wrong user identifier type:");
+                    foreach (var entityBehaviorWithWrongTenantIdentifierType in entityBehaviorsWithWrongTenantIdentifierType)
+                    {
+                        errorMessage.AppendLine($"EntityBehavior: {entityBehaviorWithWrongTenantIdentifierType.Key.Name}");
+                        foreach (var type in entityBehaviorWithWrongTenantIdentifierType.Value)
+                        {
+                            errorMessage.AppendLine($"- {type.Name} ({type.FullName})");
+                        }
+                    }
+
+                    throw new InvalidOperationException(errorMessage.ToString());
+                }
+            }
+        }
+
+        private static void ValidateUserIdentifierType(IServiceCollection services, DataAccessClientOptions dataAccessClientOptions, Type userIdentifierType)
+        {
             var userIdentifierRelatedEntityBehaviors =
-                new[] {typeof(ICreatable<>), typeof(IModifiable<>), typeof(ISoftDeletable<>)};
+                new[] { typeof(ICreatable<>), typeof(IModifiable<>), typeof(ISoftDeletable<>) };
 
 
             bool hasEntityBehaviorsWithUserIdentifier =
@@ -136,49 +207,52 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                     throw new InvalidOperationException(errorMessage.ToString());
                 }
             }
+        }
 
-            var tenantIdentifierRelatedEntityBehaviors = new[] {typeof(ITenantScopable<>)};
+        private static void ValidateLocaleIdentifierType(IServiceCollection services, DataAccessClientOptions dataAccessClientOptions, Type localeIdentifierType)
+        {
+            var localeIdentifierRelatedEntityBehaviors =
+                new[] { typeof(ILocalizable<>) };
 
-
-            bool hasEntityBehaviorsWithTenantIdentifier =
-                ContainsEntityBehaviors(dataAccessClientOptions.EntityTypes, tenantIdentifierRelatedEntityBehaviors);
-            if (hasEntityBehaviorsWithTenantIdentifier)
+            bool hasEntityBehaviorsWithLocaleIdentifier =
+                ContainsEntityBehaviors(dataAccessClientOptions.EntityTypes, localeIdentifierRelatedEntityBehaviors);
+            if (hasEntityBehaviorsWithLocaleIdentifier)
             {
-                services.RequireRegistrationForGeneric(typeof(ITenantIdentifierProvider<>), ServiceLifetime.Scoped);
+                services.RequireRegistrationForGeneric(typeof(ILocaleIdentifierProvider<>), ServiceLifetime.Scoped);
 
-                var tenantIdentifierProviderType = typeof(ITenantIdentifierProvider<>).MakeGenericType(tenantIdentifierType);
-                services.RequireRegistrationFor(tenantIdentifierProviderType, ServiceLifetime.Scoped);
+                var localeIdentifierProviderType = typeof(ILocaleIdentifierProvider<>).MakeGenericType(localeIdentifierType);
+                services.RequireRegistrationFor(localeIdentifierProviderType, ServiceLifetime.Scoped);
 
-                var entityBehaviorsWithWrongTenantIdentifierType = new Dictionary<Type, List<Type>>();
-                foreach (var tenantIdentifierRelatedEntityBehavior in tenantIdentifierRelatedEntityBehaviors)
+                var entityBehaviorsWithWrongLocaleIdentifierType = new Dictionary<Type, List<Type>>();
+                foreach (var localeIdentifierRelatedEntityBehavior in localeIdentifierRelatedEntityBehaviors)
                 {
                     var types = GetEntityTypesWithWrongIdentifierTypeInEntityBehavior(
-                        dataAccessClientOptions.EntityTypes, tenantIdentifierRelatedEntityBehavior,
-                        userIdentifierType);
+                        dataAccessClientOptions.EntityTypes, localeIdentifierRelatedEntityBehavior,
+                        localeIdentifierType);
 
                     if (types.Any())
                     {
-                        if (entityBehaviorsWithWrongTenantIdentifierType.ContainsKey(tenantIdentifierRelatedEntityBehavior))
+                        if (entityBehaviorsWithWrongLocaleIdentifierType.ContainsKey(localeIdentifierRelatedEntityBehavior))
                         {
-                            entityBehaviorsWithWrongTenantIdentifierType[tenantIdentifierRelatedEntityBehavior]
+                            entityBehaviorsWithWrongLocaleIdentifierType[localeIdentifierRelatedEntityBehavior]
                                 .AddRange(types);
                         }
                         else
                         {
-                            entityBehaviorsWithWrongTenantIdentifierType.Add(tenantIdentifierRelatedEntityBehavior, types);
+                            entityBehaviorsWithWrongLocaleIdentifierType.Add(localeIdentifierRelatedEntityBehavior, types);
                         }
                     }
                 }
 
-                if (entityBehaviorsWithWrongTenantIdentifierType.Any())
+                if (entityBehaviorsWithWrongLocaleIdentifierType.Any())
                 {
                     var errorMessage = new StringBuilder();
                     errorMessage.AppendLine(
-                        $"The following entity types have implemented the entityhavior interface with a wrong user identifier type:");
-                    foreach (var entityBehaviorWithWrongTenantIdentifierType in entityBehaviorsWithWrongTenantIdentifierType)
+                        $"The current LocaleIdentifier type is: {localeIdentifierType.Name}, the following entity types have implemented the entityhavior interface with a wrong locale identifier type:");
+                    foreach (var entityBehaviorWithWrongLocaleIdentifierType in entityBehaviorsWithWrongLocaleIdentifierType)
                     {
-                        errorMessage.AppendLine($"EntityBehavior: {entityBehaviorWithWrongTenantIdentifierType.Key.Name}");
-                        foreach (var type in entityBehaviorWithWrongTenantIdentifierType.Value)
+                        errorMessage.AppendLine($"EntityBehavior: {entityBehaviorWithWrongLocaleIdentifierType.Key.Name}");
+                        foreach (var type in entityBehaviorWithWrongLocaleIdentifierType.Value)
                         {
                             errorMessage.AppendLine($"- {type.Name} ({type.FullName})");
                         }
@@ -218,6 +292,16 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                 services.SingleOrDefault(s =>
                     s.ServiceType.IsGenericType &&
                     s.ServiceType.GetGenericTypeDefinition() == typeof(ITenantIdentifierProvider<>) &&
+                    s.Lifetime == ServiceLifetime.Scoped);
+            return registration?.ServiceType.GenericTypeArguments[0];
+        }
+
+        private static Type GetLocaleIdentifierType(this IServiceCollection services)
+        {
+            var registration =
+                services.SingleOrDefault(s =>
+                    s.ServiceType.IsGenericType &&
+                    s.ServiceType.GetGenericTypeDefinition() == typeof(ILocaleIdentifierProvider<>) &&
                     s.Lifetime == ServiceLifetime.Scoped);
             return registration?.ServiceType.GenericTypeArguments[0];
         }

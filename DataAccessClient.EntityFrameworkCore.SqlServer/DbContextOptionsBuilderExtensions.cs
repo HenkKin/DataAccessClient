@@ -21,5 +21,8 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         internal static DbContextOptionsBuilder WithTenantIdentifierType(this DbContextOptionsBuilder builder,
             Type tenantIdentifierType)
             => builder.WithOption(e => e.WithTenantIdentifierType(tenantIdentifierType));
+        internal static DbContextOptionsBuilder WithLocaleIdentifierType(this DbContextOptionsBuilder builder,
+            Type localeIdentifierType)
+            => builder.WithOption(e => e.WithLocaleIdentifierType(localeIdentifierType));
     }
 }

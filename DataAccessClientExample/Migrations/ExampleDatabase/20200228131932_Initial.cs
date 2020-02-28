@@ -21,8 +21,8 @@ namespace DataAccessClientExample.Migrations.ExampleDatabase
                     DeletedOn = table.Column<DateTime>(nullable: true),
                     DeletedById = table.Column<int>(nullable: true),
                     RowVersion = table.Column<byte[]>(rowVersion: true, nullable: true),
-                    Name = table.Column<string>(nullable: true),
-                    TenantId = table.Column<int>(nullable: false)
+                    TenantId = table.Column<int>(nullable: false),
+                    Name = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {
@@ -33,13 +33,13 @@ namespace DataAccessClientExample.Migrations.ExampleDatabase
                 name: "ExampleEntityTranslation",
                 columns: table => new
                 {
-                    Language = table.Column<string>(nullable: false),
+                    LocaleId = table.Column<string>(nullable: false),
                     TranslatedEntityId = table.Column<int>(nullable: false),
                     Description = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ExampleEntityTranslation", x => new { x.TranslatedEntityId, x.Language });
+                    table.PrimaryKey("PK_ExampleEntityTranslation", x => new { x.TranslatedEntityId, x.LocaleId });
                     table.ForeignKey(
                         name: "FK_ExampleEntityTranslation_ExampleEntities_TranslatedEntityId",
                         column: x => x.TranslatedEntityId,
