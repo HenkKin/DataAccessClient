@@ -8,20 +8,36 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer
 {
-    internal class SqlServerRepository<TDbContext, TEntity> : IRepository<TEntity> 
-        where TDbContext : SqlServerDbContext
+    internal class SqlServerRepository<TEntity> : IRepository<TEntity> 
         where TEntity : class
     {
-        protected readonly TDbContext DbContext;
+        protected readonly SqlServerDbContext DbContext;
         protected readonly DbSet<TEntity> DbSet;
         private readonly PropertyInfo _primaryKeyProperty;
+        // private readonly object _lock = new object();
 
 
-        public SqlServerRepository(ISqlServerDbContextResolver<TDbContext> sqlServerDbContextResolver)
+        public SqlServerRepository(IServiceProvider scopedServiceProvider, IEnumerable<IDataAccessClientDbContextType> dataAccessClientDbContextTypes)
         {
-            DbContext = sqlServerDbContextResolver.Execute() ?? throw new ArgumentNullException(nameof(sqlServerDbContextResolver));
-            DbSet = DbContext.Set<TEntity>();
-            _primaryKeyProperty = DbContext.Model.FindEntityType(typeof(TEntity)).FindPrimaryKey()?.Properties?.SingleOrDefault()?.PropertyInfo;
+            foreach (var dataAccessClientDbContextType in dataAccessClientDbContextTypes)
+            {
+                var dbContextType = dataAccessClientDbContextType.Execute();
+                var dbContextResolverType = typeof(ISqlServerDbContextResolver<>).MakeGenericType(dbContextType);
+                var executeMethod = dbContextResolverType.GetMethod(nameof(ISqlServerDbContextResolver<SqlServerDbContext>.Execute));
+                DbContext = executeMethod.Invoke(scopedServiceProvider.GetService(dbContextResolverType), new object[0]) as SqlServerDbContext ??
+                            throw new ArgumentNullException(nameof(SqlServerDbContext));
+                if (DbContext != null && DbContext.Model.FindEntityType(typeof(TEntity)) != null)
+                {
+                    DbSet = DbContext.Set<TEntity>();
+                    if (DbSet != null)
+                    {
+                        break;
+                    }
+                }
+
+            }
+
+            _primaryKeyProperty = DbContext.Model.FindEntityType(typeof(TEntity))?.FindPrimaryKey()?.Properties?.SingleOrDefault()?.PropertyInfo;
         }
 
         public IQueryable<TEntity> GetReadOnlyQuery()
