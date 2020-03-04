@@ -7,19 +7,18 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors
 {
-
-    public class TenantScopeableConfiguration
+    public class TenantScopeableEntityBehaviorConfiguration : IEntityBehaviorConfiguration
     {
         private static readonly PropertyInfo IsTenantScopableQueryFilterEnabledProperty;
         private static readonly MethodInfo CurrentTenantIdentifierGenericMethod;
         private static readonly MethodInfo ModelBuilderConfigureEntityBehaviorITenantScopableMethod;
 
-        static TenantScopeableConfiguration()
+        static TenantScopeableEntityBehaviorConfiguration()
         {
-            IsTenantScopableQueryFilterEnabledProperty = typeof(SqlServerDbContext).GetProperty("IsTenantScopableQueryFilterEnabled",
+            IsTenantScopableQueryFilterEnabledProperty = typeof(SqlServerDbContext).GetProperty(nameof(SqlServerDbContext.IsTenantScopableQueryFilterEnabled),
                 BindingFlags.Instance | BindingFlags.NonPublic);
 
-            CurrentTenantIdentifierGenericMethod = typeof(SqlServerDbContext).GetMethod("CurrentTenantIdentifier",
+            CurrentTenantIdentifierGenericMethod = typeof(SqlServerDbContext).GetMethod(nameof(SqlServerDbContext.CurrentTenantIdentifier),
                     BindingFlags.Instance | BindingFlags.NonPublic);
 
             ModelBuilderConfigureEntityBehaviorITenantScopableMethod = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
@@ -44,10 +43,10 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
                 }
 
                 var tenantScopableQueryFilterMethod = createTenantScopableQueryFilter.MakeGenericMethod(entityType, identifierType);
-                var tenantScopableQueryFilter = tenantScopableQueryFilterMethod.Invoke(this, new []{serverDbContext});
+                var tenantScopableQueryFilter = tenantScopableQueryFilterMethod.Invoke(this, new object[]{serverDbContext});
 
                 ModelBuilderConfigureEntityBehaviorITenantScopableMethod.MakeGenericMethod(entityType, identifierType)
-                    .Invoke(null, new object[] { modelBuilder, tenantScopableQueryFilter });
+                    .Invoke(null, new [] { modelBuilder, tenantScopableQueryFilter });
             }
         }
 
