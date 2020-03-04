@@ -76,10 +76,13 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
             services
                 .AddScoped<IUnitOfWorkPart, UnitOfWorkPartForSqlServerDbContext<TDbContext>>()
-                .AddRepositories<TDbContext>(dataAccessClientOptions.EntityTypes)
+                //.AddRepositories<TDbContext>(dataAccessClientOptions.EntityTypes)
                 .AddQueryableSearchers(dataAccessClientOptions.EntityTypes)
                 .TryAddScoped<IUnitOfWork, UnitOfWork>();
 
+
+            services.AddSingleton<IDataAccessClientDbContextType, DataAccessClientDbContextType<TDbContext>>();
+            services.TryAddScoped(typeof(IRepository<>), typeof(SqlServerRepository<>));
             services.TryAddScoped<ISqlServerDbContextResolver<TDbContext>, SqlServerDbContextResolver<TDbContext>>();
 
             return services;
@@ -358,26 +361,26 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             return entityTypesWithWrongIdentifierTypeInEntityBehavior;
         }
 
-        private static IServiceCollection AddRepositories<TDbContext>(this IServiceCollection services, IEnumerable<Type> entityTypes)
-            where TDbContext : SqlServerDbContext
-        {
-            foreach (var entityType in entityTypes)
-            {
-                Type[] interfaceTypeArgs = { entityType };
-                Type[] typeArgs = { typeof(TDbContext), entityType };
-                var typedGenericRepositoryType = typeof(SqlServerRepository<,>).MakeGenericType(typeArgs);
-                var typedRepositoryInterface = typeof(IRepository<>).MakeGenericType(interfaceTypeArgs);
+        //private static IServiceCollection AddRepositories<TDbContext>(this IServiceCollection services, IEnumerable<Type> entityTypes)
+        //    where TDbContext : SqlServerDbContext
+        //{
+        //    foreach (var entityType in entityTypes)
+        //    {
+        //        Type[] interfaceTypeArgs = { entityType };
+        //        Type[] typeArgs = { typeof(TDbContext), entityType };
+        //        var typedGenericRepositoryType = typeof(SqlServerRepository<,>).MakeGenericType(typeArgs);
+        //        var typedRepositoryInterface = typeof(IRepository<>).MakeGenericType(interfaceTypeArgs);
 
-                if (services.Any(s => s.ServiceType == typedRepositoryInterface))
-                {
-                    throw new InvalidOperationException($"An entity type {entityType.FullName} can only registered once in one DbContext, please provide another entity type for DbContext '{typeof(TDbContext).FullName}', otherwise resolving IRepository<[EntityType]> will not work.");
-                }
+        //        if (services.Any(s => s.ServiceType == typedRepositoryInterface))
+        //        {
+        //            throw new InvalidOperationException($"An entity type {entityType.FullName} can only registered once in one DbContext, please provide another entity type for DbContext '{typeof(TDbContext).FullName}', otherwise resolving IRepository<[EntityType]> will not work.");
+        //        }
 
-                services.TryAddScoped(typedRepositoryInterface, typedGenericRepositoryType);
-            }
+        //        services.TryAddScoped(typedRepositoryInterface, typedGenericRepositoryType);
+        //    }
 
-            return services;
-        }
+        //    return services;
+        //}
 
         private static IServiceCollection AddQueryableSearchers(this IServiceCollection services, IEnumerable<Type> entityTypes)
         {
