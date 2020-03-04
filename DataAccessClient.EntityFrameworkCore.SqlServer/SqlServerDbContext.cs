@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DataAccessClient.Configuration;
 using DataAccessClient.EntityBehaviors;
+using DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors;
 using DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure;
 using DataAccessClient.Exceptions;
 using Microsoft.Data.SqlClient;
@@ -199,8 +200,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                 .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorIModifiable));
             var configureEntityBehaviorISoftDeletable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
                 .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorISoftDeletable));
-            var configureEntityBehaviorITenantScopable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
-                .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorITenantScopable));
+           
             var configureEntityBehaviorILocalizable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
                 .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorILocalizable));
             var configureEntityBehaviorIRowVersionable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
@@ -220,13 +220,13 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                     $"Can not find method {nameof(CreateSoftDeletableQueryFilter)} on class {GetType().FullName}");
             }
 
-            var createTenantScopableQueryFilter = GetType().GetMethod(nameof(CreateTenantScopableQueryFilter),
-                BindingFlags.Instance | BindingFlags.NonPublic);
-            if (createTenantScopableQueryFilter == null)
-            {
-                throw new InvalidOperationException(
-                    $"Can not find method {nameof(CreateTenantScopableQueryFilter)} on class {GetType().FullName}");
-            }
+            //var createTenantScopableQueryFilter = GetType().GetMethod(nameof(CreateTenantScopableQueryFilter),
+            //    BindingFlags.Instance | BindingFlags.NonPublic);
+            //if (createTenantScopableQueryFilter == null)
+            //{
+            //    throw new InvalidOperationException(
+            //        $"Can not find method {nameof(CreateTenantScopableQueryFilter)} on class {GetType().FullName}");
+            //}
 
             var createLocalizableQueryFilter = GetType().GetMethod(nameof(CreateLocalizationQueryFilter),
                 BindingFlags.Instance | BindingFlags.NonPublic);
@@ -294,19 +294,21 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                         .Invoke(null, new[] {modelBuilder, softDeletableQueryFilter});
                 }
 
-                if (entityInterfaces.Any(x =>
-                    x.IsGenericType && x.GetGenericTypeDefinition() == typeof(ITenantScopable<>)))
-                {
-                    var identifierType = entityType.ClrType.GetInterface(typeof(ITenantScopable<>).Name)
-                        .GenericTypeArguments[0];
+                new TenantScopeableConfiguration().Execute(modelBuilder, this, entityType.ClrType);
 
-                    var tenantScopableQueryFilterMethod =
-                        createTenantScopableQueryFilter.MakeGenericMethod(entityType.ClrType, identifierType);
-                    var tenantScopableQueryFilter = tenantScopableQueryFilterMethod.Invoke(this, null);
+                //if (entityInterfaces.Any(x =>
+                //    x.IsGenericType && x.GetGenericTypeDefinition() == typeof(ITenantScopable<>)))
+                //{
+                //    var identifierType = entityType.ClrType.GetInterface(typeof(ITenantScopable<>).Name)
+                //        .GenericTypeArguments[0];
 
-                    configureEntityBehaviorITenantScopable.MakeGenericMethod(entityType.ClrType, identifierType)
-                        .Invoke(null, new[] { modelBuilder, tenantScopableQueryFilter });
-                }
+                //    var tenantScopableQueryFilterMethod =
+                //        createTenantScopableQueryFilter.MakeGenericMethod(entityType.ClrType, identifierType);
+                //    var tenantScopableQueryFilter = tenantScopableQueryFilterMethod.Invoke(this, null);
+
+                //    configureEntityBehaviorITenantScopable.MakeGenericMethod(entityType.ClrType, identifierType)
+                //        .Invoke(null, new[] { modelBuilder, tenantScopableQueryFilter, this });
+                //}
 
                 if (entityInterfaces.Any(x =>
                     x.IsGenericType && x.GetGenericTypeDefinition() == typeof(ILocalizable<>)))
@@ -362,18 +364,18 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             return softDeletableQueryFilter;
         }
 
-        protected internal Expression<Func<TEntity, bool>> CreateTenantScopableQueryFilter<TEntity,
-            TTenantIdentifierType>()
-            where TEntity : class, ITenantScopable<TTenantIdentifierType>
-            where TTenantIdentifierType : struct
-        {
-            Expression<Func<TEntity, bool>> tenantScopableQueryFilter = e =>
-                e.TenantId.Equals(CurrentTenantIdentifier<TTenantIdentifierType>()) ||
-                e.TenantId.Equals(CurrentTenantIdentifier<TTenantIdentifierType>()) ==
-                IsTenantScopableQueryFilterEnabled;
+        //protected internal Expression<Func<TEntity, bool>> CreateTenantScopableQueryFilter<TEntity,
+        //    TTenantIdentifierType>()
+        //    where TEntity : class, ITenantScopable<TTenantIdentifierType>
+        //    where TTenantIdentifierType : struct
+        //{
+        //    Expression<Func<TEntity, bool>> tenantScopableQueryFilter = e =>
+        //        e.TenantId.Equals(CurrentTenantIdentifier<TTenantIdentifierType>()) ||
+        //        e.TenantId.Equals(CurrentTenantIdentifier<TTenantIdentifierType>()) ==
+        //        IsTenantScopableQueryFilterEnabled;
 
-            return tenantScopableQueryFilter;
-        }
+        //    return tenantScopableQueryFilter;
+        //}
 
         protected internal Expression<Func<TEntity, bool>> CreateLocalizationQueryFilter<TEntity,
             TLocaleIdentifierType>()
