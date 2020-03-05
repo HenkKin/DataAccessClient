@@ -1,4 +1,5 @@
-﻿using DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestModels;
+﻿using System;
+using DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,12 +15,12 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             // Arrange
             IServiceCollection services = new ServiceCollection();
 
-            services.AddDbContext<TestDbContext>(builder => builder
-                .WithUserIdentifierType(typeof(int))
-                .WithTenantIdentifierType(typeof(int))
-                .WithLocaleIdentifierType(typeof(string))
-                .UseInMemoryDatabase(nameof(WhenWorkIsDoneWithCascadeTimingOnSaveChanges_ItShouldResetToCascadeTimingImmediate))
-            );
+            services.AddDataAccessClient<TestDbContext>(builder => builder
+                .ConfigureEntityTypes(new Type[]{})
+                .ConfigureDbContextOptions(optionsBuilder =>optionsBuilder 
+                    .UseInMemoryDatabase(
+                        nameof(WhenWorkIsDoneWithCascadeTimingOnSaveChanges_ItShouldResetToCascadeTimingImmediate))
+            ));
 
             var serviceProvider = services.BuildServiceProvider().CreateScope();
 

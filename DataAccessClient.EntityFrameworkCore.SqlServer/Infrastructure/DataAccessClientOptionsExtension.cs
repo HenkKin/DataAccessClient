@@ -1,8 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Linq;
 using System.Text;
+using DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,38 +13,16 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure
     {
         private DbContextOptionsExtensionInfo _info;
 
-        public Type UserIdentifierType { get; private set; }
-        public Type TenantIdentifierType { get; private set; }
-        public Type LocaleIdentifierType { get; private set; }
-        public IList<Type> CustomEntityBehaviorsTypes { get; private set; } = new List<Type>();
+        public IList<IEntityBehaviorConfiguration> EntityBehaviors { get; } = new List<IEntityBehaviorConfiguration>();
 
-        public DataAccessClientOptionsExtension WithUserIdentifierType(Type userIdentifierType)
+        public DataAccessClientOptionsExtension WithEntityBehaviors(IList<IEntityBehaviorConfiguration> entityBehaviors)
         {
             var clone = Clone();
-            clone.UserIdentifierType = userIdentifierType;
-            return clone;
-        }
-        public DataAccessClientOptionsExtension WithTenantIdentifierType(Type tenantIdentifierType)
-        {
-            var clone = Clone();
-            clone.TenantIdentifierType = tenantIdentifierType;
-            return clone;
-        }
-
-        public DataAccessClientOptionsExtension WithLocaleIdentifierType(Type localeIdentifierType)
-        {
-            var clone = Clone();
-            clone.LocaleIdentifierType = localeIdentifierType;
-            return clone;
-        }
-        
-        public DataAccessClientOptionsExtension WithCustomEntityBehaviorTypes(IList<Type> customEntityBehaviorTypes)
-        {
-            var clone = Clone();
-            foreach (var customEntityBehaviorType in customEntityBehaviorTypes)
+            foreach (var entityBehavior in entityBehaviors)
             {
-                clone.CustomEntityBehaviorsTypes.Add(customEntityBehaviorType);
+                clone.EntityBehaviors.Add(entityBehavior);
             }
+
             return clone;
         }
 
@@ -53,10 +32,10 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure
 
         protected DataAccessClientOptionsExtension([NotNull] DataAccessClientOptionsExtension copyFrom)
         {
-            UserIdentifierType = copyFrom.UserIdentifierType;
-            TenantIdentifierType = copyFrom.TenantIdentifierType;
-            LocaleIdentifierType = copyFrom.LocaleIdentifierType;
-            CustomEntityBehaviorsTypes = copyFrom.CustomEntityBehaviorsTypes;
+            foreach (var copyFromEntityBehavior in copyFrom.EntityBehaviors)
+            {
+                EntityBehaviors.Add(copyFromEntityBehavior);
+            }
         }
 
         public virtual DbContextOptionsExtensionInfo Info
@@ -70,20 +49,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure
 
         public virtual void Validate(IDbContextOptions options)
         {
-            if (UserIdentifierType == null)
-            {
-                throw new InvalidOperationException($"{nameof(UserIdentifierType)} is not set");
-            }
-
-            if (TenantIdentifierType == null)
-            {
-                throw new InvalidOperationException($"{nameof(TenantIdentifierType)} is not set");
-            }
-
-            if (LocaleIdentifierType == null)
-            {
-                throw new InvalidOperationException($"{nameof(LocaleIdentifierType)} is not set");
-            }
         }
 
         private sealed class ExtensionInfo : DbContextOptionsExtensionInfo
@@ -109,20 +74,8 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure
                     {
                         var builder = new StringBuilder();
 
-                        if (Extension.UserIdentifierType != null)
-                        {
-                            builder.Append($"{nameof(Extension.UserIdentifierType)}={Extension.UserIdentifierType.FullName}; ");
-                        }
-
-                        if (Extension.TenantIdentifierType != null)
-                        {
-                            builder.Append($"{nameof(Extension.TenantIdentifierType)}={Extension.TenantIdentifierType.FullName}; ");
-                        }
-
-                        if (Extension.LocaleIdentifierType != null)
-                        {
-                            builder.Append($"{nameof(Extension.LocaleIdentifierType)}={Extension.LocaleIdentifierType.FullName}; ");
-                        }
+                        builder.Append(
+                            $"{nameof(Extension.EntityBehaviors)}[{Extension.EntityBehaviors.Count}]=[{string.Join(", ", Extension.EntityBehaviors.Select(eb => eb.GetType().Name))}]; ");
 
                         _logFragment = builder.ToString();
                     }
@@ -134,21 +87,31 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure
             [SuppressMessage("Usage", "EF1001:Internal EF Core API usage.", Justification = "<Pending>")]
             public override void PopulateDebugInfo(IDictionary<string, string> debugInfo)
             {
-                debugInfo["DataAccessClient:" + nameof(UserIdentifierType)] =
-                    (Extension.UserIdentifierType?.GetHashCode() ?? 0L).ToString(CultureInfo.InvariantCulture);
-                debugInfo["DataAccessClient:" + nameof(TenantIdentifierType)] =
-                    Extension.TenantIdentifierType.GetHashCode().ToString(CultureInfo.InvariantCulture);
-                debugInfo["DataAccessClient:" + nameof(LocaleIdentifierType)] =
-                    Extension.LocaleIdentifierType.GetHashCode().ToString(CultureInfo.InvariantCulture);
+                var hashCode = Extension.EntityBehaviors?.GetHashCode() ?? 0L;
+                if (Extension.EntityBehaviors != null)
+                {
+                    foreach (var entityBehaviorConfiguration in Extension.EntityBehaviors)
+                    {
+                        hashCode = (hashCode * 3) ^ entityBehaviorConfiguration.GetHashCode();
+                    }
+                }
+
+                debugInfo["DataAccessClient:" + nameof(EntityBehaviors)] =
+                    hashCode.ToString(CultureInfo.InvariantCulture);
             }
 
             public override long GetServiceProviderHashCode()
             {
                 if (_serviceProviderHash == null)
                 {
-                    var hashCode = Extension.UserIdentifierType?.GetHashCode() ?? 0L;
-                    hashCode = (hashCode * 3) ^ Extension.TenantIdentifierType.GetHashCode();
-                    hashCode = (hashCode * 3) ^ Extension.LocaleIdentifierType.GetHashCode();
+                    var hashCode = Extension.EntityBehaviors?.GetHashCode() ?? 0L;
+                    if (Extension.EntityBehaviors != null)
+                    {
+                        foreach (var entityBehaviorConfiguration in Extension.EntityBehaviors)
+                        {
+                            hashCode = (hashCode * 3) ^ entityBehaviorConfiguration.GetHashCode();
+                        }
+                    }
 
                     _serviceProviderHash = hashCode;
                 }

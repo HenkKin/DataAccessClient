@@ -5,9 +5,14 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using DataAccessClient.Configuration;
 using DataAccessClient.EntityBehaviors;
+using DataAccessClient.Providers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+
 // ReSharper disable StaticMemberInGenericType
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors
@@ -15,18 +20,32 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
     public class SoftDeletableEntityBehaviorConfiguration<TUserIdentifierType> : IEntityBehaviorConfiguration
         where TUserIdentifierType : struct
     {
-        private static readonly PropertyInfo IsSoftDeletableQueryFilterEnabledProperty;
         private static readonly MethodInfo ModelBuilderConfigureEntityBehaviorISoftDeletableMethod;
 
         static SoftDeletableEntityBehaviorConfiguration()
         {
-            IsSoftDeletableQueryFilterEnabledProperty = typeof(SqlServerDbContext).GetProperty(
-                nameof(SqlServerDbContext.IsSoftDeletableQueryFilterEnabled),
-                BindingFlags.Instance | BindingFlags.NonPublic);
-
             ModelBuilderConfigureEntityBehaviorISoftDeletableMethod = typeof(ModelBuilderExtensions).GetTypeInfo()
                 .DeclaredMethods
                 .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorISoftDeletable));
+        }
+
+        public void OnRegistering(IServiceCollection serviceCollection)
+        {
+            serviceCollection.TryAddScoped<ISoftDeletableConfiguration, DefaultSoftDeletableConfiguration>();
+        }
+
+        public Dictionary<string, dynamic> OnExecutionContextCreating(IServiceProvider scopedServiceProvider)
+        {
+            var userIdentifierProvider = scopedServiceProvider.GetRequiredService<IUserIdentifierProvider<TUserIdentifierType>>();
+            var softDeletableConfiguration = scopedServiceProvider.GetRequiredService<ISoftDeletableConfiguration>();
+
+            var context = new Dictionary<string, dynamic>
+            {
+                {typeof(IUserIdentifierProvider<TUserIdentifierType>).Name, userIdentifierProvider},
+                {typeof(ISoftDeletableConfiguration).Name, softDeletableConfiguration},
+            };
+
+            return context;
         }
 
         public void OnModelCreating(ModelBuilder modelBuilder, SqlServerDbContext serverDbContext, Type entityType)
@@ -58,9 +77,11 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
 
         public void OnBeforeSaveChanges(SqlServerDbContext serverDbContext, DateTime onSaveChangesTime)
         {
-            if (serverDbContext.SoftDeletableConfiguration.IsEnabled)
+            var softDeletableConfiguration = serverDbContext.ExecutionContext.Get<ISoftDeletableConfiguration>();
+            if (softDeletableConfiguration.IsEnabled)
             {
-                var userIdentifier = serverDbContext.CurrentUserIdentifier<TUserIdentifierType>();
+                var userIdentifier = serverDbContext.ExecutionContext
+                    .Get<IUserIdentifierProvider<TUserIdentifierType>>().Execute();
                 foreach (var entityEntry in serverDbContext.ChangeTracker.Entries<ISoftDeletable<TUserIdentifierType>>()
                     .Where(c => c.State == EntityState.Deleted))
                 {
@@ -178,7 +199,8 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
 
         private static bool IsSoftDeletableQueryFilterEnabled(SqlServerDbContext dbContext)
         {
-            return (bool) IsSoftDeletableQueryFilterEnabledProperty.GetValue(dbContext);
+            var softDeletableConfiguration = dbContext.ExecutionContext.Get<ISoftDeletableConfiguration>();
+            return softDeletableConfiguration.IsEnabled && softDeletableConfiguration.IsQueryFilterEnabled;
         }
 
         private static Expression<Func<TEntity, bool>> CreateSoftDeletableQueryFilter<TEntity>(

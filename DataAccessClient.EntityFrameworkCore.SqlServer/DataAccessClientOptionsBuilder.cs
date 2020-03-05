@@ -41,7 +41,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
         public virtual DataAccessClientOptionsBuilder AddCustomEntityBehavior<TEntityHaviorType>() where TEntityHaviorType : IEntityBehaviorConfiguration
         {
-            _options.CustomEntityBehaviorTypes.Add(typeof(TEntityHaviorType));
+            _options.CustomEntityBehaviors.Add((TEntityHaviorType)Activator.CreateInstance(typeof(TEntityHaviorType)));
             return this;
         }
     }

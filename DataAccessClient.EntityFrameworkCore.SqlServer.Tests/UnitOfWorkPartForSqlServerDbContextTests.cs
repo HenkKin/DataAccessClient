@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using DataAccessClient.Configuration;
+using DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors;
+using DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure;
 using DataAccessClient.EntityFrameworkCore.SqlServer.Resolvers;
 using DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestModels;
+using DataAccessClient.Providers;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Xunit;
@@ -12,19 +16,27 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
 {
     public class UnitOfWorkPartForSqlServerDbContextTests
     {
+        private static readonly DbContextOptions Options = new DbContextOptionsBuilder<TestDbContext>()
+            .UseInMemoryDatabase(databaseName: "UnitOfWorkPartForSqlServerDbContextTests")
+            .Options.WithExtension(new DataAccessClientOptionsExtension().WithEntityBehaviors(new List<IEntityBehaviorConfiguration>()
+            {
+                new IdentifiableEntityBehaviorConfiguration(),
+                new CreatableEntityBehaviorConfiguration<int>(),
+                new ModifiableEntityBehaviorConfiguration<int>(),
+                new SoftDeletableEntityBehaviorConfiguration<int>(),
+                new RowVersionableEntityBehaviorConfiguration(),
+                new LocalizableEntityBehaviorConfiguration<string>(),
+                new TenantScopeableEntityBehaviorConfiguration<int>(),
+                new TranslatableEntityBehaviorConfiguration()
+            }));
+
         [Fact]
         public async Task SaveAsync_WhenCalled_ItShouldCallSaveChangesAsyncOnDbContext()
         {
             // Arrange
             var mockRepository = new MockRepository(MockBehavior.Strict);
 
-            var options = new DbContextOptionsBuilder<TestDbContext>()
-                .WithUserIdentifierType(typeof(int))
-                .WithTenantIdentifierType(typeof(int))
-                .WithLocaleIdentifierType(typeof(string))
-                .Options;
-
-            var testDbContextMock = mockRepository.Create<TestDbContext>(options);
+            var testDbContextMock = mockRepository.Create<TestDbContext>(Options);
             var testDbContextResolverMock = mockRepository.Create<ISqlServerDbContextResolver<TestDbContext>>();
 
             testDbContextResolverMock.Setup(x => x.Execute())
@@ -51,19 +63,9 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
         public void Reset_WhenNewEntityHasState_ItShouldResetEntityToExpectedState(EntityState state, EntityState expectedState)
         {
             // Arrange
-            var serviceProviderMock = new Mock<IServiceProvider>();
-
             var testDbContextResolverMock = new Mock<ISqlServerDbContextResolver<TestDbContext>>();
 
-            var options = new DbContextOptionsBuilder<TestDbContext>()
-                .WithUserIdentifierType(typeof(int))
-                .WithTenantIdentifierType(typeof(int))
-                .WithLocaleIdentifierType(typeof(string))
-                .UseInMemoryDatabase(databaseName: "Reset_WhenCalled_ItShouldCallSaveChangesAsyncOnDbContext")
-                .UseApplicationServiceProvider(serviceProviderMock.Object)
-                .Options;
-
-            var testDbContext = new TestDbContext(options);
+            var testDbContext = new TestDbContext(Options);
             testDbContextResolverMock.Setup(x => x.Execute())
                 .Returns(testDbContext);
 
@@ -95,19 +97,21 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
 
             var testDbContextResolverMock = new Mock<ISqlServerDbContextResolver<TestDbContext>>();
 
-            var options = new DbContextOptionsBuilder<TestDbContext>()
-                .WithUserIdentifierType(typeof(int))
-                .WithTenantIdentifierType(typeof(int))
-                .WithLocaleIdentifierType(typeof(string))
-                .UseInMemoryDatabase(databaseName: "Reset_WhenCalled_ItShouldCallSaveChangesAsyncOnDbContext")
-                .UseApplicationServiceProvider(serviceProviderMock.Object)
-                .Options;
-
-            var testDbContext = new TestDbContext(options);
+            var testDbContext = new TestDbContext(Options);
             var testUserIdentifierProvider = new TestUserIdentifierProvider();
             var testTenantIdentifierProvider = new TestTenantIdentifierProvider();
             var testLocaleIdentifierProvider = new TestLocaleIdentifierProvider();
-            testDbContext.Initialize(()=> testUserIdentifierProvider.Execute(), ()=> testTenantIdentifierProvider.Execute(), () => testLocaleIdentifierProvider.Execute(), new DefaultSoftDeletableConfiguration(), new DefaultMultiTenancyConfiguration(), new DefaultLocalizationConfiguration());
+            
+            var executionContext = new SqlServerDbContextExecutionContext(new Dictionary<string, dynamic> {
+                {typeof(IUserIdentifierProvider<int>).Name,  testUserIdentifierProvider},
+                {typeof(ITenantIdentifierProvider<int>).Name,  testTenantIdentifierProvider},
+                {typeof(ILocaleIdentifierProvider<string>).Name,  testLocaleIdentifierProvider},
+                {typeof(ISoftDeletableConfiguration).Name, new DefaultSoftDeletableConfiguration()},
+                {typeof(IMultiTenancyConfiguration).Name,  new DefaultMultiTenancyConfiguration()},
+                {typeof(ILocalizationConfiguration).Name,  new DefaultLocalizationConfiguration()},
+            });
+            testDbContext.Initialize(executionContext);
+
             testDbContextResolverMock.Setup(x => x.Execute())
                 .Returns(testDbContext);
 

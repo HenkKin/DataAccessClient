@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using DataAccessClient.Configuration;
 using DataAccessClient.EntityBehaviors;
-using DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors;
 using DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure;
 using DataAccessClient.Exceptions;
 using Microsoft.Data.SqlClient;
@@ -22,6 +19,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         private static readonly MethodInfo DbContextResetStateAsyncMethodInfo;
         private static readonly MethodInfo DbContextResurrectMethodInfo;
         private static readonly MethodInfo ModelBuilderConfigureHasUtcDateTimeProperties;
+
         static SqlServerDbContext()
         {
             DbContextResetStateMethodInfo = typeof(DbContext).GetMethod(
@@ -37,33 +35,11 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                 .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureHasUtcDateTimeProperties));
         }
 
-        protected internal ISoftDeletableConfiguration SoftDeletableConfiguration;
-        protected internal IMultiTenancyConfiguration MultiTenancyConfiguration;
-        protected internal ILocalizationConfiguration LocalizationConfiguration;
-        protected Func<dynamic> UserIdentifierProvider;
-        protected Func<dynamic> TenantIdentifierProvider;
-        protected Func<dynamic> LocaleIdentifierProvider;
-
-        internal bool IsSoftDeletableQueryFilterEnabled => SoftDeletableConfiguration.IsEnabled && SoftDeletableConfiguration.IsQueryFilterEnabled;
-        internal bool IsTenantScopableQueryFilterEnabled => MultiTenancyConfiguration.IsQueryFilterEnabled;
-        internal bool IsLocalizationQueryFilterEnabled => LocalizationConfiguration.IsQueryFilterEnabled;
-
-        internal TUserIdentifierType? CurrentUserIdentifier<TUserIdentifierType>()
-            where TUserIdentifierType : struct
-            => UserIdentifierProvider();
-
-        internal TTenantIdentifierType? CurrentTenantIdentifier<TTenantIdentifierType>()
-            where TTenantIdentifierType : struct
-            => TenantIdentifierProvider();
-
-        internal TLocaleIdentifierType CurrentLocaleIdentifier<TLocaleIdentifierType>()
-            where TLocaleIdentifierType : IConvertible
-            => LocaleIdentifierProvider();
+        internal SqlServerDbContextExecutionContext ExecutionContext { get; private set; }
 
         private readonly Action _dbContextResetStateMethod;
         private readonly Func<CancellationToken, Task> _dbContextResetStateAsyncMethod;
         private readonly Action<DbContextPoolConfigurationSnapshot> _dbContextResurrectMethod;
-        private readonly IReadOnlyList<IEntityBehaviorConfiguration> _entityBehaviorConfigurations;
 
         internal readonly DataAccessClientOptionsExtension DataAccessClientOptionsExtension;
 
@@ -79,31 +55,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                     Action<DbContextPoolConfigurationSnapshot>;
 
             DataAccessClientOptionsExtension = options.FindExtension<DataAccessClientOptionsExtension>();
-
-            var entityBehaviorConfigurations = new List<IEntityBehaviorConfiguration>
-            {
-                new IdentifiableEntityBehaviorConfiguration(),
-                CreateEntityBehaviorTypeInstance(typeof(CreatableEntityBehaviorConfiguration<>).MakeGenericType(DataAccessClientOptionsExtension.UserIdentifierType)),
-                CreateEntityBehaviorTypeInstance(typeof(ModifiableEntityBehaviorConfiguration<>).MakeGenericType(DataAccessClientOptionsExtension.UserIdentifierType)),
-                CreateEntityBehaviorTypeInstance(typeof(SoftDeletableEntityBehaviorConfiguration<>).MakeGenericType(DataAccessClientOptionsExtension.UserIdentifierType)),
-                new RowVersionableEntityBehaviorConfiguration(),
-                new LocalizableEntityBehaviorConfiguration(),
-                CreateEntityBehaviorTypeInstance(typeof(TenantScopeableEntityBehaviorConfiguration<>).MakeGenericType(DataAccessClientOptionsExtension.TenantIdentifierType)),
-                new TranslatableEntityBehaviorConfiguration()
-            };
-
-            if (DataAccessClientOptionsExtension.CustomEntityBehaviorsTypes.Any())
-            {
-                entityBehaviorConfigurations.AddRange(
-                    DataAccessClientOptionsExtension.CustomEntityBehaviorsTypes.Select(CreateEntityBehaviorTypeInstance));
-            }
-
-            _entityBehaviorConfigurations = entityBehaviorConfigurations;
-        }
-
-        private static IEntityBehaviorConfiguration CreateEntityBehaviorTypeInstance(Type entityBehaviorType)
-        {
-            return (IEntityBehaviorConfiguration) Activator.CreateInstance(entityBehaviorType);
         }
 
         #region DbContextPooling
@@ -173,30 +124,14 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
         protected virtual void ResetSqlServerDbContextState()
         {
-            UserIdentifierProvider = null;
-            TenantIdentifierProvider = null;
-            LocaleIdentifierProvider = null;
-            SoftDeletableConfiguration = null;
-            MultiTenancyConfiguration = null;
-            LocalizationConfiguration = null;
+            ExecutionContext = null;
         }
 
         #endregion
 
-        internal void Initialize(
-            Func<dynamic> userIdentifierProvider,
-            Func<dynamic> tenantIdentifierProvider,
-            Func<dynamic> localeIdentifierProvider,
-            ISoftDeletableConfiguration softDeletableConfiguration,
-            IMultiTenancyConfiguration multiTenancyConfiguration,
-            ILocalizationConfiguration localizationConfiguration)
+        internal void Initialize(SqlServerDbContextExecutionContext executionContext)
         {
-            UserIdentifierProvider = userIdentifierProvider;
-            TenantIdentifierProvider = tenantIdentifierProvider;
-            LocaleIdentifierProvider = localeIdentifierProvider;
-            SoftDeletableConfiguration = softDeletableConfiguration;
-            MultiTenancyConfiguration = multiTenancyConfiguration;
-            LocalizationConfiguration = localizationConfiguration;
+            ExecutionContext = executionContext;
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -216,9 +151,12 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
             foreach (var entityType in entityTypes)
             {
-                foreach (var entityBehaviorConfiguration in _entityBehaviorConfigurations)
+                if (DataAccessClientOptionsExtension != null)
                 {
-                    entityBehaviorConfiguration.OnModelCreating(modelBuilder, this, entityType.ClrType);
+                    foreach (var entityBehaviorConfiguration in DataAccessClientOptionsExtension.EntityBehaviors)
+                    {
+                        entityBehaviorConfiguration.OnModelCreating(modelBuilder, this, entityType.ClrType);
+                    }
                 }
 
                 ModelBuilderConfigureHasUtcDateTimeProperties
@@ -341,7 +279,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             {
                 var saveChangesTime = DateTime.UtcNow;
 
-                foreach (var entityBehaviorConfiguration in _entityBehaviorConfigurations)
+                foreach (var entityBehaviorConfiguration in DataAccessClientOptionsExtension.EntityBehaviors)
                 {
                     entityBehaviorConfiguration.OnBeforeSaveChanges(this, saveChangesTime);
                 }
@@ -353,7 +291,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             using var withCascadeTimingOnSaveChanges = new WithCascadeTimingOnSaveChanges(this);
             withCascadeTimingOnSaveChanges.Run(() =>
             {
-                foreach (var entityBehaviorConfiguration in _entityBehaviorConfigurations)
+                foreach (var entityBehaviorConfiguration in DataAccessClientOptionsExtension.EntityBehaviors)
                 {
                     entityBehaviorConfiguration.OnAfterSaveChanges(this);
                 }

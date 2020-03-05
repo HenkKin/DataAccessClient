@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using DataAccessClient.Configuration;
 using DataAccessClient.EntityBehaviors;
+using DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors;
 using DataAccessClient.EntityFrameworkCore.SqlServer.Resolvers;
 using DataAccessClient.EntityFrameworkCore.SqlServer.Searching;
 using DataAccessClient.Providers;
@@ -30,19 +31,34 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
             services.ValidateDataAccessClientOptions(dataAccessClientOptions, userIdentifierType, tenantIdentifierType, localeIdentifierType);
 
+            var entityBehaviorConfigurations = new List<IEntityBehaviorConfiguration>
+            {
+                new IdentifiableEntityBehaviorConfiguration(),
+                CreateEntityBehaviorTypeInstance(typeof(CreatableEntityBehaviorConfiguration<>).MakeGenericType(userIdentifierType)),
+                CreateEntityBehaviorTypeInstance(typeof(ModifiableEntityBehaviorConfiguration<>).MakeGenericType(userIdentifierType)),
+                CreateEntityBehaviorTypeInstance(typeof(SoftDeletableEntityBehaviorConfiguration<>).MakeGenericType(userIdentifierType)),
+                new RowVersionableEntityBehaviorConfiguration(),
+                CreateEntityBehaviorTypeInstance(typeof(LocalizableEntityBehaviorConfiguration<>).MakeGenericType(localeIdentifierType)),
+                CreateEntityBehaviorTypeInstance(typeof(TenantScopeableEntityBehaviorConfiguration<>).MakeGenericType(tenantIdentifierType)),
+                new TranslatableEntityBehaviorConfiguration()
+            };
+
+            if (dataAccessClientOptions.CustomEntityBehaviors.Any())
+            {
+                entityBehaviorConfigurations.AddRange(dataAccessClientOptions.CustomEntityBehaviors);
+            }
+
             void ExtendedDbContextOptionsBuilder(DbContextOptionsBuilder dbContextOptionsBuilder)
             {
-                dbContextOptionsBuilder.WithTenantIdentifierType(tenantIdentifierType);
-                dbContextOptionsBuilder.WithUserIdentifierType(userIdentifierType);
-                dbContextOptionsBuilder.WithLocaleIdentifierType(localeIdentifierType);
-                dbContextOptionsBuilder.WithCustomEntityBehaviorTypes(dataAccessClientOptions.CustomEntityBehaviorTypes);
+                dbContextOptionsBuilder.WithEntityBehaviors(entityBehaviorConfigurations);
 
                 dataAccessClientOptions.DbContextOptionsBuilder(dbContextOptionsBuilder);
             }
 
-            services.TryAddScoped<ISoftDeletableConfiguration, DefaultSoftDeletableConfiguration>();
-            services.TryAddScoped<IMultiTenancyConfiguration, DefaultMultiTenancyConfiguration>();
-            services.TryAddScoped<ILocalizationConfiguration, DefaultLocalizationConfiguration>();
+            foreach (var entityBehavior in entityBehaviorConfigurations)
+            {
+                entityBehavior.OnRegistering(services);
+            }
 
             if (ContainsEntityBehaviors(dataAccessClientOptions.EntityTypes, new[] { typeof(ISoftDeletable<>) }))
             {
@@ -84,6 +100,11 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             services.TryAddScoped<ISqlServerDbContextResolver<TDbContext>, SqlServerDbContextResolver<TDbContext>>();
 
             return services;
+        }
+
+        private static IEntityBehaviorConfiguration CreateEntityBehaviorTypeInstance(Type entityBehaviorType)
+        {
+            return (IEntityBehaviorConfiguration)Activator.CreateInstance(entityBehaviorType);
         }
 
         private static void ValidateDataAccessClientOptions(this IServiceCollection services, DataAccessClientOptions dataAccessClientOptions, Type userIdentifierType, Type tenantIdentifierType, Type localeIdentifierType)
