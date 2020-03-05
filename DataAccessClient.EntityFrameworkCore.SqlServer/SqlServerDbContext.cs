@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -13,7 +11,6 @@ using DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure;
 using DataAccessClient.Exceptions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Internal;
 
@@ -24,10 +21,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         private static readonly MethodInfo DbContextResetStateMethodInfo;
         private static readonly MethodInfo DbContextResetStateAsyncMethodInfo;
         private static readonly MethodInfo DbContextResurrectMethodInfo;
-        private static readonly MethodInfo OnBeforeSaveChangesMethodInfo;
-        private static readonly MethodInfo OnAfterSaveChangesMethodInfo;
         private static readonly MethodInfo ModelBuilderConfigureHasUtcDateTimeProperties;
-
         static SqlServerDbContext()
         {
             DbContextResetStateMethodInfo = typeof(DbContext).GetMethod(
@@ -38,10 +32,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                 BindingFlags.Instance | BindingFlags.NonPublic);
             DbContextResurrectMethodInfo = typeof(DbContext).GetMethod(
                 $"{typeof(IDbContextPoolable).FullName}.{nameof(IDbContextPoolable.Resurrect)}",
-                BindingFlags.Instance | BindingFlags.NonPublic);
-            OnBeforeSaveChangesMethodInfo = typeof(SqlServerDbContext).GetMethod(nameof(OnBeforeSaveChanges),
-                BindingFlags.Instance | BindingFlags.NonPublic);
-            OnAfterSaveChangesMethodInfo = typeof(SqlServerDbContext).GetMethod(nameof(OnAfterSaveChanges),
                 BindingFlags.Instance | BindingFlags.NonPublic);
             ModelBuilderConfigureHasUtcDateTimeProperties = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
                 .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureHasUtcDateTimeProperties));
@@ -73,8 +63,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         private readonly Action _dbContextResetStateMethod;
         private readonly Func<CancellationToken, Task> _dbContextResetStateAsyncMethod;
         private readonly Action<DbContextPoolConfigurationSnapshot> _dbContextResurrectMethod;
-        private readonly MethodInfo _onBeforeSaveChangesMethod;
-        private readonly MethodInfo _onAfterSaveChangesMethod;
+        private readonly IReadOnlyList<IEntityBehaviorConfiguration> _entityBehaviorConfigurations;
 
         internal readonly DataAccessClientOptionsExtension DataAccessClientOptionsExtension;
 
@@ -91,12 +80,30 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
             DataAccessClientOptionsExtension = options.FindExtension<DataAccessClientOptionsExtension>();
 
-            _onBeforeSaveChangesMethod = OnBeforeSaveChangesMethodInfo.MakeGenericMethod(
-                DataAccessClientOptionsExtension.UserIdentifierType,
-                DataAccessClientOptionsExtension.TenantIdentifierType);
-            _onAfterSaveChangesMethod = OnAfterSaveChangesMethodInfo.MakeGenericMethod(
-                DataAccessClientOptionsExtension.UserIdentifierType,
-                DataAccessClientOptionsExtension.TenantIdentifierType);
+            var entityBehaviorConfigurations = new List<IEntityBehaviorConfiguration>
+            {
+                new IdentifiableEntityBehaviorConfiguration(),
+                CreateEntityBehaviorTypeInstance(typeof(CreatableEntityBehaviorConfiguration<>).MakeGenericType(DataAccessClientOptionsExtension.UserIdentifierType)),
+                CreateEntityBehaviorTypeInstance(typeof(ModifiableEntityBehaviorConfiguration<>).MakeGenericType(DataAccessClientOptionsExtension.UserIdentifierType)),
+                CreateEntityBehaviorTypeInstance(typeof(SoftDeletableEntityBehaviorConfiguration<>).MakeGenericType(DataAccessClientOptionsExtension.UserIdentifierType)),
+                new RowVersionableEntityBehaviorConfiguration(),
+                new LocalizableEntityBehaviorConfiguration(),
+                CreateEntityBehaviorTypeInstance(typeof(TenantScopeableEntityBehaviorConfiguration<>).MakeGenericType(DataAccessClientOptionsExtension.TenantIdentifierType)),
+                new TranslatableEntityBehaviorConfiguration()
+            };
+
+            if (DataAccessClientOptionsExtension.CustomEntityBehaviorsTypes.Any())
+            {
+                entityBehaviorConfigurations.AddRange(
+                    DataAccessClientOptionsExtension.CustomEntityBehaviorsTypes.Select(CreateEntityBehaviorTypeInstance));
+            }
+
+            _entityBehaviorConfigurations = entityBehaviorConfigurations;
+        }
+
+        private static IEntityBehaviorConfiguration CreateEntityBehaviorTypeInstance(Type entityBehaviorType)
+        {
+            return (IEntityBehaviorConfiguration) Activator.CreateInstance(entityBehaviorType);
         }
 
         #region DbContextPooling
@@ -207,23 +214,11 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
             var utcDateTimeValueConverter = new UtcDateTimeValueConverter();
 
-            var entityBehaviorConfigurations = new List<IEntityBehaviorConfiguration>
-            {
-                new IdentifiableEntityBehaviorConfiguration(),
-                new CreatableEntityBehaviorConfiguration(),
-                new ModifiableEntityBehaviorConfiguration(),
-                new SoftDeletableEntityBehaviorConfiguration(),
-                new RowVersionableEntityBehaviorConfiguration(),
-                new LocalizableEntityBehaviorConfiguration(),
-                new TenantScopeableEntityBehaviorConfiguration(),
-                new TranslatableEntityBehaviorConfiguration()
-            };
-
             foreach (var entityType in entityTypes)
             {
-                foreach (var entityBehaviorConfiguration in entityBehaviorConfigurations)
+                foreach (var entityBehaviorConfiguration in _entityBehaviorConfigurations)
                 {
-                    entityBehaviorConfiguration.Execute(modelBuilder, this, entityType.ClrType);
+                    entityBehaviorConfiguration.OnModelCreating(modelBuilder, this, entityType.ClrType);
                 }
 
                 ModelBuilderConfigureHasUtcDateTimeProperties
@@ -236,12 +231,12 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
         public override int SaveChanges(bool acceptAllChangesOnSuccess)
         {
-            _onBeforeSaveChangesMethod.Invoke(this, new object[] { });
+            OnBeforeSaveChanges();
 
             try
             {
                 var result = base.SaveChanges(acceptAllChangesOnSuccess);
-                _onAfterSaveChangesMethod.Invoke(this, new object[] { });
+                OnAfterSaveChanges();
                 return result;
             }
             catch (DbUpdateConcurrencyException exception)
@@ -277,12 +272,12 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess,
             CancellationToken cancellationToken = new CancellationToken())
         {
-            _onBeforeSaveChangesMethod.Invoke(this, new object[] { });
+            OnBeforeSaveChanges();
 
             try
             {
                 var result = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-                _onAfterSaveChangesMethod.Invoke(this, new object[] { });
+                OnAfterSaveChanges();
                 return result;
             }
             catch (DbUpdateConcurrencyException exception)
@@ -339,186 +334,30 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             });
         }
 
-        private void OnBeforeSaveChanges<TUserIdentifierType, TTenantIdentifierType>()
-            where TUserIdentifierType : struct
-            where TTenantIdentifierType : struct
+        private void OnBeforeSaveChanges()
         {
             using var withCascadeTimingOnSaveChanges = new WithCascadeTimingOnSaveChanges(this);
             withCascadeTimingOnSaveChanges.Run(() =>
             {
                 var saveChangesTime = DateTime.UtcNow;
-                var userIdentifier = CurrentUserIdentifier<TUserIdentifierType>();
-                var tenantIdentifier = CurrentTenantIdentifier<TTenantIdentifierType>();
 
-                foreach (var entityEntry in ChangeTracker.Entries<IRowVersionable>())
+                foreach (var entityBehaviorConfiguration in _entityBehaviorConfigurations)
                 {
-                    var rowVersionProperty = entityEntry.Property(u => u.RowVersion);
-                    var rowVersion = rowVersionProperty.CurrentValue;
-                    //https://github.com/aspnet/EntityFramework/issues/4512
-                    rowVersionProperty.OriginalValue = rowVersion;
-                }
-
-                if (SoftDeletableConfiguration.IsEnabled)
-                {
-                    foreach (var entityEntry in ChangeTracker.Entries<ISoftDeletable<TUserIdentifierType>>()
-                        .Where(c => c.State == EntityState.Deleted))
-                    {
-                        entityEntry.State = EntityState.Unchanged;
-
-                        var entity = entityEntry.Entity;
-                        var entityIsSoftDeleted =
-                            entity.IsDeleted && entity.DeletedById.HasValue && entity.DeletedOn.HasValue;
-
-                        if (entityIsSoftDeleted)
-                        {
-                            continue;
-                        }
-
-                        SetOwnedEntitiesToUnchanged(entityEntry);
-
-                        entityEntry.Entity.IsDeleted = true;
-                        entityEntry.Entity.DeletedById = userIdentifier;
-                        entityEntry.Entity.DeletedOn = saveChangesTime;
-                        entityEntry.Member(nameof(ISoftDeletable<TUserIdentifierType>.IsDeleted)).IsModified = true;
-                        entityEntry.Member(nameof(ISoftDeletable<TUserIdentifierType>.DeletedById)).IsModified = true;
-                        entityEntry.Member(nameof(ISoftDeletable<TUserIdentifierType>.DeletedOn)).IsModified = true;
-                    }
-                }
-
-                foreach (var entityEntry in ChangeTracker.Entries<ITenantScopable<TTenantIdentifierType>>()
-                    .Where(c => c.State == EntityState.Added))
-                {
-                    var tenantId = entityEntry.Entity.TenantId;
-                    if (tenantId.Equals(default(TTenantIdentifierType)))
-                    {
-                        if (tenantIdentifier.HasValue)
-                        {
-                            entityEntry.Entity.TenantId = tenantIdentifier.Value;
-                        }
-                        else
-                        {
-                            throw new InvalidOperationException(
-                                $"CurrentTenantId is needed for new entity of type '{entityEntry.Entity.GetType().FullName}', but the '{typeof(IMultiTenancyConfiguration).FullName}' does not have one at this moment");
-                        }
-                    }
-                }
-
-                foreach (var entityEntry in ChangeTracker.Entries<ICreatable<TUserIdentifierType>>()
-                    .Where(c => c.State == EntityState.Added))
-                {
-                    entityEntry.Entity.CreatedById = userIdentifier.GetValueOrDefault();
-                    entityEntry.Entity.CreatedOn = saveChangesTime;
-                }
-
-                foreach (var entityEntry in ChangeTracker.Entries<IModifiable<TUserIdentifierType>>()
-                    .Where(c => c.State == EntityState.Modified))
-                {
-                    entityEntry.Entity.ModifiedById = userIdentifier;
-                    entityEntry.Entity.ModifiedOn = saveChangesTime;
+                    entityBehaviorConfiguration.OnBeforeSaveChanges(this, saveChangesTime);
                 }
             });
         }
 
-        private void OnAfterSaveChanges<TUserIdentifierType, TTenantIdentifierType>()
-            where TUserIdentifierType : struct
-            where TTenantIdentifierType : struct
+        private void OnAfterSaveChanges()
         {
             using var withCascadeTimingOnSaveChanges = new WithCascadeTimingOnSaveChanges(this);
             withCascadeTimingOnSaveChanges.Run(() =>
             {
-                var trackedEntities = new HashSet<object>();
-                foreach (var dbEntityEntry in ChangeTracker.Entries().ToArray())
+                foreach (var entityBehaviorConfiguration in _entityBehaviorConfigurations)
                 {
-                    if (dbEntityEntry.Entity != null)
-                    {
-                        trackedEntities.Add(dbEntityEntry.Entity);
-                        RemoveSoftDeletableProperties<TUserIdentifierType, TTenantIdentifierType>(dbEntityEntry,
-                            trackedEntities);
-                    }
+                    entityBehaviorConfiguration.OnAfterSaveChanges(this);
                 }
             });
-        }
-
-        private void RemoveSoftDeletableProperties<TUserIdentifierType, TTenantIdentifierType>(EntityEntry entityEntry,
-            HashSet<object> trackedEntities)
-            where TUserIdentifierType : struct
-            where TTenantIdentifierType : struct
-        {
-            var navigationPropertiesEntries = entityEntry.Navigations;
-            foreach (var navigationEntry in navigationPropertiesEntries)
-            {
-                if (navigationEntry.Metadata.IsCollection())
-                {
-                    if (navigationEntry.CurrentValue is ICollection collection)
-                    {
-                        var notRemovedItems = new Collection<object>();
-                        foreach (var collectionItem in collection)
-                        {
-                            var listItemDbEntityEntry = ChangeTracker.Context.Entry(collectionItem);
-                            if (collectionItem is ISoftDeletable<TUserIdentifierType> deletable && deletable.IsDeleted)
-                            {
-                                listItemDbEntityEntry.State = EntityState.Detached;
-                            }
-                            else
-                            {
-                                notRemovedItems.Add(collectionItem);
-                                if (!trackedEntities.Contains(collectionItem))
-                                {
-                                    trackedEntities.Add(collectionItem);
-                                    RemoveSoftDeletableProperties<TUserIdentifierType, TTenantIdentifierType>(
-                                        listItemDbEntityEntry, trackedEntities);
-                                }
-                            }
-                        }
-
-                        Type constructedType = typeof(Collection<>).MakeGenericType(navigationEntry.Metadata
-                            .PropertyInfo.PropertyType.GenericTypeArguments);
-                        IList col = (IList) Activator.CreateInstance(constructedType);
-                        foreach (var notRemovedItem in notRemovedItems)
-                        {
-                            col.Add(notRemovedItem);
-                        }
-
-                        navigationEntry.CurrentValue = col;
-                    }
-                }
-                else
-                {
-                    if (navigationEntry.CurrentValue != null)
-                    {
-                        var propertyEntityEntry = entityEntry.Reference(navigationEntry.Metadata.Name).TargetEntry;
-
-                        if (navigationEntry.CurrentValue is ISoftDeletable<TUserIdentifierType> deletable &&
-                            deletable.IsDeleted)
-                        {
-                            propertyEntityEntry.State = EntityState.Detached;
-                            navigationEntry.CurrentValue = null;
-                        }
-                        else
-                        {
-                            if (!trackedEntities.Contains(navigationEntry.CurrentValue))
-                            {
-                                trackedEntities.Add(navigationEntry.CurrentValue);
-                                RemoveSoftDeletableProperties<TUserIdentifierType, TTenantIdentifierType>(
-                                    propertyEntityEntry, trackedEntities);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        protected internal void SetOwnedEntitiesToUnchanged(EntityEntry entityEntry)
-        {
-            var ownedEntities = entityEntry.References
-                .Where(r => r.TargetEntry != null && r.TargetEntry.Metadata.IsOwned())
-                .ToList();
-
-            foreach (var ownedEntity in ownedEntities)
-            {
-                ownedEntity.TargetEntry.State = EntityState.Unchanged;
-                SetOwnedEntitiesToUnchanged(ownedEntity.TargetEntry);
-            }
         }
     }
 }

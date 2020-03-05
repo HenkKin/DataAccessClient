@@ -35,6 +35,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                 dbContextOptionsBuilder.WithTenantIdentifierType(tenantIdentifierType);
                 dbContextOptionsBuilder.WithUserIdentifierType(userIdentifierType);
                 dbContextOptionsBuilder.WithLocaleIdentifierType(localeIdentifierType);
+                dbContextOptionsBuilder.WithCustomEntityBehaviorTypes(dataAccessClientOptions.CustomEntityBehaviorTypes);
 
                 dataAccessClientOptions.DbContextOptionsBuilder(dbContextOptionsBuilder);
             }
@@ -138,8 +139,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                 if (entityBehaviorsWithWrongTenantIdentifierType.Any())
                 {
                     var errorMessage = new StringBuilder();
-                    errorMessage.AppendLine(
-                        $"The following entity types have implemented the entityhavior interface with a wrong user identifier type:");
+                    errorMessage.AppendLine("The following entity types have implemented the entityhavior interface with a wrong user identifier type:");
                     foreach (var entityBehaviorWithWrongTenantIdentifierType in entityBehaviorsWithWrongTenantIdentifierType)
                     {
                         errorMessage.AppendLine($"EntityBehavior: {entityBehaviorWithWrongTenantIdentifierType.Key.Name}");

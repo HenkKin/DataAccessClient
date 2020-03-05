@@ -24,7 +24,8 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
             ModelBuilderConfigureEntityBehaviorILocalizableMethod = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
                 .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorILocalizable));
         }
-        public void Execute(ModelBuilder modelBuilder, SqlServerDbContext serverDbContext, Type entityType)
+
+        public void OnModelCreating(ModelBuilder modelBuilder, SqlServerDbContext serverDbContext, Type entityType)
         {
             var entityInterfaces = entityType.GetInterfaces();
 
@@ -48,6 +49,14 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
                 ModelBuilderConfigureEntityBehaviorILocalizableMethod.MakeGenericMethod(entityType, identifierType)
                     .Invoke(null, new [] { modelBuilder, tenantScopableQueryFilter });
             }
+        }
+
+        public void OnBeforeSaveChanges(SqlServerDbContext serverDbContext, DateTime onSaveChangesTime)
+        {
+        }
+
+        public void OnAfterSaveChanges(SqlServerDbContext serverDbContext)
+        {
         }
 
         private static TLocaleIdentifierType CurrentLocaleIdentifier<TLocaleIdentifierType>(SqlServerDbContext dbContext) where TLocaleIdentifierType : IConvertible

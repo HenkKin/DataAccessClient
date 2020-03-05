@@ -5,6 +5,9 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
 {
     public interface IEntityBehaviorConfiguration
     {
-        void Execute(ModelBuilder modelBuilder, SqlServerDbContext serverDbContext, Type entityType);
+        void OnModelCreating(ModelBuilder modelBuilder, SqlServerDbContext serverDbContext, Type entityType);
+
+        void OnBeforeSaveChanges(SqlServerDbContext serverDbContext, DateTime onSaveChangesTime);
+        void OnAfterSaveChanges(SqlServerDbContext serverDbContext);
     }
 }

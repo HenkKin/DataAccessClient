@@ -1,26 +1,35 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using DataAccessClient.EntityBehaviors;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+// ReSharper disable StaticMemberInGenericType
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors
 {
-    public class SoftDeletableEntityBehaviorConfiguration : IEntityBehaviorConfiguration
+    public class SoftDeletableEntityBehaviorConfiguration<TUserIdentifierType> : IEntityBehaviorConfiguration
+        where TUserIdentifierType : struct
     {
         private static readonly PropertyInfo IsSoftDeletableQueryFilterEnabledProperty;
         private static readonly MethodInfo ModelBuilderConfigureEntityBehaviorISoftDeletableMethod;
 
         static SoftDeletableEntityBehaviorConfiguration()
         {
-            IsSoftDeletableQueryFilterEnabledProperty = typeof(SqlServerDbContext).GetProperty(nameof(SqlServerDbContext.IsSoftDeletableQueryFilterEnabled),
+            IsSoftDeletableQueryFilterEnabledProperty = typeof(SqlServerDbContext).GetProperty(
+                nameof(SqlServerDbContext.IsSoftDeletableQueryFilterEnabled),
                 BindingFlags.Instance | BindingFlags.NonPublic);
 
-            ModelBuilderConfigureEntityBehaviorISoftDeletableMethod = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
+            ModelBuilderConfigureEntityBehaviorISoftDeletableMethod = typeof(ModelBuilderExtensions).GetTypeInfo()
+                .DeclaredMethods
                 .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorISoftDeletable));
         }
-        public void Execute(ModelBuilder modelBuilder, SqlServerDbContext serverDbContext, Type entityType)
+
+        public void OnModelCreating(ModelBuilder modelBuilder, SqlServerDbContext serverDbContext, Type entityType)
         {
             var entityInterfaces = entityType.GetInterfaces();
 
@@ -38,23 +47,143 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
                         $"Can not find method {nameof(CreateSoftDeletableQueryFilter)} on class {GetType().FullName}");
                 }
 
-                var softDeletableQueryFilterMethod = createSoftDeletableQueryFilter.MakeGenericMethod(entityType, identifierType);
-                var softDeletableQueryFilter = softDeletableQueryFilterMethod.Invoke(this, new object[]{serverDbContext});
+                var softDeletableQueryFilterMethod = createSoftDeletableQueryFilter.MakeGenericMethod(entityType);
+                var softDeletableQueryFilter =
+                    softDeletableQueryFilterMethod.Invoke(this, new object[] {serverDbContext});
 
                 ModelBuilderConfigureEntityBehaviorISoftDeletableMethod.MakeGenericMethod(entityType, identifierType)
-                    .Invoke(null, new [] { modelBuilder, softDeletableQueryFilter });
+                    .Invoke(null, new[] {modelBuilder, softDeletableQueryFilter});
+            }
+        }
+
+        public void OnBeforeSaveChanges(SqlServerDbContext serverDbContext, DateTime onSaveChangesTime)
+        {
+            if (serverDbContext.SoftDeletableConfiguration.IsEnabled)
+            {
+                var userIdentifier = serverDbContext.CurrentUserIdentifier<TUserIdentifierType>();
+                foreach (var entityEntry in serverDbContext.ChangeTracker.Entries<ISoftDeletable<TUserIdentifierType>>()
+                    .Where(c => c.State == EntityState.Deleted))
+                {
+                    entityEntry.State = EntityState.Unchanged;
+
+                    var entity = entityEntry.Entity;
+                    var entityIsSoftDeleted =
+                        entity.IsDeleted && entity.DeletedById.HasValue && entity.DeletedOn.HasValue;
+
+                    if (entityIsSoftDeleted)
+                    {
+                        continue;
+                    }
+
+                    SetOwnedEntitiesToUnchanged(entityEntry);
+
+                    entityEntry.Entity.IsDeleted = true;
+                    entityEntry.Entity.DeletedById = userIdentifier;
+                    entityEntry.Entity.DeletedOn = onSaveChangesTime;
+                    entityEntry.Member(nameof(ISoftDeletable<TUserIdentifierType>.IsDeleted)).IsModified = true;
+                    entityEntry.Member(nameof(ISoftDeletable<TUserIdentifierType>.DeletedById)).IsModified = true;
+                    entityEntry.Member(nameof(ISoftDeletable<TUserIdentifierType>.DeletedOn)).IsModified = true;
+                }
+            }
+        }
+
+        protected internal void SetOwnedEntitiesToUnchanged(EntityEntry entityEntry)
+        {
+            var ownedEntities = entityEntry.References
+                .Where(r => r.TargetEntry != null && r.TargetEntry.Metadata.IsOwned())
+                .ToList();
+
+            foreach (var ownedEntity in ownedEntities)
+            {
+                ownedEntity.TargetEntry.State = EntityState.Unchanged;
+                SetOwnedEntitiesToUnchanged(ownedEntity.TargetEntry);
+            }
+        }
+
+        public void OnAfterSaveChanges(SqlServerDbContext serverDbContext)
+        {
+            var trackedEntities = new HashSet<object>();
+            foreach (var dbEntityEntry in serverDbContext.ChangeTracker.Entries().ToArray())
+            {
+                if (dbEntityEntry.Entity != null)
+                {
+                    trackedEntities.Add(dbEntityEntry.Entity);
+                    RemoveSoftDeletableProperties(serverDbContext, dbEntityEntry, trackedEntities);
+                }
+            }
+        }
+
+        private void RemoveSoftDeletableProperties(SqlServerDbContext serverDbContext, EntityEntry entityEntry, HashSet<object> trackedEntities)
+        {
+            var navigationPropertiesEntries = entityEntry.Navigations;
+            foreach (var navigationEntry in navigationPropertiesEntries)
+            {
+                if (navigationEntry.Metadata.IsCollection())
+                {
+                    if (navigationEntry.CurrentValue is ICollection collection)
+                    {
+                        var notRemovedItems = new Collection<object>();
+                        foreach (var collectionItem in collection)
+                        {
+                            var listItemDbEntityEntry = serverDbContext.ChangeTracker.Context.Entry(collectionItem);
+                            if (collectionItem is ISoftDeletable<TUserIdentifierType> deletable && deletable.IsDeleted)
+                            {
+                                listItemDbEntityEntry.State = EntityState.Detached;
+                            }
+                            else
+                            {
+                                notRemovedItems.Add(collectionItem);
+                                if (!trackedEntities.Contains(collectionItem))
+                                {
+                                    trackedEntities.Add(collectionItem);
+                                    RemoveSoftDeletableProperties(serverDbContext, listItemDbEntityEntry, trackedEntities);
+                                }
+                            }
+                        }
+
+                        Type constructedType = typeof(Collection<>).MakeGenericType(navigationEntry.Metadata.PropertyInfo.PropertyType.GenericTypeArguments);
+                        IList col = (IList) Activator.CreateInstance(constructedType);
+                        foreach (var notRemovedItem in notRemovedItems)
+                        {
+                            col.Add(notRemovedItem);
+                        }
+
+                        navigationEntry.CurrentValue = col;
+                    }
+                }
+                else
+                {
+                    if (navigationEntry.CurrentValue != null)
+                    {
+                        var propertyEntityEntry = entityEntry.Reference(navigationEntry.Metadata.Name).TargetEntry;
+
+                        if (navigationEntry.CurrentValue is ISoftDeletable<TUserIdentifierType> deletable && deletable.IsDeleted)
+                        {
+                            propertyEntityEntry.State = EntityState.Detached;
+                            navigationEntry.CurrentValue = null;
+                        }
+                        else
+                        {
+                            if (!trackedEntities.Contains(navigationEntry.CurrentValue))
+                            {
+                                trackedEntities.Add(navigationEntry.CurrentValue);
+                                RemoveSoftDeletableProperties(serverDbContext,
+                                    propertyEntityEntry, trackedEntities);
+                            }
+                        }
+                    }
+                }
             }
         }
 
         private static bool IsSoftDeletableQueryFilterEnabled(SqlServerDbContext dbContext)
         {
-            return (bool)IsSoftDeletableQueryFilterEnabledProperty.GetValue(dbContext);
+            return (bool) IsSoftDeletableQueryFilterEnabledProperty.GetValue(dbContext);
         }
 
-        private static Expression<Func<TEntity, bool>> CreateSoftDeletableQueryFilter<TEntity,
-            TUserIdentifierType>(SqlServerDbContext dbContext)
+        private static Expression<Func<TEntity, bool>> CreateSoftDeletableQueryFilter<TEntity>(
+            SqlServerDbContext dbContext)
             where TEntity : class, ISoftDeletable<TUserIdentifierType>
-            where TUserIdentifierType : struct
         {
             Expression<Func<TEntity, bool>> softDeletableQueryFilter =
                 e => !e.IsDeleted || e.IsDeleted != IsSoftDeletableQueryFilterEnabled(dbContext);

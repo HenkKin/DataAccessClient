@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -24,5 +25,8 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         internal static DbContextOptionsBuilder WithLocaleIdentifierType(this DbContextOptionsBuilder builder,
             Type localeIdentifierType)
             => builder.WithOption(e => e.WithLocaleIdentifierType(localeIdentifierType));
+        internal static DbContextOptionsBuilder WithCustomEntityBehaviorTypes(this DbContextOptionsBuilder builder,
+            IList<Type> customEntityBehaviorTypes)
+            => builder.WithOption(e => e.WithCustomEntityBehaviorTypes(customEntityBehaviorTypes));
     }
 }

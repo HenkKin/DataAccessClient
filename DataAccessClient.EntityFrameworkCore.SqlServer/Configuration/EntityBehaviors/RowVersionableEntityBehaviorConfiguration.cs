@@ -15,7 +15,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
             ModelBuilderConfigureEntityBehaviorIRowVersionable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
                 .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorIRowVersionable));
         }
-        public void Execute(ModelBuilder modelBuilder, SqlServerDbContext serverDbContext, Type entityType)
+        public void OnModelCreating(ModelBuilder modelBuilder, SqlServerDbContext serverDbContext, Type entityType)
         {
             var entityInterfaces = entityType.GetInterfaces();
 
@@ -24,6 +24,21 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
                 ModelBuilderConfigureEntityBehaviorIRowVersionable.MakeGenericMethod(entityType)
                     .Invoke(null, new object[] {modelBuilder});
             }
+        }
+
+        public void OnBeforeSaveChanges(SqlServerDbContext serverDbContext, DateTime onSaveChangesTime)
+        {
+            foreach (var entityEntry in serverDbContext.ChangeTracker.Entries<IRowVersionable>())
+            {
+                var rowVersionProperty = entityEntry.Property(u => u.RowVersion);
+                var rowVersion = rowVersionProperty.CurrentValue;
+                //https://github.com/aspnet/EntityFramework/issues/4512
+                rowVersionProperty.OriginalValue = rowVersion;
+            }
+        }
+
+        public void OnAfterSaveChanges(SqlServerDbContext serverDbContext)
+        {
         }
     }
 }

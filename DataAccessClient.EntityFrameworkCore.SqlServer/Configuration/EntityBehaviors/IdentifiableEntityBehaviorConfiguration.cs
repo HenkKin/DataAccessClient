@@ -15,7 +15,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
             ModelBuilderConfigureEntityBehaviorIIdentifiable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
                 .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorIIdentifiable));
         }
-        public void Execute(ModelBuilder modelBuilder, SqlServerDbContext serverDbContext, Type entityType)
+        public void OnModelCreating(ModelBuilder modelBuilder, SqlServerDbContext serverDbContext, Type entityType)
         {
             var entityInterfaces = entityType.GetInterfaces();
             
@@ -27,6 +27,14 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
                 ModelBuilderConfigureEntityBehaviorIIdentifiable.MakeGenericMethod(entityType, identifierType)
                     .Invoke(null, new object[] { modelBuilder });
             }
+        }
+
+        public void OnBeforeSaveChanges(SqlServerDbContext serverDbContext, DateTime onSaveChangesTime)
+        {
+        }
+
+        public void OnAfterSaveChanges(SqlServerDbContext serverDbContext)
+        {
         }
     }
 }

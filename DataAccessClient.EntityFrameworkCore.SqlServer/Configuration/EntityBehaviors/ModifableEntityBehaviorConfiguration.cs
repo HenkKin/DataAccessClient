@@ -3,10 +3,11 @@ using System.Linq;
 using System.Reflection;
 using DataAccessClient.EntityBehaviors;
 using Microsoft.EntityFrameworkCore;
+// ReSharper disable StaticMemberInGenericType
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors
 {
-    public class ModifiableEntityBehaviorConfiguration : IEntityBehaviorConfiguration
+    public class ModifiableEntityBehaviorConfiguration<TUserIdentifierType> : IEntityBehaviorConfiguration where TUserIdentifierType : struct
     {
         private static readonly MethodInfo ModelBuilderConfigureEntityBehaviorIModifiable;
 
@@ -15,7 +16,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
             ModelBuilderConfigureEntityBehaviorIModifiable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
                 .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorIModifiable));
         }
-        public void Execute(ModelBuilder modelBuilder, SqlServerDbContext serverDbContext, Type entityType)
+        public void OnModelCreating(ModelBuilder modelBuilder, SqlServerDbContext serverDbContext, Type entityType)
         {
             var entityInterfaces = entityType.GetInterfaces();
             
@@ -27,6 +28,22 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
                 ModelBuilderConfigureEntityBehaviorIModifiable.MakeGenericMethod(entityType, identifierType)
                     .Invoke(null, new object[] { modelBuilder });
             }
+        }
+
+        public void OnBeforeSaveChanges(SqlServerDbContext serverDbContext, DateTime onSaveChangesTime)
+        {
+            var userIdentifier = serverDbContext.CurrentUserIdentifier<TUserIdentifierType>();
+
+            foreach (var entityEntry in serverDbContext.ChangeTracker.Entries<IModifiable<TUserIdentifierType>>()
+                .Where(c => c.State == EntityState.Modified))
+            {
+                entityEntry.Entity.ModifiedById = userIdentifier;
+                entityEntry.Entity.ModifiedOn = onSaveChangesTime;
+            }
+        }
+
+        public void OnAfterSaveChanges(SqlServerDbContext serverDbContext)
+        {
         }
     }
 }

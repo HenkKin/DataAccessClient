@@ -4,10 +4,11 @@ using System.Linq.Expressions;
 using System.Reflection;
 using DataAccessClient.EntityBehaviors;
 using Microsoft.EntityFrameworkCore;
+// ReSharper disable StaticMemberInGenericType
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors
 {
-    public class TenantScopeableEntityBehaviorConfiguration : IEntityBehaviorConfiguration
+    public class TenantScopeableEntityBehaviorConfiguration<TTenantIdentifierType> : IEntityBehaviorConfiguration where TTenantIdentifierType : struct
     {
         private static readonly PropertyInfo IsTenantScopableQueryFilterEnabledProperty;
         private static readonly MethodInfo CurrentTenantIdentifierGenericMethod;
@@ -24,7 +25,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
             ModelBuilderConfigureEntityBehaviorITenantScopableMethod = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
                 .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorITenantScopable));
         }
-        public void Execute(ModelBuilder modelBuilder, SqlServerDbContext serverDbContext, Type entityType)
+        public void OnModelCreating(ModelBuilder modelBuilder, SqlServerDbContext serverDbContext, Type entityType)
         {
             var entityInterfaces = entityType.GetInterfaces();
 
@@ -42,7 +43,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
                         $"Can not find method {nameof(CreateTenantScopableQueryFilter)} on class {GetType().FullName}");
                 }
 
-                var tenantScopableQueryFilterMethod = createTenantScopableQueryFilter.MakeGenericMethod(entityType, identifierType);
+                var tenantScopableQueryFilterMethod = createTenantScopableQueryFilter.MakeGenericMethod(entityType);
                 var tenantScopableQueryFilter = tenantScopableQueryFilterMethod.Invoke(this, new object[]{serverDbContext});
 
                 ModelBuilderConfigureEntityBehaviorITenantScopableMethod.MakeGenericMethod(entityType, identifierType)
@@ -50,7 +51,35 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
             }
         }
 
-        private static TTenantIdentifierType CurrentTenantIdentifier<TTenantIdentifierType>(SqlServerDbContext dbContext) where TTenantIdentifierType : struct
+        public void OnBeforeSaveChanges(SqlServerDbContext serverDbContext, DateTime onSaveChangesTime)
+        {
+            var tenantIdentifier = serverDbContext.CurrentTenantIdentifier<TTenantIdentifierType>();
+
+            foreach (var entityEntry in serverDbContext.ChangeTracker.Entries<ITenantScopable<TTenantIdentifierType>>()
+                .Where(c => c.State == EntityState.Added))
+            {
+                var tenantId = entityEntry.Entity.TenantId;
+                if (tenantId.Equals(default(TTenantIdentifierType)))
+                {
+                    if (tenantIdentifier.HasValue)
+                    {
+                        entityEntry.Entity.TenantId = tenantIdentifier.Value;
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException(
+                            $"CurrentTenantId is needed for new entity of type '{entityEntry.Entity.GetType().FullName}', but the '{typeof(SqlServerDbContext).FullName}' does not have one at this moment");
+                    }
+                }
+            }
+        }
+
+        public void OnAfterSaveChanges(SqlServerDbContext serverDbContext)
+        {
+            
+        }
+
+        private static TTenantIdentifierType CurrentTenantIdentifier(SqlServerDbContext dbContext)
         {
             var currentTenantIdentifierMethod = CurrentTenantIdentifierGenericMethod.MakeGenericMethod(typeof(TTenantIdentifierType));
             return (TTenantIdentifierType) currentTenantIdentifierMethod.Invoke(dbContext, new object[0]);
@@ -61,15 +90,13 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
             return (bool)IsTenantScopableQueryFilterEnabledProperty.GetValue(dbContext);
         }
 
-        private static Expression<Func<TEntity, bool>> CreateTenantScopableQueryFilter<TEntity,
-            TTenantIdentifierType>(SqlServerDbContext dbContext)
+        private static Expression<Func<TEntity, bool>> CreateTenantScopableQueryFilter<TEntity>(SqlServerDbContext dbContext)
             where TEntity : class, ITenantScopable<TTenantIdentifierType>
-            where TTenantIdentifierType : struct
         {
 
             Expression<Func<TEntity, bool>> tenantScopableQueryFilter = e =>
-                e.TenantId.Equals(CurrentTenantIdentifier<TTenantIdentifierType>(dbContext)) ||
-                e.TenantId.Equals(CurrentTenantIdentifier<TTenantIdentifierType>(dbContext)) ==
+                e.TenantId.Equals(CurrentTenantIdentifier(dbContext)) ||
+                e.TenantId.Equals(CurrentTenantIdentifier(dbContext)) ==
                 IsTenantScopableQueryFilterEnabled(dbContext);
 
             return tenantScopableQueryFilter;

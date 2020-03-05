@@ -15,6 +15,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure
         public Type UserIdentifierType { get; private set; }
         public Type TenantIdentifierType { get; private set; }
         public Type LocaleIdentifierType { get; private set; }
+        public IList<Type> CustomEntityBehaviorsTypes { get; private set; } = new List<Type>();
 
         public DataAccessClientOptionsExtension WithUserIdentifierType(Type userIdentifierType)
         {
@@ -35,6 +36,16 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure
             clone.LocaleIdentifierType = localeIdentifierType;
             return clone;
         }
+        
+        public DataAccessClientOptionsExtension WithCustomEntityBehaviorTypes(IList<Type> customEntityBehaviorTypes)
+        {
+            var clone = Clone();
+            foreach (var customEntityBehaviorType in customEntityBehaviorTypes)
+            {
+                clone.CustomEntityBehaviorsTypes.Add(customEntityBehaviorType);
+            }
+            return clone;
+        }
 
         public DataAccessClientOptionsExtension()
         {
@@ -45,6 +56,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure
             UserIdentifierType = copyFrom.UserIdentifierType;
             TenantIdentifierType = copyFrom.TenantIdentifierType;
             LocaleIdentifierType = copyFrom.LocaleIdentifierType;
+            CustomEntityBehaviorsTypes = copyFrom.CustomEntityBehaviorsTypes;
         }
 
         public virtual DbContextOptionsExtensionInfo Info

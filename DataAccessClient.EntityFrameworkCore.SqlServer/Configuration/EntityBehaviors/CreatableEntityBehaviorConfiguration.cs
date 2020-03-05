@@ -3,10 +3,11 @@ using System.Linq;
 using System.Reflection;
 using DataAccessClient.EntityBehaviors;
 using Microsoft.EntityFrameworkCore;
+// ReSharper disable StaticMemberInGenericType
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors
 {
-    public class CreatableEntityBehaviorConfiguration : IEntityBehaviorConfiguration
+    public class CreatableEntityBehaviorConfiguration<TUserIdentifierType> : IEntityBehaviorConfiguration where TUserIdentifierType : struct
     {
         private static readonly MethodInfo ModelBuilderConfigureEntityBehaviorICreatable;
 
@@ -15,7 +16,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
             ModelBuilderConfigureEntityBehaviorICreatable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
                 .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorICreatable));
         }
-        public void Execute(ModelBuilder modelBuilder, SqlServerDbContext serverDbContext, Type entityType)
+        public void OnModelCreating(ModelBuilder modelBuilder, SqlServerDbContext serverDbContext, Type entityType)
         {
             var entityInterfaces = entityType.GetInterfaces();
             
@@ -27,6 +28,22 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
                 ModelBuilderConfigureEntityBehaviorICreatable.MakeGenericMethod(entityType, identifierType)
                     .Invoke(null, new object[] { modelBuilder });
             }
+        }
+
+        public void OnBeforeSaveChanges(SqlServerDbContext serverDbContext, DateTime onSaveChangesTime)
+        {
+            var userIdentifier = serverDbContext.CurrentUserIdentifier<TUserIdentifierType>();
+
+            foreach (var entityEntry in serverDbContext.ChangeTracker.Entries<ICreatable<TUserIdentifierType>>()
+                .Where(c => c.State == EntityState.Added))
+            {
+                entityEntry.Entity.CreatedById = userIdentifier.GetValueOrDefault();
+                entityEntry.Entity.CreatedOn = onSaveChangesTime;
+            }
+        }
+
+        public void OnAfterSaveChanges(SqlServerDbContext serverDbContext)
+        {
         }
     }
 }
