@@ -1,4 +1,5 @@
 ﻿using System;
+using DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors;
 using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer
@@ -35,6 +36,12 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         {
             _options.UsePooling = usePooling;
             _options.PoolSize = poolSize;
+            return this;
+        }
+
+        public virtual DataAccessClientOptionsBuilder AddCustomEntityBehavior<TEntityHaviorType>() where TEntityHaviorType : IEntityBehaviorConfiguration
+        {
+            _options.CustomEntityBehaviors.Add((TEntityHaviorType)Activator.CreateInstance(typeof(TEntityHaviorType)));
             return this;
         }
     }

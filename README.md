@@ -17,7 +17,7 @@ DataAccessClient
 
 ### Summary
 
-Provides interfaces for Data Access with IRepository<T>, IUnitOfWork and IQueryableSearcher<T>. Also provides haviorial interfaces for entities like IIdentifiable, ICreatable, IModifiable, ISoftDeletable, ITranslatable, IRowVersionable and ITenantScopable. Last but not least provides some types for Exceptions and searching capabilities like Filtering, Paging, Sorting and Includes.
+Provides interfaces for Data Access with IRepository<T>, IUnitOfWork and IQueryableSearcher<T>. Also provides haviorial interfaces for entities like IIdentifiable, ICreatable, IModifiable, ISoftDeletable, ITranslatable, IRowVersionable, ITenantScopable and ILocalizable. Last but not least provides some types for Exceptions and searching capabilities like Filtering, Paging, Sorting and Includes.
 
 This library is Cross-platform, supporting `netstandard2.1`.
 
@@ -54,7 +54,7 @@ public class ExampleEntity :
 	IModifiable<int>, 
 	ISoftDeletable<int>, 
 	IRowVersionable,
-	ITranslatable<ExampleEntityTranslation, int>,
+	ITranslatable<ExampleEntityTranslation, int, string>,
 	ITenantScopable<int>
 {
 	// to identify an entity
@@ -86,13 +86,13 @@ public class ExampleEntity :
 	public string Name { get; set; }
 }
 
-public class ExampleEntityTranslation : IEntityTranslation<ExampleEntity, int>
+public class ExampleEntityTranslation : IEntityTranslation<ExampleEntity, int, string>
 {
     public ExampleEntity TranslatedEntity { get; set; }
     public int TranslatedEntityId { get; set; }
 
 	// language of translations, f.e. en-GB or nl-NL
-    public string Language { get; set; }
+    public string LocaleId { get; set; }
 
 	// your custom translatable fields
 	public string Description { get; set; }
@@ -103,8 +103,8 @@ public class ExampleEntityTranslation : IEntityTranslation<ExampleEntity, int>
 
 Alle entity behaviors are optional. No one is required.
 
-The generic parameter `int` defines the IdentifierType of your identifier fields (primary and foreign keys). 
-All `struct` types are possible, also the `Identifier` type of package [Identifiers](https://www.nuget.org/packages/Identifiers)
+All `struct` types are possible, also the `Identifier` type of package [Identifiers](https://www.nuget.org/packages/Identifiers). 
+For LocaleId the type should by `IConvertible`, so `String` is allowed too.
 
 ### IUnitOfWork and IRepository<T>
 	
@@ -325,8 +325,9 @@ When using this package, there are two required implementation you have to provi
 
  - IUserIdentifierProvider<TUserIdentifierType>
  - ITenantIdentifierProvider<TTenantIdentifierType>
+ - ILocaleIdentifierProvider<TLocaleIdentifierType>
 
-These two providers have to be registered with Scoped Lifetime in DependencyInjection.
+These three providers have to be registered with Scoped Lifetime in DependencyInjection. They are only required when it is needed for the EntityBehaviors you have implemented.
 
 #### IUserIdentifierProvider<TUserIdentifierType>
 
@@ -370,6 +371,26 @@ public class YourTenantIdentifierProvider : ITenantIdentifierProvider<int>
 ...
 ```
 
+#### ILocaleIdentifierProvider<TLocaleIdentifierType>
+
+Providing an implementation for interface `ILocaleIdentifierProvider<TLocaleIdentifierType>`. This provider should try to return a locale identifier of the current context.
+
+```csharp
+...
+using  DataAccessClient.Providers;
+
+public class YourLocaleIdentifierProvider : ILocaleIdentifierProvider<string>
+{
+	public string Execute()
+	{
+		// f.e. in Asp.NET Core it could use IHttpContextAccessor.HttpContext.User.Identity to get locale identifier via claims or your own implementation;
+
+		// return the current locale id
+		return "nl-NL";
+	}
+}
+...
+```
 
 ### Exceptions
 
@@ -467,7 +488,7 @@ Either commands, from Package Manager Console or .NET Core CLI, will download an
 
 ### Usage
 
-IIf you're using EntityFrameworkCore.SqlServer and you want to use this Identifier type in your entities, then you can use [DataAccessClient.EntityFrameworkCore.SqlServer](https://github.com/HenkKin/DataAccessClient.EntityFrameworkCore.SqlServer/) package which includes the following registration options via extensions method:
+If you're using EntityFrameworkCore.SqlServer and you want to use this Identifier type in your entities, then you can use [DataAccessClient.EntityFrameworkCore.SqlServer](https://github.com/HenkKin/DataAccessClient.EntityFrameworkCore.SqlServer/) package which includes the following registration options via extensions method:
 
 - `IServiceCollection AddDataAccessClient<TDbContext>(this IServiceCollection services, Action<DataAccessClientOptionsBuilder> dataAccessClientOptionsBuilderAction)`
 
@@ -489,18 +510,14 @@ public class Startup
 		var entityTypes = new [] { typeof(Entity1), typeof(Entity2) }; // can also done by using reflection
 		...
 
-		// register IUserIdentifierProvider 
-		services.AddScoped<IUserIdentifierProvider<int>, YourUserIdentifierProvider>();
-
-		// register ITenantIdentifierProvider 
-		services.AddScoped<ITenantIdentifierProvider<int>, YourTenantIdentifierProvider>();
-
 		services.AddScoped<IUserIdentifierProvider<int>, ExampleUserIdentifierProvider>();
 		services.AddScoped<ITenantIdentifierProvider<int>, ExampleTenantIdentifierProvider>();
-		
+		services.AddScoped<ILocaleIdentifierProvider<string>, ExampleLocaleIdentifierProvider>();
+
 		// register as DataAccessClient
 		services.AddDataAccessClient<ExampleDbContext>(conf => conf
             .UsePooling(true)
+			.AddCustomEntityBehavior<YourCustomEntityBehaviorConfigurationType>() // optional extensible
             .ConfigureEntityTypes(new[] { typeof(ExampleEntity) })
             .ConfigureDbContextOptions(builder => builder
                 .EnableSensitiveDataLogging()
@@ -546,6 +563,79 @@ internal class YourDbContext : SqlServerDbContext
     ...
 ```
 
+### Extensibility
+
+To add your custom EntityBehavior, you have to implement the `IEntityBehaviorConfiguration` interface.
+
+```csharp
+...
+using DataAccessClient.EntityFrameworkCore.SqlServer;
+
+public class Startup
+{
+    ...
+    
+    // This method gets called by the runtime. Use this method to add services to the container.
+    public void ConfigureServices(IServiceCollection services)
+    {
+		// register as DataAccessClient
+		services.AddDataAccessClient<ExampleDbContext>(conf => conf
+		    ...
+			.AddCustomEntityBehavior<YourCustomEntityBehavior1ConfigurationType>() 
+			.AddCustomEntityBehavior<YourCustomEntityBehavior2ConfigurationType>() 
+            
+		);
+                
+		...
+	}
+}
+
+// NOTE: to see a working implementation of an EntityBehavior, have a look at: 
+// https://github.com/HenkKin/DataAccessClient/blob/master/DataAccessClient.EntityFrameworkCore.SqlServer/Configuration/EntityBehaviors/TenantScopeableEntityBehaviorConfiguration.cs
+
+public class YourCustomEntityBehaviorConfigurationType : IEntityBehaviorConfiguration
+{
+	public void OnRegistering(IServiceCollection serviceCollection)
+	{
+		// please register here dependencies you need for your custom entity behavior, it is also allowed to register them elsewhere in your applicatie
+	}
+	
+	public Dictionary<string, dynamic> OnExecutionContextCreating(IServiceProvider scopedServiceProvider)
+	{
+		// if you need some context information for query filters, like tenantIdentifier or LocaleIdentifier, then you van provide it into this dictionary. 
+		return new Dictionary<string, dynamic>();
+	}
+	
+	public void OnModelCreating(ModelBuilder modelBuilder, SqlServerDbContext sqlServerDbContext, Type entityType)
+	{
+		// configure the Entities if needed
+	}
+	
+	public void OnBeforeSaveChanges(SqlServerDbContext sqlServerDbContext, DateTime onSaveChangesTime)
+	{
+		// optional you van provide some logic before save. You can you use here the `ChangeTracker`
+	}
+	
+	public void OnAfterSaveChanges(SqlServerDbContext sqlServerDbContext)
+	{
+		// optional you van provide some logic after save. You can you use here the `ChangeTracker`
+	}
+}
+    ...
+```
+#### HasQueryFilter issue, please use AppendQueryFilter!
+
+When configuring an QueryFilter for an entity, you normally use `EntityTypeBuilder.HasQueryFilter(LambdaExpression filter)` or the generic variant of it.
+The downside of this method is, that is overwrite the current QueryFilter.
+Especially when we have multiple entity behaviors, which each specify its own filter.
+
+To solve this issue an extension method is provided:
+
+`EntityTypeBuilder<TEntity> AppendQueryFilter<TEntity>(this EntityTypeBuilder<TEntity> entityTypeBuilder, Expression<Func<TEntity, bool>> expression) where TEntity : class`
+
+It lives in the namespace `DataAccessClient.EntityFrameworkCore.SqlServer` and class `EntityTypeBuilderExtensions`.
+
+This method concatenates the queryies provided via `AppendQueryFilter(...)`.
 
 ### Supporting migrations using `dotnet ef` tooling
 

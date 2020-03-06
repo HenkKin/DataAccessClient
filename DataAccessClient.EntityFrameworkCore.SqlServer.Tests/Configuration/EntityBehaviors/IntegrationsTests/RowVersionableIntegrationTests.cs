@@ -6,7 +6,7 @@ using DataAccessClient.Providers;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.EntityBehaviors
+namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.EntityBehaviors.IntegrationsTests
 {
     public class RowVersionableIntegrationTests : DbContextTestBase
     {

@@ -1,7 +1,7 @@
 ﻿namespace DataAccessClient.EntityBehaviors
 {
-    public interface ITenantScopable<TIdentifierType> where TIdentifierType : struct
+    public interface ITenantScopable<TTenantIdentifierType> where TTenantIdentifierType : struct
     {
-        TIdentifierType TenantId { get; set; }
+        TTenantIdentifierType TenantId { get; set; }
     }
 }

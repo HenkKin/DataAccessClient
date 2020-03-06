@@ -8,7 +8,7 @@
 //using Microsoft.Extensions.DependencyInjection;
 //using Xunit;
 
-//namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.EntityBehaviors
+//namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.EntityBehaviors.IntegrationsTests
 //{
 //    public class LocalizableIntegrationTests : DbContextTestBase
 //    {
@@ -25,8 +25,8 @@
 
 //            localeIdentifierProvider.ChangeLocaleIdentifier("nl-NL");
 //            var testEntityLocale1 = new TestEntity();
-//            testEntityLocale1.Translations.Add(new TestEntityTranslation{Description = "Uitproberen", LocaleId = "nl-NL"});
-//            testEntityLocale1.Translations.Add(new TestEntityTranslation{Description = "test", LocaleId = "en-GB" });
+//            testEntityLocale1.Translations.Add(new TestEntityTranslation { Description = "Uitproberen", LocaleId = "nl-NL" });
+//            testEntityLocale1.Translations.Add(new TestEntityTranslation { Description = "test", LocaleId = "en-GB" });
 //            TestEntityRepository.Add(testEntityLocale1);
 //            await UnitOfWork.SaveAsync();
 
@@ -44,7 +44,7 @@
 //            {
 //                Assert.False(localizationConfiguration.IsQueryFilterEnabled);
 
-//                var allLocaleEntities = await TestEntityRepository.GetReadOnlyQuery().Include(x=>x.Translations).ToListAsync();
+//                var allLocaleEntities = await TestEntityRepository.GetReadOnlyQuery().Include(x => x.Translations).ToListAsync();
 //                Assert.Equal(2, allLocaleEntities.Count);
 //            }
 

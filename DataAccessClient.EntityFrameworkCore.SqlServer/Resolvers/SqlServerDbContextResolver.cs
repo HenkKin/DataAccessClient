@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Reflection;
-using DataAccessClient.Configuration;
-using DataAccessClient.Providers;
+using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Resolvers
@@ -31,29 +29,19 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Resolvers
 
                     var dbContext = _scopedServiceProvider.GetRequiredService<TDbContext>();
 
-                    var userIdentifierProviderType = typeof(IUserIdentifierProvider<>).MakeGenericType(dbContext.DataAccessClientOptionsExtension.UserIdentifierType);
-                    var tenantIdentifierProviderType = typeof(ITenantIdentifierProvider<>).MakeGenericType(dbContext.DataAccessClientOptionsExtension.TenantIdentifierType);
-                    var localeIdentifierProviderType = typeof(ILocaleIdentifierProvider<>).MakeGenericType(dbContext.DataAccessClientOptionsExtension.LocaleIdentifierType);
+                    var context = new Dictionary<string, dynamic>();
+                   
+                    foreach (var entityBehaviorConfiguration in dbContext.DataAccessClientOptionsExtension.EntityBehaviors)
+                    {
+                        foreach (var entityBehaviorContext in entityBehaviorConfiguration.OnExecutionContextCreating(_scopedServiceProvider))
+                        {
+                            context.TryAdd(entityBehaviorContext.Key, entityBehaviorContext.Value);
+                        }
+                    }
 
-                    var executeUserIdentifierProviderTypeMethod = userIdentifierProviderType.GetMethod(nameof(IUserIdentifierProvider<int>.Execute), BindingFlags.Instance | BindingFlags.Public);
-                    var executeTenantIdentifierProviderTypeMethod = tenantIdentifierProviderType.GetMethod(nameof(ITenantIdentifierProvider<int>.Execute), BindingFlags.Instance | BindingFlags.Public);
-                    var executeLocaleIdentifierProviderTypeMethod = localeIdentifierProviderType.GetMethod(nameof(ILocaleIdentifierProvider<int>.Execute), BindingFlags.Instance | BindingFlags.Public);
+                    var executionContext = new SqlServerDbContextExecutionContext(context);
 
-                    var userIdentifierProvider = _scopedServiceProvider.GetRequiredService(userIdentifierProviderType);
-                    var tenantIdentifierProvider = _scopedServiceProvider.GetRequiredService(tenantIdentifierProviderType);
-                    var localeIdentifierProvider = _scopedServiceProvider.GetRequiredService(localeIdentifierProviderType);
-
-                    var softDeletableConfiguration = _scopedServiceProvider.GetRequiredService<ISoftDeletableConfiguration>();
-                    var multiTenancyConfiguration = _scopedServiceProvider.GetRequiredService<IMultiTenancyConfiguration>();
-                    var localizationConfiguration = _scopedServiceProvider.GetRequiredService<ILocalizationConfiguration>();
-
-                    dbContext.Initialize(
-                        () => executeUserIdentifierProviderTypeMethod.Invoke(userIdentifierProvider, new object[0]),
-                        () => executeTenantIdentifierProviderTypeMethod.Invoke(tenantIdentifierProvider, new object[0]),
-                        () => executeLocaleIdentifierProviderTypeMethod.Invoke(localeIdentifierProvider, new object[0]),
-                        softDeletableConfiguration,
-                        multiTenancyConfiguration,
-                        localizationConfiguration);
+                    dbContext.Initialize(executionContext);
 
                     _resolvedDbContext = dbContext;
                 }
