@@ -11,14 +11,11 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
     public class TranslatableEntityBehaviorConfiguration : IEntityBehaviorConfiguration
     {
         private static readonly MethodInfo ModelBuilderConfigureEntityBehaviorITranslatable;
-        private static readonly MethodInfo ModelBuilderConfigureEntityBehaviorTranslatedProperties;
 
         static TranslatableEntityBehaviorConfiguration()
         {
             ModelBuilderConfigureEntityBehaviorITranslatable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
                 .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorITranslatable));
-            ModelBuilderConfigureEntityBehaviorTranslatedProperties = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
-                .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorTranslatedProperties));
         }
 
         public void OnRegistering(IServiceCollection serviceCollection)
@@ -49,8 +46,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
                     .MakeGenericMethod(entityType, entityTranslationType, identifierType, localeType)
                     .Invoke(null, new object[] { modelBuilder });
             }
-
-            ModelBuilderConfigureEntityBehaviorTranslatedProperties.MakeGenericMethod(entityType).Invoke(null, new object[] { modelBuilder });
         }
 
         public void OnBeforeSaveChanges(SqlServerDbContext serverDbContext, DateTime onSaveChangesTime)

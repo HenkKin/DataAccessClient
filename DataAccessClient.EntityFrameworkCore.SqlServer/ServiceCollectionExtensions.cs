@@ -40,7 +40,9 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                 new RowVersionableEntityBehaviorConfiguration(),
                 CreateEntityBehaviorTypeInstance(typeof(LocalizableEntityBehaviorConfiguration<>).MakeGenericType(localeIdentifierType)),
                 CreateEntityBehaviorTypeInstance(typeof(TenantScopeableEntityBehaviorConfiguration<>).MakeGenericType(tenantIdentifierType)),
-                new TranslatableEntityBehaviorConfiguration()
+                new TranslatableEntityBehaviorConfiguration(),
+                new TranslatedPropertyEntityBehaviorConfiguration(),
+                new UtcDateTimePropertyEntityBehaviorConfiguration()
             };
 
             if (dataAccessClientOptions.CustomEntityBehaviors.Any())

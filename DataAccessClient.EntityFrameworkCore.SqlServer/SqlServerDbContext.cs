@@ -18,7 +18,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         private static readonly MethodInfo DbContextResetStateMethodInfo;
         private static readonly MethodInfo DbContextResetStateAsyncMethodInfo;
         private static readonly MethodInfo DbContextResurrectMethodInfo;
-        private static readonly MethodInfo ModelBuilderConfigureHasUtcDateTimeProperties;
 
         static SqlServerDbContext()
         {
@@ -31,8 +30,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             DbContextResurrectMethodInfo = typeof(DbContext).GetMethod(
                 $"{typeof(IDbContextPoolable).FullName}.{nameof(IDbContextPoolable.Resurrect)}",
                 BindingFlags.Instance | BindingFlags.NonPublic);
-            ModelBuilderConfigureHasUtcDateTimeProperties = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
-                .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureHasUtcDateTimeProperties));
         }
 
         internal SqlServerDbContextExecutionContext ExecutionContext { get; private set; }
@@ -147,21 +144,12 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                             (p.ClrType.IsGenericType && !ignoredEntityTypes.Contains(p.ClrType.GetGenericTypeDefinition())))
                 .ToList();
 
-            var utcDateTimeValueConverter = new UtcDateTimeValueConverter();
-
             foreach (var entityType in entityTypes)
             {
-                if (DataAccessClientOptionsExtension != null)
+                foreach (var entityBehaviorConfiguration in DataAccessClientOptionsExtension.EntityBehaviors)
                 {
-                    foreach (var entityBehaviorConfiguration in DataAccessClientOptionsExtension.EntityBehaviors)
-                    {
-                        entityBehaviorConfiguration.OnModelCreating(modelBuilder, this, entityType.ClrType);
-                    }
+                    entityBehaviorConfiguration.OnModelCreating(modelBuilder, this, entityType.ClrType);
                 }
-
-                ModelBuilderConfigureHasUtcDateTimeProperties
-                    .MakeGenericMethod(entityType.ClrType)
-                    .Invoke(null, new object[] {modelBuilder, utcDateTimeValueConverter});
             }
 
             base.OnModelCreating(modelBuilder);
