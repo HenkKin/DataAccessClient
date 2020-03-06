@@ -488,7 +488,7 @@ Either commands, from Package Manager Console or .NET Core CLI, will download an
 
 ### Usage
 
-IIf you're using EntityFrameworkCore.SqlServer and you want to use this Identifier type in your entities, then you can use [DataAccessClient.EntityFrameworkCore.SqlServer](https://github.com/HenkKin/DataAccessClient.EntityFrameworkCore.SqlServer/) package which includes the following registration options via extensions method:
+If you're using EntityFrameworkCore.SqlServer and you want to use this Identifier type in your entities, then you can use [DataAccessClient.EntityFrameworkCore.SqlServer](https://github.com/HenkKin/DataAccessClient.EntityFrameworkCore.SqlServer/) package which includes the following registration options via extensions method:
 
 - `IServiceCollection AddDataAccessClient<TDbContext>(this IServiceCollection services, Action<DataAccessClientOptionsBuilder> dataAccessClientOptionsBuilderAction)`
 
@@ -623,7 +623,19 @@ public class YourCustomEntityBehaviorConfigurationType : IEntityBehaviorConfigur
 }
     ...
 ```
+#### HasQueryFilter issue, please use AppendQueryFilter!
 
+When configuring an QueryFilter for an entity, you normally use `EntityTypeBuilder.HasQueryFilter(LambdaExpression filter)` or the generic variant of it.
+The downside of this method is, that is overwrite the current QueryFilter.
+Especially when we have multiple entity behaviors, which each specify its own filter.
+
+To solve this issue an extension method is provided:
+
+`EntityTypeBuilder<TEntity> AppendQueryFilter<TEntity>(this EntityTypeBuilder<TEntity> entityTypeBuilder, Expression<Func<TEntity, bool>> expression) where TEntity : class`
+
+It lives in the namespace `DataAccessClient.EntityFrameworkCore.SqlServer` and class `EntityTypeBuilderExtensions`.
+
+This method concatenates the queryies provided via `AppendQueryFilter(...)`.
 
 ### Supporting migrations using `dotnet ef` tooling
 
