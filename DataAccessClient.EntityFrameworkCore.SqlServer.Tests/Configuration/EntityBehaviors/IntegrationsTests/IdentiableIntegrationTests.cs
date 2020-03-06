@@ -3,7 +3,7 @@ using DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestBase;
 using DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestModels;
 using Xunit;
 
-namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.EntityBehaviors
+namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.EntityBehaviors.IntegrationsTests
 {
     public class IdentiableIntegrationTests : DbContextTestBase
     {

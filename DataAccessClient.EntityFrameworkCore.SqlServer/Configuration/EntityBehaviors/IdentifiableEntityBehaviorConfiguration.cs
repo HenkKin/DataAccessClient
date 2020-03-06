@@ -4,20 +4,47 @@ using System.Linq;
 using System.Reflection;
 using DataAccessClient.EntityBehaviors;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors
 {
-    public class IdentifiableEntityBehaviorConfiguration : IEntityBehaviorConfiguration
+    internal static class IdentifiableEntityBehaviorConfigurationExtensions
     {
-        private static readonly MethodInfo ModelBuilderConfigureEntityBehaviorIIdentifiable;
+        internal static readonly MethodInfo ModelBuilderConfigureEntityBehaviorIIdentifiable;
 
-        static IdentifiableEntityBehaviorConfiguration()
+        static IdentifiableEntityBehaviorConfigurationExtensions()
         {
-            ModelBuilderConfigureEntityBehaviorIIdentifiable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
-                .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorIIdentifiable));
+            ModelBuilderConfigureEntityBehaviorIIdentifiable = typeof(IdentifiableEntityBehaviorConfigurationExtensions).GetTypeInfo()
+                .DeclaredMethods
+                .Single(m => m.Name == nameof(ConfigureEntityBehaviorIIdentifiable));
         }
 
+        internal static ModelBuilder ConfigureEntityBehaviorIIdentifiable<TEntity, TIdentifierType>(ModelBuilder modelBuilder)
+            where TEntity : class, IIdentifiable<TIdentifierType>
+            where TIdentifierType : struct
+        {
+            modelBuilder.Entity<TEntity>()
+                .IsIdentifiable<TEntity, TIdentifierType>();
+
+            return modelBuilder;
+        }
+
+        internal static EntityTypeBuilder<TEntity> IsIdentifiable<TEntity, TIdentifierType>(this EntityTypeBuilder<TEntity> entity)
+            where TEntity : class, IIdentifiable<TIdentifierType>
+            where TIdentifierType : struct
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .IsRequired();
+
+            return entity;
+        }
+    }
+
+    public class IdentifiableEntityBehaviorConfiguration : IEntityBehaviorConfiguration
+    {
         public void OnRegistering(IServiceCollection serviceCollection)
         {
         }
@@ -36,7 +63,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
             {
                 var identifierType = entityType.GetInterface(typeof(IIdentifiable<>).Name)
                     .GenericTypeArguments[0];
-                ModelBuilderConfigureEntityBehaviorIIdentifiable.MakeGenericMethod(entityType, identifierType)
+                IdentifiableEntityBehaviorConfigurationExtensions.ModelBuilderConfigureEntityBehaviorIIdentifiable.MakeGenericMethod(entityType, identifierType)
                     .Invoke(null, new object[] { modelBuilder });
             }
         }

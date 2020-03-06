@@ -1,12 +1,11 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestBase;
 using DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestModels;
 using DataAccessClient.Providers;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.EntityBehaviors
+namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.EntityBehaviors.IntegrationsTests
 {
     public class ModifiableIntegrationTests : DbContextTestBase
     {

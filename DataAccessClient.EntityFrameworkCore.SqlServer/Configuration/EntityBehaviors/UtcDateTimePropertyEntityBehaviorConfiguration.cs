@@ -3,21 +3,56 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors
 {
-    public class UtcDateTimePropertyEntityBehaviorConfiguration : IEntityBehaviorConfiguration
+    internal static class UtcDateTimePropertyEntityBehaviorConfigurationExtensions
     {
-        private static readonly MethodInfo ModelBuilderConfigureHasUtcDateTimeProperties;
-        private static readonly UtcDateTimeValueConverter UtcDateTimeValueConverter = new UtcDateTimeValueConverter();
+        internal static readonly MethodInfo ModelBuilderConfigureHasUtcDateTimeProperties;
+        internal static readonly UtcDateTimeValueConverter UtcDateTimeValueConverter = new UtcDateTimeValueConverter();
 
-        static UtcDateTimePropertyEntityBehaviorConfiguration()
+        static UtcDateTimePropertyEntityBehaviorConfigurationExtensions()
         {
-            ModelBuilderConfigureHasUtcDateTimeProperties = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
-                .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureHasUtcDateTimeProperties));
+            ModelBuilderConfigureHasUtcDateTimeProperties = typeof(UtcDateTimePropertyEntityBehaviorConfigurationExtensions).GetTypeInfo().DeclaredMethods
+                .Single(m => m.Name == nameof(ConfigureHasUtcDateTimeProperties));
         }
 
+        internal static ModelBuilder ConfigureHasUtcDateTimeProperties<TEntity>(ModelBuilder modelBuilder,
+            ValueConverter<DateTime?, DateTime?> dateTimeValueConverter)
+            where TEntity : class
+        {
+            modelBuilder.Entity<TEntity>()
+                .HasUtcDateTimeProperties(dateTimeValueConverter);
+
+            return modelBuilder;
+        }
+
+        internal static EntityTypeBuilder<TEntity> HasUtcDateTimeProperties<TEntity>(
+            this EntityTypeBuilder<TEntity> entity, ValueConverter<DateTime?, DateTime?> dateTimeValueConverter)
+            where TEntity : class
+        {
+            var datetimeProperties = typeof(TEntity).GetProperties()
+                .Where(property =>
+                    property.CanWrite && (property.PropertyType == typeof(DateTime) ||
+                                          property.PropertyType == typeof(DateTime?))
+                )
+                .ToList();
+
+            datetimeProperties.ForEach(property =>
+            {
+                entity.Property(property.Name)
+                    .HasConversion(dateTimeValueConverter);
+            });
+
+            return entity;
+        }
+    }
+
+    public class UtcDateTimePropertyEntityBehaviorConfiguration : IEntityBehaviorConfiguration
+    {
         public void OnRegistering(IServiceCollection serviceCollection)
         {
         }
@@ -30,9 +65,9 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
 
         public void OnModelCreating(ModelBuilder modelBuilder, SqlServerDbContext serverDbContext, Type entityType)
         {
-            ModelBuilderConfigureHasUtcDateTimeProperties
+            UtcDateTimePropertyEntityBehaviorConfigurationExtensions.ModelBuilderConfigureHasUtcDateTimeProperties
                 .MakeGenericMethod(entityType)
-                .Invoke(null, new object[] { modelBuilder, UtcDateTimeValueConverter });
+                .Invoke(null, new object[] { modelBuilder, UtcDateTimePropertyEntityBehaviorConfigurationExtensions.UtcDateTimeValueConverter });
         }
 
         public void OnBeforeSaveChanges(SqlServerDbContext serverDbContext, DateTime onSaveChangesTime)

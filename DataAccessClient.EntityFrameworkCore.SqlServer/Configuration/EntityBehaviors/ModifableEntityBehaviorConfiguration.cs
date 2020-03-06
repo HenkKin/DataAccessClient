@@ -5,22 +5,46 @@ using System.Reflection;
 using DataAccessClient.EntityBehaviors;
 using DataAccessClient.Providers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.Extensions.DependencyInjection;
-
-// ReSharper disable StaticMemberInGenericType
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors
 {
-    public class ModifiableEntityBehaviorConfiguration<TUserIdentifierType> : IEntityBehaviorConfiguration where TUserIdentifierType : struct
+    internal static class ModifiableEntityBehaviorConfigurationExtensions
     {
-        private static readonly MethodInfo ModelBuilderConfigureEntityBehaviorIModifiable;
+        internal static readonly MethodInfo ModelBuilderConfigureEntityBehaviorIModifiable;
 
-        static ModifiableEntityBehaviorConfiguration()
+        static ModifiableEntityBehaviorConfigurationExtensions()
         {
-            ModelBuilderConfigureEntityBehaviorIModifiable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
-                .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorIModifiable));
+            ModelBuilderConfigureEntityBehaviorIModifiable = typeof(ModifiableEntityBehaviorConfigurationExtensions).GetTypeInfo()
+                .DeclaredMethods
+                .Single(m => m.Name == nameof(ConfigureEntityBehaviorIModifiable));
         }
 
+        internal static ModelBuilder ConfigureEntityBehaviorIModifiable<TEntity, TIdentifierType>(
+            ModelBuilder modelBuilder)
+            where TEntity : class, IModifiable<TIdentifierType>
+            where TIdentifierType : struct
+        {
+            modelBuilder.Entity<TEntity>()
+                .IsModifiable<TEntity, TIdentifierType>();
+
+            return modelBuilder;
+        }
+
+        internal static EntityTypeBuilder<TEntity> IsModifiable<TEntity, TIdentifierType>(
+            this EntityTypeBuilder<TEntity> entity)
+            where TEntity : class, IModifiable<TIdentifierType>
+            where TIdentifierType : struct
+        {
+            entity.Property(e => e.ModifiedById).IsRequired(false);
+            entity.Property(e => e.ModifiedOn).IsRequired(false);
+            return entity;
+        }
+    }
+
+    public class ModifiableEntityBehaviorConfiguration<TUserIdentifierType> : IEntityBehaviorConfiguration where TUserIdentifierType : struct
+    {
         public void OnRegistering(IServiceCollection serviceCollection)
         {
         }
@@ -46,7 +70,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
             {
                 var identifierType = entityType.GetInterface(typeof(IModifiable<>).Name)
                     .GenericTypeArguments[0];
-                ModelBuilderConfigureEntityBehaviorIModifiable.MakeGenericMethod(entityType, identifierType)
+                ModifiableEntityBehaviorConfigurationExtensions.ModelBuilderConfigureEntityBehaviorIModifiable.MakeGenericMethod(entityType, identifierType)
                     .Invoke(null, new object[] { modelBuilder });
             }
         }

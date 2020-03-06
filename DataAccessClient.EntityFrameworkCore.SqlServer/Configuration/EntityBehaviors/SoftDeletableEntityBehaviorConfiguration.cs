@@ -10,25 +10,51 @@ using DataAccessClient.EntityBehaviors;
 using DataAccessClient.Providers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-// ReSharper disable StaticMemberInGenericType
-
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors
 {
+    internal static class SoftDeletableEntityBehaviorConfigurationExtensions
+    {
+        internal static readonly MethodInfo ModelBuilderConfigureEntityBehaviorISoftDeletableMethod;
+
+        static SoftDeletableEntityBehaviorConfigurationExtensions()
+        {
+            ModelBuilderConfigureEntityBehaviorISoftDeletableMethod = typeof(SoftDeletableEntityBehaviorConfigurationExtensions).GetTypeInfo()
+                .DeclaredMethods
+                .Single(m => m.Name == nameof(ConfigureEntityBehaviorISoftDeletable));
+        }
+
+        internal static ModelBuilder ConfigureEntityBehaviorISoftDeletable<TEntity, TIdentifierType>(
+            ModelBuilder modelBuilder, Expression<Func<TEntity, bool>> queryFilter)
+            where TEntity : class, ISoftDeletable<TIdentifierType>
+            where TIdentifierType : struct
+        {
+            modelBuilder.Entity<TEntity>()
+                .IsSoftDeletable<TEntity, TIdentifierType>(queryFilter);
+
+            return modelBuilder;
+        }
+
+        internal static EntityTypeBuilder<TEntity> IsSoftDeletable<TEntity, TIdentifierType>(
+            this EntityTypeBuilder<TEntity> entity, Expression<Func<TEntity, bool>> queryFilter)
+            where TEntity : class, ISoftDeletable<TIdentifierType>
+            where TIdentifierType : struct
+        {
+            entity.Property(e => e.IsDeleted).IsRequired();
+            entity.Property(e => e.DeletedOn).IsRequired(false);
+            entity.Property(e => e.DeletedById).IsRequired(false);
+
+            entity.AppendQueryFilter(queryFilter);
+            return entity;
+        }
+    }
+
     public class SoftDeletableEntityBehaviorConfiguration<TUserIdentifierType> : IEntityBehaviorConfiguration
         where TUserIdentifierType : struct
     {
-        private static readonly MethodInfo ModelBuilderConfigureEntityBehaviorISoftDeletableMethod;
-
-        static SoftDeletableEntityBehaviorConfiguration()
-        {
-            ModelBuilderConfigureEntityBehaviorISoftDeletableMethod = typeof(ModelBuilderExtensions).GetTypeInfo()
-                .DeclaredMethods
-                .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorISoftDeletable));
-        }
-
         public void OnRegistering(IServiceCollection serviceCollection)
         {
             serviceCollection.TryAddScoped<ISoftDeletableConfiguration, DefaultSoftDeletableConfiguration>();
@@ -70,7 +96,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
                 var softDeletableQueryFilter =
                     softDeletableQueryFilterMethod.Invoke(this, new object[] {serverDbContext});
 
-                ModelBuilderConfigureEntityBehaviorISoftDeletableMethod.MakeGenericMethod(entityType, identifierType)
+                SoftDeletableEntityBehaviorConfigurationExtensions.ModelBuilderConfigureEntityBehaviorISoftDeletableMethod.MakeGenericMethod(entityType, identifierType)
                     .Invoke(null, new[] {modelBuilder, softDeletableQueryFilter});
             }
         }

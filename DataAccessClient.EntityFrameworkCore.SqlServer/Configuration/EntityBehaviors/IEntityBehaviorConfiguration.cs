@@ -9,9 +9,9 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
     {
         void OnRegistering(IServiceCollection serviceCollection);
         Dictionary<string, dynamic> OnExecutionContextCreating(IServiceProvider scopedServiceProvider);
-        void OnModelCreating(ModelBuilder modelBuilder, SqlServerDbContext serverDbContext, Type entityType);
+        void OnModelCreating(ModelBuilder modelBuilder, SqlServerDbContext sqlServerDbContext, Type entityType);
 
-        void OnBeforeSaveChanges(SqlServerDbContext serverDbContext, DateTime onSaveChangesTime);
-        void OnAfterSaveChanges(SqlServerDbContext serverDbContext);
+        void OnBeforeSaveChanges(SqlServerDbContext sqlServerDbContext, DateTime onSaveChangesTime);
+        void OnAfterSaveChanges(SqlServerDbContext sqlServerDbContext);
     }
 }

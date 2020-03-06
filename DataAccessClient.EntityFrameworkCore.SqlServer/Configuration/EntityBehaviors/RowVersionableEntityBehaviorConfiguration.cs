@@ -4,20 +4,41 @@ using System.Linq;
 using System.Reflection;
 using DataAccessClient.EntityBehaviors;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors
 {
-    public class RowVersionableEntityBehaviorConfiguration : IEntityBehaviorConfiguration
+    internal static class RowVersionableEntityBehaviorConfigurationExtensions
     {
-        private static readonly MethodInfo ModelBuilderConfigureEntityBehaviorIRowVersionable;
+        internal static readonly MethodInfo ModelBuilderConfigureEntityBehaviorIRowVersionable;
 
-        static RowVersionableEntityBehaviorConfiguration()
+        static RowVersionableEntityBehaviorConfigurationExtensions()
         {
-            ModelBuilderConfigureEntityBehaviorIRowVersionable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
-                .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorIRowVersionable));
+            ModelBuilderConfigureEntityBehaviorIRowVersionable = typeof(RowVersionableEntityBehaviorConfigurationExtensions).GetTypeInfo()
+                .DeclaredMethods
+                .Single(m => m.Name == nameof(ConfigureEntityBehaviorIRowVersionable));
         }
 
+        internal static ModelBuilder ConfigureEntityBehaviorIRowVersionable<TEntity>(ModelBuilder modelBuilder)
+            where TEntity : class, IRowVersionable
+        {
+            modelBuilder.Entity<TEntity>()
+                .IsRowVersionable();
+
+            return modelBuilder;
+        }
+
+        internal static EntityTypeBuilder<TEntity> IsRowVersionable<TEntity>(this EntityTypeBuilder<TEntity> entity)
+            where TEntity : class, IRowVersionable
+        {
+            entity.Property(e => e.RowVersion).IsRowVersion();
+            return entity;
+        }
+    }
+
+    public class RowVersionableEntityBehaviorConfiguration : IEntityBehaviorConfiguration
+    {
         public void OnRegistering(IServiceCollection serviceCollection)
         {
         }
@@ -35,7 +56,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
 
             if (entityInterfaces.Any(x => !x.IsGenericType && x == typeof(IRowVersionable)))
             {
-                ModelBuilderConfigureEntityBehaviorIRowVersionable.MakeGenericMethod(entityType)
+                RowVersionableEntityBehaviorConfigurationExtensions.ModelBuilderConfigureEntityBehaviorIRowVersionable.MakeGenericMethod(entityType)
                     .Invoke(null, new object[] {modelBuilder});
             }
         }

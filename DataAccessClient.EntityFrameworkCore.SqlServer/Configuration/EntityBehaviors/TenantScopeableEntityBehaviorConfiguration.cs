@@ -7,23 +7,49 @@ using DataAccessClient.Configuration;
 using DataAccessClient.EntityBehaviors;
 using DataAccessClient.Providers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-// ReSharper disable StaticMemberInGenericType
-
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors
 {
-    public class TenantScopeableEntityBehaviorConfiguration<TTenantIdentifierType> : IEntityBehaviorConfiguration where TTenantIdentifierType : struct
+    internal static class TenantScopeableEntityBehaviorConfigurationExtensions
     {
-        private static readonly MethodInfo ModelBuilderConfigureEntityBehaviorITenantScopableMethod;
+        internal static readonly MethodInfo ModelBuilderConfigureEntityBehaviorITenantScopableMethod;
 
-        static TenantScopeableEntityBehaviorConfiguration()
+        static TenantScopeableEntityBehaviorConfigurationExtensions()
         {
-            ModelBuilderConfigureEntityBehaviorITenantScopableMethod = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
-                .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorITenantScopable));
+            ModelBuilderConfigureEntityBehaviorITenantScopableMethod = typeof(TenantScopeableEntityBehaviorConfigurationExtensions).GetTypeInfo()
+                .DeclaredMethods
+                .Single(m => m.Name == nameof(ConfigureEntityBehaviorITenantScopable));
         }
 
+        internal static ModelBuilder ConfigureEntityBehaviorITenantScopable<TEntity, TIdentifierType>(
+            ModelBuilder modelBuilder, Expression<Func<TEntity, bool>> queryFilter)
+            where TEntity : class, ITenantScopable<TIdentifierType>
+            where TIdentifierType : struct
+        {
+            modelBuilder.Entity<TEntity>()
+                .IsTenantScopable<TEntity, TIdentifierType>(queryFilter);
+
+            return modelBuilder;
+        }
+
+        internal static EntityTypeBuilder<TEntity> IsTenantScopable<TEntity, TIdentifierType>(
+            this EntityTypeBuilder<TEntity> entity, Expression<Func<TEntity, bool>> queryFilter)
+            where TEntity : class, ITenantScopable<TIdentifierType>
+            where TIdentifierType : struct
+        {
+            entity.Property(e => e.TenantId).IsRequired();
+
+            entity.AppendQueryFilter(queryFilter);
+
+            return entity;
+        }
+    }
+
+    public class TenantScopeableEntityBehaviorConfiguration<TTenantIdentifierType> : IEntityBehaviorConfiguration where TTenantIdentifierType : struct
+    {
         public void OnRegistering(IServiceCollection serviceCollection)
         {
             serviceCollection.TryAddScoped<IMultiTenancyConfiguration, DefaultMultiTenancyConfiguration>();
@@ -64,7 +90,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
                 var tenantScopableQueryFilterMethod = createTenantScopableQueryFilter.MakeGenericMethod(entityType);
                 var tenantScopableQueryFilter = tenantScopableQueryFilterMethod.Invoke(this, new object[]{serverDbContext});
 
-                ModelBuilderConfigureEntityBehaviorITenantScopableMethod.MakeGenericMethod(entityType, identifierType)
+                TenantScopeableEntityBehaviorConfigurationExtensions.ModelBuilderConfigureEntityBehaviorITenantScopableMethod.MakeGenericMethod(entityType, identifierType)
                     .Invoke(null, new [] { modelBuilder, tenantScopableQueryFilter });
             }
         }

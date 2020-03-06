@@ -5,21 +5,43 @@ using System.Reflection;
 using DataAccessClient.EntityBehaviors;
 using DataAccessClient.Providers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.Extensions.DependencyInjection;
-// ReSharper disable StaticMemberInGenericType
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors
 {
-    public class CreatableEntityBehaviorConfiguration<TUserIdentifierType> : IEntityBehaviorConfiguration where TUserIdentifierType : struct
+    internal static class CreatableEntityBehaviorConfigurationExtensions
     {
-        private static readonly MethodInfo ModelBuilderConfigureEntityBehaviorICreatable;
+        internal static readonly MethodInfo ModelBuilderConfigureEntityBehaviorICreatable;
 
-        static CreatableEntityBehaviorConfiguration()
+        static CreatableEntityBehaviorConfigurationExtensions()
         {
-            ModelBuilderConfigureEntityBehaviorICreatable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
-                .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorICreatable));
+            ModelBuilderConfigureEntityBehaviorICreatable = typeof(CreatableEntityBehaviorConfigurationExtensions).GetTypeInfo().DeclaredMethods
+                .Single(m => m.Name == nameof(ConfigureEntityBehaviorICreatable));
         }
 
+        internal static ModelBuilder ConfigureEntityBehaviorICreatable<TEntity, TIdentifierType>(ModelBuilder modelBuilder)
+            where TEntity : class, ICreatable<TIdentifierType>
+            where TIdentifierType : struct
+        {
+            modelBuilder.Entity<TEntity>()
+                .IsCreatable<TEntity, TIdentifierType>();
+
+            return modelBuilder;
+        }
+
+        internal static EntityTypeBuilder<TEntity> IsCreatable<TEntity, TIdentifierType>(this EntityTypeBuilder<TEntity> entity)
+            where TEntity : class, ICreatable<TIdentifierType>
+            where TIdentifierType : struct
+        {
+            entity.Property(e => e.CreatedById).IsRequired();
+            entity.Property(e => e.CreatedOn).IsRequired();
+            return entity;
+        }
+    }
+
+    public class CreatableEntityBehaviorConfiguration<TUserIdentifierType> : IEntityBehaviorConfiguration where TUserIdentifierType : struct
+    {
         public void OnRegistering(IServiceCollection serviceCollection)
         {
         }
@@ -45,11 +67,11 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
             {
                 var identifierType = entityType.GetInterface(typeof(ICreatable<>).Name)
                     .GenericTypeArguments[0];
-                ModelBuilderConfigureEntityBehaviorICreatable.MakeGenericMethod(entityType, identifierType)
+                CreatableEntityBehaviorConfigurationExtensions.ModelBuilderConfigureEntityBehaviorICreatable.MakeGenericMethod(entityType, identifierType)
                     .Invoke(null, new object[] { modelBuilder });
             }
         }
-
+        
         public void OnBeforeSaveChanges(SqlServerDbContext serverDbContext, DateTime onSaveChangesTime)
         {
             var userIdentifier = serverDbContext.ExecutionContext

@@ -4,20 +4,75 @@ using System.Linq;
 using System.Reflection;
 using DataAccessClient.EntityBehaviors;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors
 {
-    public class TranslatableEntityBehaviorConfiguration : IEntityBehaviorConfiguration
+    internal static class TranslatableEntityBehaviorConfigurationExtensions
     {
-        private static readonly MethodInfo ModelBuilderConfigureEntityBehaviorITranslatable;
+        internal static readonly MethodInfo ModelBuilderConfigureEntityBehaviorITranslatable;
 
-        static TranslatableEntityBehaviorConfiguration()
+        static TranslatableEntityBehaviorConfigurationExtensions()
         {
-            ModelBuilderConfigureEntityBehaviorITranslatable = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
-                .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorITranslatable));
+            ModelBuilderConfigureEntityBehaviorITranslatable = typeof(TranslatableEntityBehaviorConfigurationExtensions).GetTypeInfo()
+                .DeclaredMethods
+                .Single(m => m.Name == nameof(ConfigureEntityBehaviorITranslatable));
         }
 
+        internal static ModelBuilder ConfigureEntityBehaviorITranslatable<TEntity, TEntityTranslation, TIdentifierType,
+            TLocaleIdentifierType>(
+            ModelBuilder modelBuilder)
+            where TEntity : class, ITranslatable<TEntityTranslation, TIdentifierType, TLocaleIdentifierType>
+            where TEntityTranslation : class, IEntityTranslation<TEntity, TIdentifierType, TLocaleIdentifierType>
+            where TIdentifierType : struct
+            where TLocaleIdentifierType : IConvertible
+        {
+            modelBuilder.Entity<TEntity>()
+                .IsTranslatable<TEntity, TEntityTranslation, TIdentifierType, TLocaleIdentifierType>();
+
+            modelBuilder.Entity<TEntityTranslation>()
+                .IsEntityTranslation<TEntityTranslation, TEntity, TIdentifierType, TLocaleIdentifierType>();
+
+            return modelBuilder;
+        }
+
+        internal static EntityTypeBuilder<TEntity> IsTranslatable<TEntity, TEntityTranslation, TIdentifierType,
+            TLocaleIdentifierType>(this EntityTypeBuilder<TEntity> entity)
+            where TEntity : class, ITranslatable<TEntityTranslation, TIdentifierType, TLocaleIdentifierType>
+            where TEntityTranslation : class, IEntityTranslation<TEntity, TIdentifierType, TLocaleIdentifierType>
+            where TIdentifierType : struct
+            where TLocaleIdentifierType : IConvertible
+        {
+            entity.HasMany(x => x.Translations)
+                .WithOne(x => x.TranslatedEntity)
+                .HasForeignKey(x => x.TranslatedEntityId)
+                .OnDelete(DeleteBehavior.Cascade);
+            return entity;
+        }
+
+        internal static EntityTypeBuilder<TEntity> IsEntityTranslation<TEntity, TTranslatableEntity, TIdentifierType,
+            TLocaleIdentifierType>(this EntityTypeBuilder<TEntity> entity)
+            where TEntity : class, IEntityTranslation<TTranslatableEntity, TIdentifierType, TLocaleIdentifierType>
+            where TTranslatableEntity : class, ITranslatable<TEntity, TIdentifierType, TLocaleIdentifierType>
+            where TIdentifierType : struct
+            where TLocaleIdentifierType : IConvertible
+        {
+            entity.HasOne(x => x.TranslatedEntity)
+                .WithMany(x => x.Translations)
+                .HasForeignKey(x => x.TranslatedEntityId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasKey(e => new {e.TranslatedEntityId, Language = e.LocaleId});
+            entity.Property(e => e.TranslatedEntityId).IsRequired();
+            entity.Property(e => e.LocaleId).IsRequired();
+
+            return entity;
+        }
+    }
+
+    public class TranslatableEntityBehaviorConfiguration : IEntityBehaviorConfiguration
+    {
         public void OnRegistering(IServiceCollection serviceCollection)
         {
         }
@@ -42,7 +97,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
                 var localeType = entityType.GetInterface(typeof(ITranslatable<,,>).Name)
                     .GenericTypeArguments[2];
 
-                ModelBuilderConfigureEntityBehaviorITranslatable
+                TranslatableEntityBehaviorConfigurationExtensions.ModelBuilderConfigureEntityBehaviorITranslatable
                     .MakeGenericMethod(entityType, entityTranslationType, identifierType, localeType)
                     .Invoke(null, new object[] { modelBuilder });
             }

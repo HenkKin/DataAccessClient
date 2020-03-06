@@ -7,22 +7,47 @@ using DataAccessClient.Configuration;
 using DataAccessClient.EntityBehaviors;
 using DataAccessClient.Providers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-// ReSharper disable StaticMemberInGenericType
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors
 {
-    public class LocalizableEntityBehaviorConfiguration<TLocaleIdentifierType> : IEntityBehaviorConfiguration where TLocaleIdentifierType : IConvertible
+    internal static class LocalizableEntityBehaviorConfigurationExtensions
     {
-        private static readonly MethodInfo ModelBuilderConfigureEntityBehaviorILocalizableMethod;
+        internal static readonly MethodInfo ModelBuilderConfigureEntityBehaviorILocalizableMethod;
 
-        static LocalizableEntityBehaviorConfiguration()
+        static LocalizableEntityBehaviorConfigurationExtensions()
         {
-            ModelBuilderConfigureEntityBehaviorILocalizableMethod = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
-                .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorILocalizable));
+            ModelBuilderConfigureEntityBehaviorILocalizableMethod = typeof(LocalizableEntityBehaviorConfigurationExtensions).GetTypeInfo()
+                .DeclaredMethods
+                .Single(m => m.Name == nameof(ConfigureEntityBehaviorILocalizable));
         }
 
+        internal static ModelBuilder ConfigureEntityBehaviorILocalizable<TEntity, TIdentifierType>(this ModelBuilder modelBuilder, Expression<Func<TEntity, bool>> queryFilter)
+            where TEntity : class, ILocalizable<TIdentifierType>
+            where TIdentifierType : IConvertible
+        {
+            modelBuilder.Entity<TEntity>()
+                .IsLocalizable<TEntity, TIdentifierType>(queryFilter);
+
+            return modelBuilder;
+        }
+
+        internal static EntityTypeBuilder<TEntity> IsLocalizable<TEntity, TIdentifierType>(this EntityTypeBuilder<TEntity> entity, Expression<Func<TEntity, bool>> queryFilter)
+            where TEntity : class, ILocalizable<TIdentifierType>
+            where TIdentifierType : IConvertible
+        {
+            entity.Property(e => e.LocaleId).IsRequired();
+
+            entity.AppendQueryFilter(queryFilter);
+
+            return entity;
+        }
+    }
+
+    public class LocalizableEntityBehaviorConfiguration<TLocaleIdentifierType> : IEntityBehaviorConfiguration where TLocaleIdentifierType : IConvertible
+    {
         public void OnRegistering(IServiceCollection serviceCollection)
         {
             serviceCollection.TryAddScoped<ILocalizationConfiguration, DefaultLocalizationConfiguration>();
@@ -63,7 +88,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
                 var tenantScopableQueryFilterMethod = createLocalizableQueryFilter.MakeGenericMethod(entityType);
                 var tenantScopableQueryFilter = tenantScopableQueryFilterMethod.Invoke(this, new object[]{serverDbContext});
 
-                ModelBuilderConfigureEntityBehaviorILocalizableMethod.MakeGenericMethod(entityType, identifierType)
+                LocalizableEntityBehaviorConfigurationExtensions.ModelBuilderConfigureEntityBehaviorILocalizableMethod.MakeGenericMethod(entityType, identifierType)
                     .Invoke(null, new [] { modelBuilder, tenantScopableQueryFilter });
             }
         }

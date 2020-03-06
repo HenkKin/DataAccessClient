@@ -2,20 +2,66 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using DataAccessClient.EntityBehaviors;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors
 {
+    internal static class TranslatedPropertyEntityBehaviorConfigurationExtensions
+    {
+        internal static readonly MethodInfo ModelBuilderConfigureEntityBehaviorTranslatedProperties;
+
+        static TranslatedPropertyEntityBehaviorConfigurationExtensions()
+        {
+            ModelBuilderConfigureEntityBehaviorTranslatedProperties = typeof(TranslatedPropertyEntityBehaviorConfigurationExtensions).GetTypeInfo()
+                .DeclaredMethods
+                .Single(m => m.Name == nameof(ConfigureEntityBehaviorTranslatedProperties));
+        }
+
+        internal static ModelBuilder ConfigureEntityBehaviorTranslatedProperties<TEntity>(ModelBuilder modelBuilder)
+            where TEntity : class
+        {
+            modelBuilder.Entity<TEntity>()
+                .HasTranslatedProperties();
+
+            return modelBuilder;
+        }
+
+        internal static EntityTypeBuilder<TEntity> HasTranslatedProperties<TEntity>(
+            this EntityTypeBuilder<TEntity> entity)
+            where TEntity : class
+        {
+            var translatedProperties = typeof(TEntity).GetProperties().Where(p =>
+                p.PropertyType.IsGenericType &&
+                p.PropertyType.GetGenericTypeDefinition() == typeof(TranslatedProperty<>));
+            foreach (var translatedProperty in translatedProperties)
+            {
+                var localeIdentifierType = translatedProperty.PropertyType.GenericTypeArguments[0];
+                var ownsOneType = typeof(TranslatedProperty<>).MakeGenericType(localeIdentifierType);
+                entity.OwnsOne(ownsOneType, translatedProperty.Name, translatedPropertyBuilder =>
+                {
+                    var propertyTranslationType = typeof(PropertyTranslation<>).MakeGenericType(localeIdentifierType);
+                    translatedPropertyBuilder.OwnsMany(propertyTranslationType,
+                        nameof(TranslatedProperty<int>.Translations), builder =>
+                        {
+                            builder.ToTable(typeof(TEntity).Name + "_" + translatedProperty.Name +
+                                            nameof(TranslatedProperty<int>.Translations));
+                            builder.WithOwner().HasForeignKey("OwnerId");
+                            builder.Property(nameof(PropertyTranslation<int>.LocaleId)).IsRequired();
+                            builder.Property(nameof(PropertyTranslation<int>.Translation)).IsRequired();
+                        }
+                    );
+                });
+            }
+
+            return entity;
+        }
+    }
+
     public class TranslatedPropertyEntityBehaviorConfiguration : IEntityBehaviorConfiguration
     {
-        private static readonly MethodInfo ModelBuilderConfigureEntityBehaviorTranslatedProperties;
-
-        static TranslatedPropertyEntityBehaviorConfiguration()
-        {
-            ModelBuilderConfigureEntityBehaviorTranslatedProperties = typeof(ModelBuilderExtensions).GetTypeInfo().DeclaredMethods
-                .Single(m => m.Name == nameof(ModelBuilderExtensions.ConfigureEntityBehaviorTranslatedProperties));
-        }
 
         public void OnRegistering(IServiceCollection serviceCollection)
         {
@@ -29,7 +75,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
 
         public void OnModelCreating(ModelBuilder modelBuilder, SqlServerDbContext serverDbContext, Type entityType)
         {
-            ModelBuilderConfigureEntityBehaviorTranslatedProperties.MakeGenericMethod(entityType).Invoke(null, new object[] { modelBuilder });
+            TranslatedPropertyEntityBehaviorConfigurationExtensions.ModelBuilderConfigureEntityBehaviorTranslatedProperties.MakeGenericMethod(entityType).Invoke(null, new object[] { modelBuilder });
         }
 
         public void OnBeforeSaveChanges(SqlServerDbContext serverDbContext, DateTime onSaveChangesTime)
