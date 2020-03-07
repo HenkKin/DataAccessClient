@@ -301,7 +301,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                     s.ServiceType.IsGenericType &&
                     s.ServiceType.GetGenericTypeDefinition() == typeof(IUserIdentifierProvider<>) &&
                     s.Lifetime == ServiceLifetime.Scoped);
-            return registration?.ServiceType.GenericTypeArguments[0]; 
+            return registration?.ServiceType.GenericTypeArguments[0];
         }
 
         private static Type GetTenantIdentifierType(this IServiceCollection services)
