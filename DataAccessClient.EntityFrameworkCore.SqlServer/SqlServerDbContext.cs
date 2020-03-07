@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -18,6 +20,8 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         private static readonly MethodInfo DbContextResetStateMethodInfo;
         private static readonly MethodInfo DbContextResetStateAsyncMethodInfo;
         private static readonly MethodInfo DbContextResurrectMethodInfo;
+        internal static ConcurrentBag<Type> RegisteredDbContextTypes = new ConcurrentBag<Type>();
+        internal static ConcurrentDictionary<Type, List<Type>> RegisteredEntityTypesPerDbContexts = new ConcurrentDictionary<Type, List<Type>>();
 
         static SqlServerDbContext()
         {
@@ -153,6 +157,12 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             }
 
             base.OnModelCreating(modelBuilder);
+
+            var allEntityTypes = modelBuilder.Model.GetEntityTypes()
+                .Where(p => (!p.ClrType.IsGenericType && !ignoredEntityTypes.Contains(p.ClrType)) ||
+                            (p.ClrType.IsGenericType && !ignoredEntityTypes.Contains(p.ClrType.GetGenericTypeDefinition())))
+                .ToList();
+            RegisteredEntityTypesPerDbContexts.TryAdd(GetType(), allEntityTypes.Select(e => e.ClrType).ToList());
         }
 
         public override int SaveChanges(bool acceptAllChangesOnSuccess)

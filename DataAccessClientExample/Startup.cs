@@ -37,7 +37,6 @@ namespace DataAccessClientExample
 
             services.AddDataAccessClient<ExampleDbContext>(conf => conf
                     .UsePooling(true)
-                    .ConfigureEntityTypes(new[] { typeof(ExampleEntity), typeof(ExampleEntityView) })
                     .ConfigureDbContextOptions(builder => builder
                         .EnableSensitiveDataLogging()
                         .EnableDetailedErrors()
@@ -47,7 +46,6 @@ namespace DataAccessClientExample
 
             services.AddDataAccessClient<ExampleSecondDbContext>(conf => conf
                     .UsePooling(true)
-                    .ConfigureEntityTypes(new[] { typeof(ExampleSecondEntity) })
                     .ConfigureDbContextOptions(builder => builder
                         .EnableSensitiveDataLogging()
                         .EnableDetailedErrors()

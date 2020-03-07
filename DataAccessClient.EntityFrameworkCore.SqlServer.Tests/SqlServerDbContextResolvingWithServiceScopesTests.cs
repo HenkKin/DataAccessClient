@@ -27,7 +27,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             serviceCollection.AddDataAccessClient<MyDbContext>(
                 conf => conf
                     .UsePooling(true)
-                    .ConfigureEntityTypes(new[] {typeof(Entity)})
                     .ConfigureDbContextOptions(builder => builder
                         .UseInMemoryDatabase(nameof(WithDbContextPooling_WhenHavingNestedChildScopes_ItShouldResolveDbContextPerChildScope))
                     )
@@ -49,7 +48,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             serviceCollection.AddDataAccessClient<MyDbContext>(
                 conf => conf
                     .UsePooling(false)
-                    .ConfigureEntityTypes(new[] { typeof(Entity) })
                     .ConfigureDbContextOptions(builder => builder
                         .UseInMemoryDatabase(nameof(WithoutDbContextPooling_WhenHavingChildScope_ItShouldResolveDbContextPerChildScope))
                     )
@@ -71,7 +69,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             serviceCollection.AddDataAccessClient<MyDbContext>(
                 conf => conf
                     .UsePooling(true)
-                    .ConfigureEntityTypes(new[] { typeof(Entity) })
                     .ConfigureDbContextOptions(builder => builder
                         .UseInMemoryDatabase(nameof(WithDbContextPooling_WhenMultipleDbContextAreResolvedFromSameScope_ItShouldReturnSameDbContextInstance))
                     )
@@ -92,7 +89,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             serviceCollection.AddDataAccessClient<MyDbContext>(
                 conf => conf
                     .UsePooling(false)
-                    .ConfigureEntityTypes(new[] { typeof(Entity) })
                     .ConfigureDbContextOptions(builder => builder
                         .UseInMemoryDatabase(nameof(WithoutDbContextPooling_WhenMultipleDbContextAreResolvedFromSameScope_ItShouldReturnSameDbContextInstance))
                     )

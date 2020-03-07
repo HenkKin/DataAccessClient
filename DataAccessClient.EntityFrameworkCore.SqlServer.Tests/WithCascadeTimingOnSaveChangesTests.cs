@@ -16,7 +16,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             IServiceCollection services = new ServiceCollection();
 
             services.AddDataAccessClient<TestDbContext>(builder => builder
-                .ConfigureEntityTypes(new Type[]{})
                 .ConfigureDbContextOptions(optionsBuilder =>optionsBuilder 
                     .UseInMemoryDatabase(
                         nameof(WhenWorkIsDoneWithCascadeTimingOnSaveChanges_ItShouldResetToCascadeTimingImmediate))

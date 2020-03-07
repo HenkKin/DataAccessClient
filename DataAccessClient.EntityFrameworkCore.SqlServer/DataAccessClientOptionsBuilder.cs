@@ -26,12 +26,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             return this;
         }
 
-        public virtual DataAccessClientOptionsBuilder ConfigureEntityTypes(Type[] entityTypes)
-        {
-            _options.EntityTypes = entityTypes;
-            return this;
-        }
-
         public virtual DataAccessClientOptionsBuilder UsePooling(bool usePooling, int? poolSize = null)
         {
             _options.UsePooling = usePooling;

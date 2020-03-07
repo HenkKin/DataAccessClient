@@ -14,27 +14,18 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         protected readonly SqlServerDbContext DbContext;
         protected readonly DbSet<TEntity> DbSet;
         private readonly PropertyInfo _primaryKeyProperty;
-        // private readonly object _lock = new object();
 
-
-        public SqlServerRepository(IServiceProvider scopedServiceProvider, IEnumerable<IDataAccessClientDbContextType> dataAccessClientDbContextTypes)
+        public SqlServerRepository(ISqlServerDbContextForEntityResolver sqlServerDbContextForEntityResolver)
         {
-            foreach (var dataAccessClientDbContextType in dataAccessClientDbContextTypes)
+            DbContext = sqlServerDbContextForEntityResolver.Execute<TEntity>();
+            if (DbContext != null)
             {
-                var dbContextType = dataAccessClientDbContextType.Execute();
-                var dbContextResolverType = typeof(ISqlServerDbContextResolver<>).MakeGenericType(dbContextType);
-                var executeMethod = dbContextResolverType.GetMethod(nameof(ISqlServerDbContextResolver<SqlServerDbContext>.Execute));
-                DbContext = executeMethod.Invoke(scopedServiceProvider.GetService(dbContextResolverType), new object[0]) as SqlServerDbContext ??
-                            throw new ArgumentNullException(nameof(SqlServerDbContext));
-                if (DbContext != null && DbContext.Model.FindEntityType(typeof(TEntity)) != null)
-                {
-                    DbSet = DbContext.Set<TEntity>();
-                    if (DbSet != null)
-                    {
-                        break;
-                    }
-                }
+                DbSet = DbContext.Set<TEntity>();
+            }
 
+            if (DbContext == null || DbSet == null)
+            {
+                throw new InvalidOperationException($"Can not find IRepository instance for type {typeof(TEntity).FullName}");
             }
 
             _primaryKeyProperty = DbContext.Model.FindEntityType(typeof(TEntity))?.FindPrimaryKey()?.Properties?.SingleOrDefault()?.PropertyInfo;
