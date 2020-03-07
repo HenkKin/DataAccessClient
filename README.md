@@ -488,7 +488,7 @@ Either commands, from Package Manager Console or .NET Core CLI, will download an
 
 ### Usage
 
-If you're using EntityFrameworkCore.SqlServer and you want to use the DataAccessClient, then you can use [DataAccessClient.EntityFrameworkCore.SqlServer](https://github.com/HenkKin/DataAccessClient#dataaccesscliententityframeworkcoresqlserver/) package which includes the following registration options via extensions method:
+If you're using EntityFrameworkCore.SqlServer and you want to use the DataAccessClient, then you can use [DataAccessClient.EntityFrameworkCore.SqlServer](https://github.com/HenkKin/DataAccessClient#dataaccesscliententityframeworkcoresqlserver) package which includes the following registration options via extensions method:
 
 - `IServiceCollection AddDataAccessClient<TDbContext>(this IServiceCollection services, Action<DataAccessClientOptionsBuilder> dataAccessClientOptionsBuilderAction)`
 
