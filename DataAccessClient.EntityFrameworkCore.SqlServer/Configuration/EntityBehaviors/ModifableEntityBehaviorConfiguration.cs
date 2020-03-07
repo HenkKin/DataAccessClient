@@ -51,12 +51,13 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
 
         public Dictionary<string, dynamic> OnExecutionContextCreating(IServiceProvider scopedServiceProvider)
         {
-            var userIdentifierProvider = scopedServiceProvider.GetRequiredService<IUserIdentifierProvider<TUserIdentifierType>>();
+            var userIdentifierProvider = scopedServiceProvider.GetService<IUserIdentifierProvider<TUserIdentifierType>>();
 
-            var context = new Dictionary<string, dynamic>
+            var context = new Dictionary<string, dynamic>();
+            if (userIdentifierProvider != null)
             {
-                {typeof(IUserIdentifierProvider<TUserIdentifierType>).Name, userIdentifierProvider},
-            };
+                context.Add(typeof(IUserIdentifierProvider<TUserIdentifierType>).Name, userIdentifierProvider);
+            }
 
             return context;
         }

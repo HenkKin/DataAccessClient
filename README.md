@@ -518,7 +518,6 @@ public class Startup
 		services.AddDataAccessClient<ExampleDbContext>(conf => conf
             .UsePooling(true)
 			.AddCustomEntityBehavior<YourCustomEntityBehaviorConfigurationType>() // optional extensible
-            .ConfigureEntityTypes(new[] { typeof(ExampleEntity) })
             .ConfigureDbContextOptions(builder => builder
                 .EnableSensitiveDataLogging()
                 .EnableDetailedErrors()

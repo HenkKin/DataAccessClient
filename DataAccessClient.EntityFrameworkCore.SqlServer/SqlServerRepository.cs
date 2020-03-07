@@ -8,20 +8,26 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer
 {
-    internal class SqlServerRepository<TDbContext, TEntity> : IRepository<TEntity> 
-        where TDbContext : SqlServerDbContext
+    internal class SqlServerRepository<TEntity> : IRepository<TEntity> 
         where TEntity : class
     {
-        protected readonly TDbContext DbContext;
         protected readonly DbSet<TEntity> DbSet;
         private readonly PropertyInfo _primaryKeyProperty;
 
-
-        public SqlServerRepository(ISqlServerDbContextResolver<TDbContext> sqlServerDbContextResolver)
+        public SqlServerRepository(ISqlServerDbContextForEntityResolver sqlServerDbContextForEntityResolver)
         {
-            DbContext = sqlServerDbContextResolver.Execute() ?? throw new ArgumentNullException(nameof(sqlServerDbContextResolver));
-            DbSet = DbContext.Set<TEntity>();
-            _primaryKeyProperty = DbContext.Model.FindEntityType(typeof(TEntity)).FindPrimaryKey()?.Properties?.SingleOrDefault()?.PropertyInfo;
+            var dbContext = sqlServerDbContextForEntityResolver.Execute<TEntity>();
+            if (dbContext != null)
+            {
+                DbSet = dbContext.Set<TEntity>();
+            }
+
+            if (dbContext == null || DbSet == null)
+            {
+                throw new InvalidOperationException($"Can not find IRepository instance for type {typeof(TEntity).FullName}");
+            }
+
+            _primaryKeyProperty = dbContext.Model.FindEntityType(typeof(TEntity))?.FindPrimaryKey()?.Properties?.SingleOrDefault()?.PropertyInfo;
         }
 
         public IQueryable<TEntity> GetReadOnlyQuery()

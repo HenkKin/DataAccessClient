@@ -57,14 +57,18 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
 
         public Dictionary<string, dynamic> OnExecutionContextCreating(IServiceProvider scopedServiceProvider)
         {
-            var tenantIdentifierProvider = scopedServiceProvider.GetRequiredService<ITenantIdentifierProvider<TTenantIdentifierType>>();
-            var multiTenancyConfiguration = scopedServiceProvider.GetRequiredService<IMultiTenancyConfiguration>();
+            var tenantIdentifierProvider = scopedServiceProvider.GetService<ITenantIdentifierProvider<TTenantIdentifierType>>();
+            var multiTenancyConfiguration = scopedServiceProvider.GetService<IMultiTenancyConfiguration>();
 
-            var context = new Dictionary<string, dynamic>
+            var context = new Dictionary<string, dynamic>();
+            if (tenantIdentifierProvider != null)
             {
-                {typeof(ITenantIdentifierProvider<TTenantIdentifierType>).Name, tenantIdentifierProvider},
-                {typeof(IMultiTenancyConfiguration).Name, multiTenancyConfiguration},
-            };
+                context.Add(typeof(ITenantIdentifierProvider<TTenantIdentifierType>).Name, tenantIdentifierProvider);
+            }
+            if (multiTenancyConfiguration != null)
+            {
+                context.Add(typeof(IMultiTenancyConfiguration).Name, multiTenancyConfiguration);
+            }
 
             return context;
         }

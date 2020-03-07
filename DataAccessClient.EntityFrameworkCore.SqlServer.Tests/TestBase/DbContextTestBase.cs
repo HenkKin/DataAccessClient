@@ -25,7 +25,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestBase
             serviceCollection.AddDataAccessClient<TestDbContext>(
                 conf => conf
                     .UsePooling(true)
-                    .ConfigureEntityTypes(new[] { typeof(TestEntity), typeof(TestEntityTranslation), typeof(TestEntityView) })
                     .ConfigureDbContextOptions(builder => builder
                         .UseInMemoryDatabase(testName).EnableSensitiveDataLogging().EnableDetailedErrors()
                     )

@@ -55,14 +55,18 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
 
         public Dictionary<string, dynamic> OnExecutionContextCreating(IServiceProvider scopedServiceProvider)
         {
-            var localeIdentifierProvider = scopedServiceProvider.GetRequiredService<ILocaleIdentifierProvider<TLocaleIdentifierType>>();
-            var localizationConfiguration = scopedServiceProvider.GetRequiredService<ILocalizationConfiguration>();
+            var localeIdentifierProvider = scopedServiceProvider.GetService<ILocaleIdentifierProvider<TLocaleIdentifierType>>();
+            var localizationConfiguration = scopedServiceProvider.GetService<ILocalizationConfiguration>();
 
-            var context = new Dictionary<string, dynamic>
+            var context = new Dictionary<string, dynamic>();
+            if (localeIdentifierProvider != null)
             {
-                {typeof(ILocaleIdentifierProvider<TLocaleIdentifierType>).Name, localeIdentifierProvider},
-                {typeof(ILocalizationConfiguration).Name, localizationConfiguration},
-            };
+                context.Add(typeof(ILocaleIdentifierProvider<TLocaleIdentifierType>).Name, localeIdentifierProvider);
+            }
+            if (localizationConfiguration != null)
+            {
+                context.Add(typeof(ILocalizationConfiguration).Name, localizationConfiguration);
+            }
 
             return context;
         }

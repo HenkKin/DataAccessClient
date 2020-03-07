@@ -62,14 +62,18 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
 
         public Dictionary<string, dynamic> OnExecutionContextCreating(IServiceProvider scopedServiceProvider)
         {
-            var userIdentifierProvider = scopedServiceProvider.GetRequiredService<IUserIdentifierProvider<TUserIdentifierType>>();
-            var softDeletableConfiguration = scopedServiceProvider.GetRequiredService<ISoftDeletableConfiguration>();
+            var userIdentifierProvider = scopedServiceProvider.GetService<IUserIdentifierProvider<TUserIdentifierType>>();
+            var softDeletableConfiguration = scopedServiceProvider.GetService<ISoftDeletableConfiguration>();
 
-            var context = new Dictionary<string, dynamic>
+            var context = new Dictionary<string, dynamic>();
+            if (userIdentifierProvider != null)
             {
-                {typeof(IUserIdentifierProvider<TUserIdentifierType>).Name, userIdentifierProvider},
-                {typeof(ISoftDeletableConfiguration).Name, softDeletableConfiguration},
-            };
+                context.Add(typeof(IUserIdentifierProvider<TUserIdentifierType>).Name, userIdentifierProvider);
+            }
+            if (softDeletableConfiguration != null)
+            {
+                context.Add(typeof(ISoftDeletableConfiguration).Name, softDeletableConfiguration);
+            }
 
             return context;
         }

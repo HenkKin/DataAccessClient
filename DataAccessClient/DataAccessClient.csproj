@@ -13,7 +13,7 @@
     <PackageTags>DataAccess Repository, UnitOfWork, SoftDelete, RowVersioning, Filtering, Paging, Translation, Sorting, Includes</PackageTags>
     <Description>Provides interfaces for Data Access with IRepository&lt;T&gt; and IUnitOfWork. Also provides haviorial interfaces for entities like IIdentifiable, ICreatable, IModifiable, ISoftDeletable, ITranslatable and IRowVersioned. Last but not least provides some types for Exceptions and searching capabilities like Filtering,Paging, Sorting and Includes.</Description>
     <Copyright>Henk Kin</Copyright>
-    <Version>0.0.5</Version>
+    <Version>0.0.6</Version>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>
