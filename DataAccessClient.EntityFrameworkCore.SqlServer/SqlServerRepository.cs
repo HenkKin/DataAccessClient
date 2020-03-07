@@ -11,24 +11,23 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
     internal class SqlServerRepository<TEntity> : IRepository<TEntity> 
         where TEntity : class
     {
-        protected readonly SqlServerDbContext DbContext;
         protected readonly DbSet<TEntity> DbSet;
         private readonly PropertyInfo _primaryKeyProperty;
 
         public SqlServerRepository(ISqlServerDbContextForEntityResolver sqlServerDbContextForEntityResolver)
         {
-            DbContext = sqlServerDbContextForEntityResolver.Execute<TEntity>();
-            if (DbContext != null)
+            var dbContext = sqlServerDbContextForEntityResolver.Execute<TEntity>();
+            if (dbContext != null)
             {
-                DbSet = DbContext.Set<TEntity>();
+                DbSet = dbContext.Set<TEntity>();
             }
 
-            if (DbContext == null || DbSet == null)
+            if (dbContext == null || DbSet == null)
             {
                 throw new InvalidOperationException($"Can not find IRepository instance for type {typeof(TEntity).FullName}");
             }
 
-            _primaryKeyProperty = DbContext.Model.FindEntityType(typeof(TEntity))?.FindPrimaryKey()?.Properties?.SingleOrDefault()?.PropertyInfo;
+            _primaryKeyProperty = dbContext.Model.FindEntityType(typeof(TEntity))?.FindPrimaryKey()?.Properties?.SingleOrDefault()?.PropertyInfo;
         }
 
         public IQueryable<TEntity> GetReadOnlyQuery()

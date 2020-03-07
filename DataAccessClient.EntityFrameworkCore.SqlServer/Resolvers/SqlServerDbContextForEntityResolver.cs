@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,8 +7,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Resolvers
     internal class SqlServerDbContextForEntityResolver : ISqlServerDbContextForEntityResolver
     {
         private readonly IServiceProvider _scopedServiceProvider;
-        private ConcurrentDictionary<Type, SqlServerDbContext> _resolvedDbContexts = new ConcurrentDictionary<Type, SqlServerDbContext>();
-        private readonly object _lock = new object();
 
         public SqlServerDbContextForEntityResolver(IServiceProvider scopedServiceProvider)
         {
@@ -18,44 +15,30 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Resolvers
 
         public SqlServerDbContext Execute<TEntity>() where TEntity : class
         {
-            if (!_resolvedDbContexts.ContainsKey(typeof(TEntity)))
+            Type dbContextType =
+                SqlServerDbContext.RegisteredEntityTypesPerDbContexts.Where(c =>
+                    c.Value.Any(entityType => entityType == typeof(TEntity))).Select(x => x.Key).SingleOrDefault();
+
+            SqlServerDbContext dbContext = null;
+            if (dbContextType != null)
             {
-                lock (_lock)
+                dbContext = ResolveDbContextInstance<TEntity>(_scopedServiceProvider, dbContextType);
+            }
+
+            if (dbContext == null)
+            {
+                foreach (var registeredDbContextType in SqlServerDbContext.RegisteredDbContextTypes)
                 {
-                    if (_resolvedDbContexts.ContainsKey(typeof(TEntity)))
+                    dbContext = ResolveDbContextInstance<TEntity>(_scopedServiceProvider, registeredDbContextType);
+
+                    if (dbContext != null)
                     {
-                        return _resolvedDbContexts[typeof(TEntity)];
+                        break;
                     }
-
-                    Type dbContextType =
-                        SqlServerDbContext.RegisteredEntityTypesPerDbContexts.Where(c =>
-                            c.Value.Any(entityType => entityType == typeof(TEntity))).Select(x => x.Key).SingleOrDefault();
-
-                    SqlServerDbContext dbContext = null;
-                    if (dbContextType != null)
-                    {
-                        dbContext = ResolveDbContextInstance<TEntity>(_scopedServiceProvider, dbContextType);
-                    }
-
-                    if (dbContext == null)
-                    {
-                        foreach (var registeredDbContextType in SqlServerDbContext.RegisteredDbContextTypes)
-                        {
-                            dbContext = ResolveDbContextInstance<TEntity>(_scopedServiceProvider, registeredDbContextType);
-
-                            if (dbContext != null)
-                            {
-                                break;
-                            }
-                        }
-                    }
-
-                    _resolvedDbContexts.TryAdd(typeof(TEntity), dbContext ?? throw new InvalidOperationException($"Can not find IRepository instance for type {typeof(TEntity).FullName}"));
-                    return dbContext;
                 }
             }
 
-            return _resolvedDbContexts[typeof(TEntity)];
+            return dbContext;
         }
 
         private SqlServerDbContext ResolveDbContextInstance<TEntity>(IServiceProvider scopedServiceProvider, Type dbContextType) where TEntity : class
