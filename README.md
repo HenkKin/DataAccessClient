@@ -488,11 +488,11 @@ Either commands, from Package Manager Console or .NET Core CLI, will download an
 
 ### Usage
 
-If you're using EntityFrameworkCore.SqlServer and you want to use this Identifier type in your entities, then you can use [DataAccessClient.EntityFrameworkCore.SqlServer](https://github.com/HenkKin/DataAccessClient.EntityFrameworkCore.SqlServer/) package which includes the following registration options via extensions method:
+If you're using EntityFrameworkCore.SqlServer and you want to use the DataAccessClient, then you can use [DataAccessClient.EntityFrameworkCore.SqlServer](https://github.com/HenkKin/DataAccessClient#dataaccesscliententityframeworkcoresqlserver/) package which includes the following registration options via extensions method:
 
 - `IServiceCollection AddDataAccessClient<TDbContext>(this IServiceCollection services, Action<DataAccessClientOptionsBuilder> dataAccessClientOptionsBuilderAction)`
 
-These extension method supports you to register all needed DbContexts, IUnitOfWorks and IRepositories for provided entity types. Calling AddDbContext or AddDbContextPool of EntityFrameworkCore is not needed and not recommended when you are using this library.
+This extension method supports you to register all needed DbContexts, IUnitOfWorks and IRepositories for provided entity types. Calling AddDbContext or AddDbContextPool of EntityFrameworkCore is not needed and not recommended when you are using this library.
 
 To use it:
 
