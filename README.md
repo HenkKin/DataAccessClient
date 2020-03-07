@@ -507,26 +507,26 @@ public class Startup
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services)
     {
-		var entityTypes = new [] { typeof(Entity1), typeof(Entity2) }; // can also done by using reflection
-		...
-
-		services.AddScoped<IUserIdentifierProvider<int>, ExampleUserIdentifierProvider>();
-		services.AddScoped<ITenantIdentifierProvider<int>, ExampleTenantIdentifierProvider>();
-		services.AddScoped<ILocaleIdentifierProvider<string>, ExampleLocaleIdentifierProvider>();
-
-		// register as DataAccessClient
-		services.AddDataAccessClient<ExampleDbContext>(conf => conf
+        var entityTypes = new [] { typeof(Entity1), typeof(Entity2) }; // can also done by using reflection
+        ...
+        
+        services.AddScoped<IUserIdentifierProvider<int>, ExampleUserIdentifierProvider>();
+        services.AddScoped<ITenantIdentifierProvider<int>, ExampleTenantIdentifierProvider>();
+        services.AddScoped<ILocaleIdentifierProvider<string>, ExampleLocaleIdentifierProvider>();
+        
+        // register as DataAccessClient
+        services.AddDataAccessClient<ExampleDbContext>(conf => conf
             .UsePooling(true)
-			.AddCustomEntityBehavior<YourCustomEntityBehaviorConfigurationType>() // optional extensible
+            .AddCustomEntityBehavior<YourCustomEntityBehaviorConfigurationType>() // optional extensible
             .ConfigureDbContextOptions(builder => builder
                 .EnableSensitiveDataLogging()
                 .EnableDetailedErrors()
                 .UseSqlServer("[Your connectionstring]")
             )
-		);
+        );
                 
-		...
-	}
+        ...
+    }
     
     ...
 ```
@@ -566,6 +566,8 @@ internal class YourDbContext : SqlServerDbContext
 
 To add your custom EntityBehavior, you have to implement the `IEntityBehaviorConfiguration` interface.
 
+To see a working implementation of an EntityBehavior, have a look at: [TenantScopeableEntityBehaviorConfiguration](https://github.com/HenkKin/DataAccessClient/blob/master/DataAccessClient.EntityFrameworkCore.SqlServer/Configuration/EntityBehaviors/TenantScopeableEntityBehaviorConfiguration.cs)
+
 ```csharp
 ...
 using DataAccessClient.EntityFrameworkCore.SqlServer;
@@ -589,8 +591,7 @@ public class Startup
 	}
 }
 
-// NOTE: to see a working implementation of an EntityBehavior, have a look at: 
-// https://github.com/HenkKin/DataAccessClient/blob/master/DataAccessClient.EntityFrameworkCore.SqlServer/Configuration/EntityBehaviors/TenantScopeableEntityBehaviorConfiguration.cs
+
 
 public class YourCustomEntityBehaviorConfigurationType : IEntityBehaviorConfiguration
 {
