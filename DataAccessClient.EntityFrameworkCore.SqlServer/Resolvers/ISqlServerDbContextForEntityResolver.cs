@@ -1,6 +1,6 @@
 ﻿namespace DataAccessClient.EntityFrameworkCore.SqlServer.Resolvers
 {
-    internal interface ISqlServerDbContextForEntityResolver
+    public interface ISqlServerDbContextForEntityResolver
     {
         SqlServerDbContext Execute<TEntity>() where TEntity : class;
     }

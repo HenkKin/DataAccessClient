@@ -13,10 +13,11 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
         public void ConvertFromProviderExpression_WhenDateTimeWithAnyKindIsProvided_ItShouldReturnDateTimeWithKindUtc(DateTimeKind dateTimeKind)
         {
             // Arrange
-            var offset = dateTimeKind == DateTimeKind.Local ? DateTimeOffset.Now.Offset : TimeSpan.FromHours(0);
-
+            TimeZoneInfo zone = TimeZoneInfo.FindSystemTimeZoneById("W. Europe Standard Time");
+            var dateTime = new DateTime(2020, 2, 12, 22, 39, 35, dateTimeKind);
+            
+            var offset = dateTimeKind == DateTimeKind.Local ? zone.GetUtcOffset(dateTime) : TimeSpan.FromHours(0);
             var input = new DateTimeOffset(2020, 2, 12, 22, 39, 35, offset);
-            var dateTime = DateTime.SpecifyKind(input.DateTime, dateTimeKind);
 
             Assert.Equal(dateTimeKind, dateTime.Kind);
 
@@ -27,7 +28,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
 
             // Assert
             Assert.True(result.HasValue);
-            Assert.Equal(input.UtcDateTime, result.Value);
+            Assert.Equal(input.ToUniversalTime(), result.Value);
             Assert.Equal(DateTimeKind.Utc, result.Value.Kind);
         }
 
@@ -38,10 +39,12 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
         public void ConvertFromProviderExpression_WhenNullableDateTimeWithAnyKindIsProvided_ItShouldReturnDateTimeWithKindUtc(DateTimeKind dateTimeKind)
         {
             // Arrange
-            var offset = dateTimeKind == DateTimeKind.Local ? DateTimeOffset.Now.Offset : TimeSpan.FromHours(0);
+            TimeZoneInfo zone = TimeZoneInfo.FindSystemTimeZoneById("W. Europe Standard Time");
+            var dateTime = new DateTime(2020, 2, 12, 22, 39, 35, dateTimeKind);
 
+            var offset = dateTimeKind == DateTimeKind.Local ? zone.GetUtcOffset(dateTime) : TimeSpan.FromHours(0);
             var input = new DateTimeOffset(2020, 2, 12, 22, 39, 35, offset);
-            var dateTime = DateTime.SpecifyKind(input.DateTime, dateTimeKind);
+
             Assert.Equal(dateTimeKind, dateTime.Kind);
 
             var utcDateTimeValueConverter = new UtcDateTimeValueConverter(new ConverterMappingHints());
@@ -62,10 +65,12 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
         public void ConvertToProviderExpression_WhenDateTimeWithAnyKindIsProvided_ItShouldReturnDateTimeWithKindUtc(DateTimeKind dateTimeKind)
         {
             // Arrange
-            var offset = dateTimeKind == DateTimeKind.Local ? DateTimeOffset.Now.Offset : TimeSpan.FromHours(0);
+            TimeZoneInfo zone = TimeZoneInfo.FindSystemTimeZoneById("W. Europe Standard Time");
+            var dateTime = new DateTime(2020, 2, 12, 22, 39, 35, dateTimeKind);
 
+            var offset = dateTimeKind == DateTimeKind.Local ? zone.GetUtcOffset(dateTime) : TimeSpan.FromHours(0);
             var input = new DateTimeOffset(2020, 2, 12, 22, 39, 35, offset);
-            var dateTime = DateTime.SpecifyKind(input.DateTime, dateTimeKind);
+
             Assert.Equal(dateTimeKind, dateTime.Kind);
 
             var utcDateTimeValueConverter = new UtcDateTimeValueConverter(new ConverterMappingHints());
@@ -86,10 +91,12 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
         public void ConvertToProviderExpression_WhenNullableDateTimeWithAnyKindIsProvided_ItShouldReturnDateTimeWithKindUtc(DateTimeKind dateTimeKind)
         {
             // Arrange
-            var offset = dateTimeKind == DateTimeKind.Local ? DateTimeOffset.Now.Offset : TimeSpan.FromHours(0);
+            TimeZoneInfo zone = TimeZoneInfo.FindSystemTimeZoneById("W. Europe Standard Time");
+            var dateTime = new DateTime(2020, 4, 12, 22, 39, 35, dateTimeKind);
 
-            var input = new DateTimeOffset(2020, 2, 12, 22, 39, 35, offset);
-            var dateTime = DateTime.SpecifyKind(input.DateTime, dateTimeKind);
+            var offset = dateTimeKind == DateTimeKind.Local ? zone.GetUtcOffset(dateTime) : TimeSpan.FromHours(0);
+            var input = new DateTimeOffset(2020, 4, 12, 22, 39, 35, offset);
+
             Assert.Equal(dateTimeKind, dateTime.Kind);
 
             var utcDateTimeValueConverter = new UtcDateTimeValueConverter(new ConverterMappingHints());
