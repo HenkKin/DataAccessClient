@@ -13,14 +13,14 @@
     <PackageReleaseNotes></PackageReleaseNotes>
     <Copyright>Henk Kin</Copyright>
     <PackageTags>EntityFrameworkCore, EF, SqlServer, DependencyInjection, Multiple DbContext support, DataAccess, Repository, UnitOfWork, SoftDelete, Translation, Localization, RowVersioning, Multitenancy, Filtering, Paging, Sorting, Includes</PackageTags>
-    <Version>0.0.7</Version>
+    <Version>0.0.8</Version>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="EntityCloner.Microsoft.EntityFrameworkCore" Version="0.0.1" />
+    <PackageReference Include="EntityCloner.Microsoft.EntityFrameworkCore" Version="0.0.2" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
     <PackageReference Include="LinqKit.Microsoft.EntityFrameworkCore" Version="3.0.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="3.5.0" />

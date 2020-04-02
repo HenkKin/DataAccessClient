@@ -13,14 +13,14 @@
     <PackageTags>DataAccess Repository, UnitOfWork, Multitenancy, SoftDelete, RowVersioning, Filtering, Paging, Translation, Localization, Sorting, Includes</PackageTags>
     <Description>Provides interfaces for Data Access with IRepository&lt;T&gt; and IUnitOfWork. Also provides haviorial interfaces for entities like IIdentifiable, ICreatable, IModifiable, ISoftDeletable, ITranslatable, ILocalizable, ITenantScopable and IRowVersioned. Last but not least provides some types for Exceptions and searching capabilities like Filtering,Paging, Sorting and Includes.</Description>
     <Copyright>Henk Kin</Copyright>
-    <Version>0.0.7</Version>
+    <Version>0.0.8</Version>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="EntityCloner.Microsoft.EntityFrameworkCore" Version="0.0.1" />
+    <PackageReference Include="EntityCloner.Microsoft.EntityFrameworkCore" Version="0.0.2" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
 </Project>
