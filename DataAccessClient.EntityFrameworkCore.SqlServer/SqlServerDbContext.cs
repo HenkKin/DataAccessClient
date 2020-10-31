@@ -15,11 +15,10 @@ using Microsoft.EntityFrameworkCore.Internal;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer
 {
-    public abstract class SqlServerDbContext : DbContext, IDbContextPoolable
+    public abstract class SqlServerDbContext : DbContext, IResettableService
     {
         private static readonly MethodInfo DbContextResetStateMethodInfo;
         private static readonly MethodInfo DbContextResetStateAsyncMethodInfo;
-        private static readonly MethodInfo DbContextResurrectMethodInfo;
         internal static ConcurrentBag<Type> RegisteredDbContextTypes = new ConcurrentBag<Type>();
         internal static ConcurrentDictionary<Type, List<Type>> RegisteredEntityTypesPerDbContexts = new ConcurrentDictionary<Type, List<Type>>();
 
@@ -30,9 +29,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                 BindingFlags.Instance | BindingFlags.NonPublic);
             DbContextResetStateAsyncMethodInfo = typeof(DbContext).GetMethod(
                 $"{typeof(IResettableService).FullName}.{nameof(IResettableService.ResetStateAsync)}",
-                BindingFlags.Instance | BindingFlags.NonPublic);
-            DbContextResurrectMethodInfo = typeof(DbContext).GetMethod(
-                $"{typeof(IDbContextPoolable).FullName}.{nameof(IDbContextPoolable.Resurrect)}",
                 BindingFlags.Instance | BindingFlags.NonPublic);
         }
 
@@ -51,42 +47,11 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             _dbContextResetStateAsyncMethod =
                 DbContextResetStateAsyncMethodInfo.CreateDelegate(typeof(Func<CancellationToken, Task>), this) as
                     Func<CancellationToken, Task>;
-            _dbContextResurrectMethod =
-                DbContextResurrectMethodInfo.CreateDelegate(typeof(Action<DbContextPoolConfigurationSnapshot>), this) as
-                    Action<DbContextPoolConfigurationSnapshot>;
-
             DataAccessClientOptionsExtension = options.FindExtension<DataAccessClientOptionsExtension>();
         }
 
-        #region DbContextPooling
+        #region IResettableService  overrides to support DbContextPooling
 
-        // https://stackoverflow.com/questions/37310896/overriding-explicit-interface-implementations
-
-        /// <summary>
-        ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to
-        ///     the same compatibility standards as public APIs. It may be changed or removed without notice in
-        ///     any release. You should only use it directly in your code with extreme caution and knowing that
-        ///     doing so can result in application failures when updating to a new Entity Framework Core release.
-        /// </summary>
-        void IDbContextPoolable.Resurrect(DbContextPoolConfigurationSnapshot configurationSnapshot)
-        {
-            if (_dbContextResurrectMethod != null)
-            {
-                _dbContextResurrectMethod.Invoke(configurationSnapshot);
-            }
-            else
-            {
-                throw new InvalidOperationException(
-                    $"Cannot find method {nameof(IDbContextPoolable)}.{nameof(IDbContextPoolable.Resurrect)} on basetype DbContext of {GetType().FullName}");
-            }
-        }
-
-        /// <summary>
-        ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to
-        ///     the same compatibility standards as public APIs. It may be changed or removed without notice in
-        ///     any release. You should only use it directly in your code with extreme caution and knowing that
-        ///     doing so can result in application failures when updating to a new Entity Framework Core release.
-        /// </summary>
         void IResettableService.ResetState()
         {
             ResetSqlServerDbContextState();
@@ -102,13 +67,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             }
         }
 
-        /// <summary>
-        ///     This is an internal API that supports the Entity Framework Core infrastructure and not subject to
-        ///     the same compatibility standards as public APIs. It may be changed or removed without notice in
-        ///     any release. You should only use it directly in your code with extreme caution and knowing that
-        ///     doing so can result in application failures when updating to a new Entity Framework Core release.
-        /// </summary>
-        /// <param name="cancellationToken"> A <see cref="CancellationToken" /> to observe while waiting for the task to complete. </param>
         async Task IResettableService.ResetStateAsync(CancellationToken cancellationToken)
         {
             ResetSqlServerDbContextState();

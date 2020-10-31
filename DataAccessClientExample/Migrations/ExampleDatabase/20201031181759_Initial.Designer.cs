@@ -10,23 +10,23 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAccessClientExample.Migrations.ExampleDatabase
 {
     [DbContext(typeof(ExampleDbContext))]
-    [Migration("20200228131932_Initial")]
+    [Migration("20201031181759_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "3.1.2")
+                .UseIdentityColumns()
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
-                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                .HasAnnotation("ProductVersion", "5.0.0-rc.2.20475.6");
 
             modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleEntity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                        .UseIdentityColumn();
 
                     b.Property<int>("CreatedById")
                         .HasColumnType("int");
@@ -81,6 +81,22 @@ namespace DataAccessClientExample.Migrations.ExampleDatabase
                     b.ToTable("ExampleEntityTranslation");
                 });
 
+            modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleEntityView", b =>
+                {
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LocaleId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+                });
+
             modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleEntityTranslation", b =>
                 {
                     b.HasOne("DataAccessClientExample.DataLayer.ExampleEntity", "TranslatedEntity")
@@ -88,6 +104,13 @@ namespace DataAccessClientExample.Migrations.ExampleDatabase
                         .HasForeignKey("TranslatedEntityId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("TranslatedEntity");
+                });
+
+            modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleEntity", b =>
+                {
+                    b.Navigation("Translations");
                 });
 #pragma warning restore 612, 618
         }

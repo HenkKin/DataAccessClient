@@ -169,7 +169,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
             var navigationPropertiesEntries = entityEntry.Navigations;
             foreach (var navigationEntry in navigationPropertiesEntries)
             {
-                if (navigationEntry.Metadata.IsCollection())
+                if (navigationEntry.Metadata.IsCollection)
                 {
                     if (navigationEntry.CurrentValue is ICollection collection)
                     {

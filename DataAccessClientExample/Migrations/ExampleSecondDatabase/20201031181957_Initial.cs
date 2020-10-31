@@ -11,18 +11,18 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                 name: "ExampleSecondEntities",
                 columns: table => new
                 {
-                    Id = table.Column<int>(nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    CreatedOn = table.Column<DateTime>(nullable: false),
-                    CreatedById = table.Column<int>(nullable: false),
-                    ModifiedOn = table.Column<DateTime>(nullable: true),
-                    ModifiedById = table.Column<int>(nullable: true),
-                    IsDeleted = table.Column<bool>(nullable: false),
-                    DeletedOn = table.Column<DateTime>(nullable: true),
-                    DeletedById = table.Column<int>(nullable: true),
-                    RowVersion = table.Column<byte[]>(rowVersion: true, nullable: true),
-                    Name = table.Column<string>(nullable: true),
-                    TenantId = table.Column<int>(nullable: false)
+                    CreatedOn = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedById = table.Column<int>(type: "int", nullable: false),
+                    ModifiedOn = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ModifiedById = table.Column<int>(type: "int", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedOn = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedById = table.Column<int>(type: "int", nullable: true),
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TenantId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -33,11 +33,11 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                 name: "ExampleSecondEntity_CodeTranslations",
                 columns: table => new
                 {
-                    OwnerId = table.Column<int>(nullable: false),
-                    Id = table.Column<int>(nullable: false)
+                    OwnerId = table.Column<int>(type: "int", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Translation = table.Column<string>(nullable: false),
-                    LocaleId = table.Column<string>(nullable: false)
+                    Translation = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    LocaleId = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -54,11 +54,11 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                 name: "ExampleSecondEntity_DescriptionTranslations",
                 columns: table => new
                 {
-                    OwnerId = table.Column<int>(nullable: false),
-                    Id = table.Column<int>(nullable: false)
+                    OwnerId = table.Column<int>(type: "int", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Translation = table.Column<string>(nullable: false),
-                    LocaleId = table.Column<string>(nullable: false)
+                    Translation = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    LocaleId = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {

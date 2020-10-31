@@ -10,23 +10,23 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
 {
     [DbContext(typeof(ExampleSecondDbContext))]
-    [Migration("20200228131947_Initial")]
+    [Migration("20201031181957_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "3.1.2")
+                .UseIdentityColumns()
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
-                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                .HasAnnotation("ProductVersion", "5.0.0-rc.2.20475.6");
 
             modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleSecondEntity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                        .UseIdentityColumn();
 
                     b.Property<int>("CreatedById")
                         .HasColumnType("int");
@@ -72,7 +72,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                             b1.Property<int>("ExampleSecondEntityId")
                                 .ValueGeneratedOnAdd()
                                 .HasColumnType("int")
-                                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                                .UseIdentityColumn();
 
                             b1.HasKey("ExampleSecondEntityId");
 
@@ -89,7 +89,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                                     b2.Property<int>("Id")
                                         .ValueGeneratedOnAdd()
                                         .HasColumnType("int")
-                                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                                        .UseIdentityColumn();
 
                                     b2.Property<string>("LocaleId")
                                         .IsRequired()
@@ -106,6 +106,8 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                                     b2.WithOwner()
                                         .HasForeignKey("OwnerId");
                                 });
+
+                            b1.Navigation("Translations");
                         });
 
                     b.OwnsOne("DataAccessClient.EntityBehaviors.TranslatedProperty<string>", "Description", b1 =>
@@ -113,7 +115,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                             b1.Property<int>("ExampleSecondEntityId")
                                 .ValueGeneratedOnAdd()
                                 .HasColumnType("int")
-                                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                                .UseIdentityColumn();
 
                             b1.HasKey("ExampleSecondEntityId");
 
@@ -130,7 +132,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                                     b2.Property<int>("Id")
                                         .ValueGeneratedOnAdd()
                                         .HasColumnType("int")
-                                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                                        .UseIdentityColumn();
 
                                     b2.Property<string>("LocaleId")
                                         .IsRequired()
@@ -147,7 +149,13 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                                     b2.WithOwner()
                                         .HasForeignKey("OwnerId");
                                 });
+
+                            b1.Navigation("Translations");
                         });
+
+                    b.Navigation("Code");
+
+                    b.Navigation("Description");
                 });
 #pragma warning restore 612, 618
         }
