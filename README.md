@@ -650,7 +650,7 @@ When version of `dotnet ef` tooling is updated, uninstall `dotnet ef` tooling
 
 Install `dotnet ef` tooling (only needed first time or when version is updated)
 
-`dotnet tool install --global dotnet-ef --version 3.1.1 --add-source https://api.nuget.org/v3/index.json --ignore-failed-sources`
+`dotnet tool install --global dotnet-ef --add-source https://api.nuget.org/v3/index.json --ignore-failed-sources`
 
 Adding migrations for specific DbContext
 

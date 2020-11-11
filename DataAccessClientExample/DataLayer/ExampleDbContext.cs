@@ -18,17 +18,7 @@ namespace DataAccessClientExample.DataLayer
             modelBuilder
                 .Entity<ExampleEntityView>()
                 .HasNoKey()
-                .ToQuery(() =>
-                    // TODO: Query does not work without query side evaluation, thows invalidoperationexception, needs investigation
-                    (from exampleEntity in Set<ExampleEntity>()
-                     from exampleEntityTranslation in Set<ExampleEntityTranslation>().Where(st => st.TranslatedEntityId == exampleEntity.Id)
-                     select new ExampleEntityView
-                     {
-                         Id = exampleEntity.Id,
-                         LocaleId = exampleEntityTranslation.LocaleId,
-                         Name = exampleEntity.Name,
-                         Description = exampleEntityTranslation.Description
-                     }));
+                .ToSqlQuery("SELECT e.Id, et.LocaleId, e.Name, et.Description FROM dbo.ExampleEntities e INNER JOIN dbo.ExampleEntityTranslation et ON e.Id = et.TranslatedEntityId");
 
             base.OnModelCreating(modelBuilder);
         }

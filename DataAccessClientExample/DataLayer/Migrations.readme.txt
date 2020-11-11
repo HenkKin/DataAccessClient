@@ -2,8 +2,8 @@
 
 cd [path-to-repository]\DataAccessClient\DataAccessClientExample
 
-dotnet ef migrations Add [migrationname] --context ExampleDbContext --output-dir Migrations/ExampleDatabase
-dotnet ef migrations Add [migrationname] --context ExampleSecondDbContext --output-dir Migrations/ExampleSecondDatabase
+dotnet ef migrations Add Initial --context ExampleDbContext --output-dir Migrations/ExampleDatabase
+dotnet ef migrations Add Initial --context ExampleSecondDbContext --output-dir Migrations/ExampleSecondDatabase
 
 dotnet ef database update --context ExampleDbContext
 dotnet ef database update --context ExampleSecondDbContext
