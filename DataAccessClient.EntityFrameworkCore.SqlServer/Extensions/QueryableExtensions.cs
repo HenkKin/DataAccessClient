@@ -51,7 +51,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Extensions
                     var options = ScriptOptions.Default.AddReferences(typeof(T).Assembly);
 
                     Expression<Func<T, bool>> whereClauseFunc =
-                        CSharpScript.EvaluateAsync<Expression<Func<T, bool>>>(whereClause, options).Result;
+                       await CSharpScript.EvaluateAsync<Expression<Func<T, bool>>>(whereClause, options);
 
                     source = source.Where(whereClauseFunc);
                 }

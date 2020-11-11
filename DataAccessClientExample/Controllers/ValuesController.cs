@@ -171,7 +171,7 @@ namespace DataAccessClientExample.Controllers
                 OrderByDirection = OrderByDirection.Ascending,
                 Page = 1,
                 PageSize = 10,
-                Search = "Updated"
+                Search = "Henk"
             };
             criteria.Includes.Add("Translations");
 
@@ -181,7 +181,7 @@ namespace DataAccessClientExample.Controllers
                 OrderByDirection = OrderByDirection.Ascending,
                 Page = 1,
                 PageSize = 10,
-                Search = "Updated"
+                Search = "Henk"
             };
 
             CriteriaResult<ExampleEntity> exampleEntitiesSearchResults;
