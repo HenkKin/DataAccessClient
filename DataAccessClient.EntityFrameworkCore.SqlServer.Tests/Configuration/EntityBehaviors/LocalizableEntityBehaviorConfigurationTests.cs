@@ -47,7 +47,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
         public void EntityTypeBuilder_IsLocalizable_WhenNotCalled_ItShouldHaveNoConfiguration()
         {
             // Arrange
-            var entityType = new EntityType(typeof(TestEntity), new Model(new ConventionSet()), ConfigurationSource.Explicit);
+            var entityType = new EntityType(typeof(TestEntity), new Model(new ConventionSet()), false, ConfigurationSource.Explicit);
 
             // Act
             var result = new EntityTypeBuilder<TestEntityView>(entityType);
@@ -62,7 +62,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
         public void EntityTypeBuilder_IsLocalizable_WhenCalled_ItShouldSetLocalizableConfiguration()
         {
             // Arrange
-            var entityType = new EntityType(typeof(TestEntityView), new Model(new ConventionSet()), ConfigurationSource.Explicit);
+            var entityType = new EntityType(typeof(TestEntityView), new Model(new ConventionSet()), false, ConfigurationSource.Explicit);
             var entityTypeBuilder = new EntityTypeBuilder<TestEntityView>(entityType);
 
             // Act

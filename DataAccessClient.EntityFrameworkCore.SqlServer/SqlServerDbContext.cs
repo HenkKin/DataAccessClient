@@ -36,7 +36,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 
         private readonly Action _dbContextResetStateMethod;
         private readonly Func<CancellationToken, Task> _dbContextResetStateAsyncMethod;
-        private readonly Action<DbContextPoolConfigurationSnapshot> _dbContextResurrectMethod;
 
         internal readonly DataAccessClientOptionsExtension DataAccessClientOptionsExtension;
 

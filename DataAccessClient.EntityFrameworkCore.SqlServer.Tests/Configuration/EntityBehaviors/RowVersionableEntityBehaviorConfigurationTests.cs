@@ -43,7 +43,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
         public void EntityTypeBuilder_IsRowVersionable_WhenNotCalled_ItShouldHaveNoConfiguration()
         {
             // Arrange
-            var entityType = new EntityType(typeof(TestEntity), new Model(new ConventionSet()), ConfigurationSource.Explicit);
+            var entityType = new EntityType(typeof(TestEntity), new Model(new ConventionSet()), false, ConfigurationSource.Explicit);
 
             // Act
             var result = new EntityTypeBuilder<TestEntity>(entityType);
@@ -56,7 +56,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
         public void EntityTypeBuilder_IsRowVersionable_WhenCalled_ItShouldSetIdentifiableConfiguration()
         {
             // Arrange
-            var entityType = new EntityType(typeof(TestEntity), new Model(new ConventionSet()), ConfigurationSource.Explicit);
+            var entityType = new EntityType(typeof(TestEntity), new Model(new ConventionSet()), false, ConfigurationSource.Explicit);
             var entityTypeBuilder = new EntityTypeBuilder<TestEntity>(entityType);
 
             // Act

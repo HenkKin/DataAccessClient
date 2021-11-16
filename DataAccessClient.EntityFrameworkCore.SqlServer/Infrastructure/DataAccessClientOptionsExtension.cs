@@ -53,7 +53,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure
 
         private sealed class ExtensionInfo : DbContextOptionsExtensionInfo
         {
-            private long? _serviceProviderHash;
+            private int? _serviceProviderHash;
             private string _logFragment;
 
             public ExtensionInfo(DataAccessClientOptionsExtension extension)
@@ -100,11 +100,11 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure
                     hashCode.ToString(CultureInfo.InvariantCulture);
             }
 
-            public override long GetServiceProviderHashCode()
+            public override int GetServiceProviderHashCode()
             {
                 if (_serviceProviderHash == null)
                 {
-                    var hashCode = Extension.EntityBehaviors?.GetHashCode() ?? 0L;
+                    var hashCode = Extension.EntityBehaviors?.GetHashCode() ?? 0;
                     if (Extension.EntityBehaviors != null)
                     {
                         foreach (var entityBehaviorConfiguration in Extension.EntityBehaviors)
@@ -118,6 +118,9 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Infrastructure
 
                 return _serviceProviderHash.Value;
             }
+
+            public override bool ShouldUseSameServiceProvider(DbContextOptionsExtensionInfo other)
+        => other is DbContextOptionsExtensionInfo;// RelationalExtensionInfo;
         }
     }
 }

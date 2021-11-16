@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
+#nullable disable
+
 namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
 {
     [DbContext(typeof(ExampleSecondDbContext))]
@@ -15,16 +17,18 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .UseIdentityColumns()
-                .HasAnnotation("Relational:MaxIdentifierLength", 128)
-                .HasAnnotation("ProductVersion", "5.0.0");
+                .HasAnnotation("ProductVersion", "6.0.0")
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
 
             modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleSecondEntity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .UseIdentityColumn();
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
                     b.Property<int>("CreatedById")
                         .HasColumnType("int");
@@ -60,7 +64,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
 
                     b.HasKey("Id");
 
-                    b.ToTable("ExampleSecondEntities");
+                    b.ToTable("ExampleSecondEntities", (string)null);
                 });
 
             modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleSecondEntity", b =>
@@ -68,9 +72,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                     b.OwnsOne("DataAccessClient.EntityBehaviors.TranslatedProperty<string>", "Code", b1 =>
                         {
                             b1.Property<int>("ExampleSecondEntityId")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("int")
-                                .UseIdentityColumn();
+                                .HasColumnType("int");
 
                             b1.HasKey("ExampleSecondEntityId");
 
@@ -86,8 +88,9 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
 
                                     b2.Property<int>("Id")
                                         .ValueGeneratedOnAdd()
-                                        .HasColumnType("int")
-                                        .UseIdentityColumn();
+                                        .HasColumnType("int");
+
+                                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b2.Property<int>("Id"), 1L, 1);
 
                                     b2.Property<string>("LocaleId")
                                         .IsRequired()
@@ -99,7 +102,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
 
                                     b2.HasKey("OwnerId", "Id");
 
-                                    b2.ToTable("ExampleSecondEntity_CodeTranslations");
+                                    b2.ToTable("ExampleSecondEntity_CodeTranslations", (string)null);
 
                                     b2.WithOwner()
                                         .HasForeignKey("OwnerId");
@@ -111,9 +114,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                     b.OwnsOne("DataAccessClient.EntityBehaviors.TranslatedProperty<string>", "Description", b1 =>
                         {
                             b1.Property<int>("ExampleSecondEntityId")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("int")
-                                .UseIdentityColumn();
+                                .HasColumnType("int");
 
                             b1.HasKey("ExampleSecondEntityId");
 
@@ -129,8 +130,9 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
 
                                     b2.Property<int>("Id")
                                         .ValueGeneratedOnAdd()
-                                        .HasColumnType("int")
-                                        .UseIdentityColumn();
+                                        .HasColumnType("int");
+
+                                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b2.Property<int>("Id"), 1L, 1);
 
                                     b2.Property<string>("LocaleId")
                                         .IsRequired()
@@ -142,7 +144,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
 
                                     b2.HasKey("OwnerId", "Id");
 
-                                    b2.ToTable("ExampleSecondEntity_DescriptionTranslations");
+                                    b2.ToTable("ExampleSecondEntity_DescriptionTranslations", (string)null);
 
                                     b2.WithOwner()
                                         .HasForeignKey("OwnerId");

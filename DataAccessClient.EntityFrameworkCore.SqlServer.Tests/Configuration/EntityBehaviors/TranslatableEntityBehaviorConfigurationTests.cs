@@ -49,7 +49,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
         public void EntityTypeBuilder_IsTranslatable_WhenNotCalled_ItShouldHaveNoConfiguration()
         {
             // Arrange
-            var entityType = new EntityType(typeof(TestEntity), new Model(new ConventionSet()), ConfigurationSource.Explicit);
+            var entityType = new EntityType(typeof(TestEntity), new Model(new ConventionSet()), false, ConfigurationSource.Explicit);
 
             // Act
             var result = new EntityTypeBuilder<TestEntity>(entityType);
@@ -62,7 +62,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
         public void EntityTypeBuilder_IsTranslatable_WhenCalled_ItShouldSetTranslatableConfiguration()
         {
             // Arrange
-            var entityType = new EntityType(typeof(TestEntity), new Model(new ConventionSet()), ConfigurationSource.Explicit);
+            var entityType = new EntityType(typeof(TestEntity), new Model(new ConventionSet()), false, ConfigurationSource.Explicit);
             var entityTypeBuilder = new EntityTypeBuilder<TestEntity>(entityType);
 
             // Act
@@ -77,7 +77,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
         public void EntityTypeBuilder_IsEntityTranslation_WhenNotCalled_ItShouldHaveNoConfiguration()
         {
             // Arrange
-            var entityType = new EntityType(typeof(TestEntityTranslation), new Model(new ConventionSet()), ConfigurationSource.Explicit);
+            var entityType = new EntityType(typeof(TestEntityTranslation), new Model(new ConventionSet()), false, ConfigurationSource.Explicit);
 
             // Act
             var result = new EntityTypeBuilder<TestEntityTranslation>(entityType);
@@ -92,7 +92,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
         public void EntityTypeBuilder_IsEntityTranslation_WhenCalled_ItShouldSetTranslatableConfiguration()
         {
             // Arrange
-            var entityType = new EntityType(typeof(TestEntityTranslation), new Model(new ConventionSet()), ConfigurationSource.Explicit);
+            var entityType = new EntityType(typeof(TestEntityTranslation), new Model(new ConventionSet()), false, ConfigurationSource.Explicit);
             var entityTypeBuilder = new EntityTypeBuilder<TestEntityTranslation>(entityType);
 
             // Act
