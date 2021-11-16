@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
+#nullable disable
+
 namespace DataAccessClientExample.Migrations.ExampleDatabase
 {
     [DbContext(typeof(ExampleDbContext))]
@@ -15,16 +17,18 @@ namespace DataAccessClientExample.Migrations.ExampleDatabase
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .UseIdentityColumns()
-                .HasAnnotation("Relational:MaxIdentifierLength", 128)
-                .HasAnnotation("ProductVersion", "5.0.0");
+                .HasAnnotation("ProductVersion", "6.0.0")
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
 
             modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleEntity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .UseIdentityColumn();
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
                     b.Property<int>("CreatedById")
                         .HasColumnType("int");
@@ -60,7 +64,7 @@ namespace DataAccessClientExample.Migrations.ExampleDatabase
 
                     b.HasKey("Id");
 
-                    b.ToTable("ExampleEntities");
+                    b.ToTable("ExampleEntities", (string)null);
                 });
 
             modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleEntityTranslation", b =>
@@ -77,6 +81,24 @@ namespace DataAccessClientExample.Migrations.ExampleDatabase
                     b.HasKey("TranslatedEntityId", "LocaleId");
 
                     b.ToTable("ExampleEntityTranslation");
+                });
+
+            modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleEntityView", b =>
+                {
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LocaleId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.ToSqlQuery("SELECT e.Id, et.LocaleId, e.Name, et.Description FROM dbo.ExampleEntities e INNER JOIN dbo.ExampleEntityTranslation et ON e.Id = et.TranslatedEntityId");
                 });
 
             modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleEntityTranslation", b =>
