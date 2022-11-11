@@ -29,7 +29,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestBase
                         .UseInMemoryDatabase(testName).EnableSensitiveDataLogging().EnableDetailedErrors()
                     )
             );
-            ServiceProvider = serviceCollection.BuildServiceProvider().CreateScope().ServiceProvider;
+            ServiceProvider = serviceCollection.BuildServiceProvider(true).CreateScope().ServiceProvider;
             UnitOfWork = ServiceProvider.GetRequiredService<IUnitOfWork>();
             TestEntityRepository = ServiceProvider.GetRequiredService<IRepository<TestEntity>>();
             TestEntityViewRepository = ServiceProvider.GetRequiredService<IRepository<TestEntityView>>();

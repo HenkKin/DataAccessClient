@@ -17,10 +17,10 @@ namespace DataAccessClientExample.Migrations.ExampleDatabase
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.0")
+                .HasAnnotation("ProductVersion", "7.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleEntity", b =>
                 {
@@ -28,7 +28,7 @@ namespace DataAccessClientExample.Migrations.ExampleDatabase
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("CreatedById")
                         .HasColumnType("int");
@@ -97,6 +97,8 @@ namespace DataAccessClientExample.Migrations.ExampleDatabase
 
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
+
+                    b.ToTable((string)null);
 
                     b.ToSqlQuery("SELECT e.Id, et.LocaleId, e.Name, et.Description FROM dbo.ExampleEntities e INNER JOIN dbo.ExampleEntityTranslation et ON e.Id = et.TranslatedEntityId");
                 });
