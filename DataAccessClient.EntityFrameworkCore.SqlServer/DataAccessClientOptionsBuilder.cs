@@ -33,6 +33,12 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             return this;
         }
 
+        public virtual DataAccessClientOptionsBuilder DisableUtcDateTimePropertyEntityBehavior()
+        {
+            _options.DisableUtcDateTimePropertyEntityBehavior = true;
+            return this;
+        }
+
         public virtual DataAccessClientOptionsBuilder AddCustomEntityBehavior<TEntityHaviorType>() where TEntityHaviorType : IEntityBehaviorConfiguration
         {
             _options.CustomEntityBehaviors.Add((TEntityHaviorType)Activator.CreateInstance(typeof(TEntityHaviorType)));

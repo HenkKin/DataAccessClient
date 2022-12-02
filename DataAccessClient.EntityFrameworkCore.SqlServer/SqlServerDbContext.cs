@@ -11,7 +11,6 @@ using DataAccessClient.Exceptions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Internal;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer
 {

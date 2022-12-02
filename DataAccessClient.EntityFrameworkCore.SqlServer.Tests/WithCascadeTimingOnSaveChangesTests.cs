@@ -1,5 +1,4 @@
-﻿using System;
-using DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestModels;
+﻿using DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,6 +23,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
             var serviceProvider = services.BuildServiceProvider().CreateScope();
 
             var dbContext = serviceProvider.ServiceProvider.GetService<TestDbContext>();
+            Assert.NotNull(dbContext);
 
             // EF Core defaults to Immediate since EF Core 3.0, before 3.0 to OnSaveChanges
             // https://docs.microsoft.com/en-us/ef/core/what-is-new/ef-core-3.0/breaking-changes#cascade
