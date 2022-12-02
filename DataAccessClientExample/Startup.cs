@@ -37,6 +37,7 @@ namespace DataAccessClientExample
 
             services.AddDataAccessClient<ExampleDbContext>(conf => conf
                     .UsePooling(true)
+                    .DisableUtcDateTimePropertyEntityBehavior()
                     .ConfigureDbContextOptions(builder => builder
                         .EnableSensitiveDataLogging()
                         .EnableDetailedErrors()
@@ -46,6 +47,7 @@ namespace DataAccessClientExample
 
             services.AddDataAccessClient<ExampleSecondDbContext>(conf => conf
                     .UsePooling(true)
+                    .DisableUtcDateTimePropertyEntityBehavior()
                     .ConfigureDbContextOptions(builder => builder
                         .EnableSensitiveDataLogging()
                         .EnableDetailedErrors()

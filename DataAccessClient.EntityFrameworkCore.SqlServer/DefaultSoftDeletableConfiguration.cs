@@ -21,8 +21,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             IsEnabled = false;
             return new RestoreAction(() => IsEnabled = originalIsEnabled);
         }
-
-
+        
         public RestoreAction EnableQueryFilter()
         {
             var originalIsQueryFilterEnabled = IsQueryFilterEnabled;

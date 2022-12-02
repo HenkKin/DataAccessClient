@@ -38,6 +38,56 @@ Either commands, from Package Manager Console or .NET Core CLI, will download an
 
 No external dependencies
 
+### (Breaking) Changes
+
+#### 7.0.1: Added option to disable UtcDateTimePropertyEntityBehavior
+#### Future 8.0.0: Removed UtcDateTimePropertyEntityBehavior options and properties with types DateTime and Nullable<DateTime> no longer default to Utc. You have to do that in your own modelbuilder with a convention.
+
+For example
+```csharp
+
+protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+{
+    configurationBuilder
+        .Properties<DateTime>()
+        .HaveConversion<UtcDateTimeConverter>();
+	
+	configurationBuilder
+        .Properties<DateTime?>()
+        .HaveConversion<UtcDateTimeConverter>();
+}
+
+...
+
+public class UtcDateTimeValueConverter : ValueConverter<DateTime?, DateTime?>
+{
+    public UtcDateTimeValueConverter() : this(null)
+    {
+    }
+
+    public UtcDateTimeValueConverter(ConverterMappingHints mappingHints = null) : base(ConvertToUtcExpression, ConvertToUtcExpression, mappingHints)
+    {
+    }
+
+    private static readonly Expression<Func<DateTime?, DateTime?>> ConvertToUtcExpression = dateTime => dateTime.HasValue ? ConvertToUtc(dateTime.Value) : dateTime;
+
+    public static DateTime ConvertToUtc(DateTime dateTime)
+    {
+        if (dateTime.Kind == DateTimeKind.Unspecified)
+        {
+            return DateTime.SpecifyKind(dateTime, DateTimeKind.Utc);
+        }
+
+        if (dateTime.Kind == DateTimeKind.Local)
+        {
+            return dateTime.ToUniversalTime();
+        }
+
+        return dateTime;
+    }
+}
+```
+
 ### Entity behaviors
 
 The [DataAccessClient](https://github.com/HenkKin/DataAccessClient/) package provides you a set of EntityBehavior interfaces. These interfaces you can use to decorate your entites.
@@ -518,6 +568,8 @@ public class Startup
         // register as DataAccessClient
         services.AddDataAccessClient<ExampleDbContext>(conf => conf
             .UsePooling(true)
+			// This option will be deleted in version 8.0.0
+            .DisableUtcDateTimePropertyEntityBehavior() // Disable the default UtcDateTimePropertyEntityBehavior
             .AddCustomEntityBehavior<YourCustomEntityBehaviorConfigurationType>() // optional extensible
             .ConfigureDbContextOptions(builder => builder
                 .EnableSensitiveDataLogging()
