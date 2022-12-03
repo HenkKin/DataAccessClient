@@ -41,7 +41,7 @@ No external dependencies
 ### (Breaking) Changes
 
 #### 7.0.1: Added option to disable UtcDateTimePropertyEntityBehavior
-#### Future 8.0.0: Removed UtcDateTimePropertyEntityBehavior options and properties with types DateTime and Nullable<DateTime> no longer default to Utc. You have to do that in your own modelbuilder with a convention.
+#### Future 8.0.0: Removed UtcDateTimePropertyEntityBehavior options and properties with types DateTime and Nullable DateTime no longer default to Utc. You have to do that in your own modelbuilder with a convention.
 
 For example
 ```csharp
