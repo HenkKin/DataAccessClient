@@ -513,7 +513,7 @@ DataAccessClient.EntityFrameworkCore.SqlServer
 
 The DataAccessClient.EntityFrameworkCore.SqlServer library is an Microsoft.EntityFrameworkCore.SqlServer implementation for [DataAccessClient](https://github.com/HenkKin/DataAccessClient/).
 
-This library is Cross-platform, supporting `net7.0`.
+This library is Cross-platform, supporting `net6.0`, `net7.0` and `net8.0`.
 
 
 ### Installing DataAccessClient.EntityFrameworkCore.SqlServer
