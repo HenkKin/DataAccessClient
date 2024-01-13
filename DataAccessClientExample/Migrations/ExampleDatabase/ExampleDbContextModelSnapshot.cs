@@ -17,7 +17,7 @@ namespace DataAccessClientExample.Migrations.ExampleDatabase
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.0")
+                .HasAnnotation("ProductVersion", "8.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -80,7 +80,7 @@ namespace DataAccessClientExample.Migrations.ExampleDatabase
 
                     b.HasKey("TranslatedEntityId", "LocaleId");
 
-                    b.ToTable("ExampleEntityTranslation");
+                    b.ToTable("ExampleEntityTranslation", (string)null);
                 });
 
             modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleEntityView", b =>
