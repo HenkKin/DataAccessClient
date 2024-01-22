@@ -7,7 +7,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
 {
     public class IdentiableIntegrationTests : DbContextTestBase
     {
-        public IdentiableIntegrationTests() : base(nameof(IdentiableIntegrationTests))
+        public IdentiableIntegrationTests(DatabaseFixture databaseFixture) : base(nameof(IdentiableIntegrationTests), databaseFixture)
         {
         }
 
@@ -19,15 +19,15 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
             var testEntity2 = new TestEntity();
             var testEntity3 = new TestEntity();
 
-            TestEntityRepository.Add(testEntity1);
-            TestEntityRepository.Add(testEntity2);
-            TestEntityRepository.Add(testEntity3);
+            DatabaseFixture.TestEntityRepository.Add(testEntity1);
+            DatabaseFixture.TestEntityRepository.Add(testEntity2);
+            DatabaseFixture.TestEntityRepository.Add(testEntity3);
 
             Assert.Equal(1, testEntity1.Id);
             Assert.Equal(2, testEntity2.Id);
             Assert.Equal(3, testEntity3.Id);
 
-            await UnitOfWork.SaveAsync();
+            await DatabaseFixture.UnitOfWork.SaveAsync();
 
             Assert.Equal(1, testEntity1.Id);
             Assert.Equal(2, testEntity2.Id);
@@ -37,7 +37,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
             testEntity2.Description = "updated2";
             testEntity3.Description = "updated3";
 
-            await UnitOfWork.SaveAsync();
+            await DatabaseFixture.UnitOfWork.SaveAsync();
 
             Assert.Equal(1, testEntity1.Id);
             Assert.Equal(2, testEntity2.Id);

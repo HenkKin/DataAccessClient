@@ -1,0 +1,18 @@
+﻿Update Database
+
+cd [path-to-repository]\DataAccessClient\DataAccessClientExample
+
+Installeer de dotnet ef tool (indien nodig)
+
+// in geval van update. voer dan eerst uit:
+- dotnet tool uninstall --global dotnet-ef 
+
+// download from https://dotnet.microsoft.com/download/dotnet-core/thank-you/sdk-3.1.302-windows-x64-installer
+- dotnet tool install --global dotnet-ef --add-source https://api.nuget.org/v3/index.json --ignore-failed-sources --version 7.0.0
+
+
+dotnet ef migrations Add Initial --context ExampleDbContext --output-dir Migrations/ExampleDatabase
+dotnet ef migrations Add Initial --context ExampleSecondDbContext --output-dir Migrations/ExampleSecondDatabase
+
+dotnet ef database update --context ExampleDbContext
+dotnet ef database update --context ExampleSecondDbContext
