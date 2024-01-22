@@ -9,7 +9,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
 {
     public class ModifiableIntegrationTests : DbContextTestBase
     {
-        public ModifiableIntegrationTests() : base(nameof(ModifiableIntegrationTests))
+        public ModifiableIntegrationTests(DatabaseFixture databaseFixture) : base(nameof(ModifiableIntegrationTests), databaseFixture)
         {
         }
 
@@ -17,19 +17,19 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
         public async Task Modifiable_WhenCalled_ItShouldSetModifiablePropertiesOnUpdate()
         {
             // Arrange
-            var userIdentifierProvider = (TestUserIdentifierProvider)ServiceProvider.GetRequiredService<IUserIdentifierProvider<int>>();
+            var userIdentifierProvider = (TestUserIdentifierProvider)DatabaseFixture.ServiceProvider.GetRequiredService<IUserIdentifierProvider<int>>();
 
             var userIdentifier = 15;
             userIdentifierProvider.ChangeUserIdentifier(userIdentifier);
             var testEntity = new TestEntity();
-            TestEntityRepository.Add(testEntity);
-            await UnitOfWork.SaveAsync();
+            DatabaseFixture.TestEntityRepository.Add(testEntity);
+            await DatabaseFixture.UnitOfWork.SaveAsync();
 
             Assert.Null(testEntity.ModifiedById);
             Assert.Null(testEntity.ModifiedOn);
 
             testEntity.Description = "Updated";
-            await UnitOfWork.SaveAsync();
+            await DatabaseFixture.UnitOfWork.SaveAsync();
 
             Assert.Equal(userIdentifier, testEntity.ModifiedById);
             Assert.NotNull(testEntity.ModifiedOn);

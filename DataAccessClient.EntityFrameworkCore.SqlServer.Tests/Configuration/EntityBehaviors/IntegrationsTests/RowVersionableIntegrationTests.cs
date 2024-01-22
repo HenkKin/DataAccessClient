@@ -10,7 +10,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
 {
     public class RowVersionableIntegrationTests : DbContextTestBase
     {
-        public RowVersionableIntegrationTests() : base(nameof(RowVersionableIntegrationTests))
+        public RowVersionableIntegrationTests(DatabaseFixture databaseFixture) : base(nameof(RowVersionableIntegrationTests), databaseFixture)
         {
         }
 
@@ -18,15 +18,15 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
         public async Task RowVersionable_WhenCalled_ItShouldApplyRowVersioning()
         {
             // Arrange
-            var userIdentifierProvider = (TestUserIdentifierProvider)ServiceProvider.GetRequiredService<IUserIdentifierProvider<int>>();
+            var userIdentifierProvider = (TestUserIdentifierProvider)DatabaseFixture.ServiceProvider.GetRequiredService<IUserIdentifierProvider<int>>();
             
             userIdentifierProvider.ChangeUserIdentifier(10);
             var testEntity = new TestEntity
             {
                 RowVersion = new byte[] { 1 }
             };
-            TestEntityRepository.Add(testEntity);
-            await UnitOfWork.SaveAsync();
+            DatabaseFixture.TestEntityRepository.Add(testEntity);
+            await DatabaseFixture.UnitOfWork.SaveAsync();
 
             var rowVersion = testEntity.RowVersion;
             var newRowVersion = new byte[] { 2 };
@@ -35,7 +35,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
             testEntity.Description = $"Updated with rowVersion {newRowVersion}";
             testEntity.RowVersion = newRowVersion;
 
-            await Assert.ThrowsAsync<RowVersioningException>(() => UnitOfWork.SaveAsync());
+            await Assert.ThrowsAsync<RowVersioningException>(() => DatabaseFixture.UnitOfWork.SaveAsync());
           
             Assert.NotEqual(rowVersion, testEntity.RowVersion);
             Assert.Equal(newRowVersion, testEntity.RowVersion);

@@ -12,7 +12,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
 {
     public class TenantScopableIntegrationTests : DbContextTestBase
     {
-        public TenantScopableIntegrationTests() : base(nameof(TenantScopableIntegrationTests))
+        public TenantScopableIntegrationTests(DatabaseFixture databaseFixture) : base(nameof(TenantScopableIntegrationTests), databaseFixture)
         {
         }
 
@@ -20,18 +20,18 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
         public async Task TenantScopableQueryFilter_WhenCalled_ItShouldApplyQueryFilter()
         {
             // Arrange
-            var tenantIdentifierProvider = (TestTenantIdentifierProvider)ServiceProvider.GetRequiredService<ITenantIdentifierProvider<int>>();
-            var multiTenancyConfiguration = ServiceProvider.GetRequiredService<IMultiTenancyConfiguration>();
+            var tenantIdentifierProvider = (TestTenantIdentifierProvider)DatabaseFixture.ServiceProvider.GetRequiredService<ITenantIdentifierProvider<int>>();
+            var multiTenancyConfiguration = DatabaseFixture.ServiceProvider.GetRequiredService<IMultiTenancyConfiguration>();
             
             tenantIdentifierProvider.ChangeTenantIdentifier(1);
             var testEntityTenant1 = new TestEntity();
-            TestEntityRepository.Add(testEntityTenant1);
-            await UnitOfWork.SaveAsync();
+            DatabaseFixture.TestEntityRepository.Add(testEntityTenant1);
+            await DatabaseFixture.UnitOfWork.SaveAsync();
 
             tenantIdentifierProvider.ChangeTenantIdentifier(2);
             var testEntityTenant2 = new TestEntity();
-            TestEntityRepository.Add(testEntityTenant2);
-            await UnitOfWork.SaveAsync();
+            DatabaseFixture.TestEntityRepository.Add(testEntityTenant2);
+            await DatabaseFixture.UnitOfWork.SaveAsync();
 
             multiTenancyConfiguration.EnableQueryFilter();
             Assert.True(multiTenancyConfiguration.IsQueryFilterEnabled);
@@ -40,19 +40,19 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
             {
                 Assert.False(multiTenancyConfiguration.IsQueryFilterEnabled);
 
-                var allTenantEntities = await TestEntityRepository.GetReadOnlyQuery().ToListAsync();
+                var allTenantEntities = await DatabaseFixture.TestEntityRepository.GetReadOnlyQuery().ToListAsync();
                 Assert.Equal(2, allTenantEntities.Count);
             }
 
             Assert.True(multiTenancyConfiguration.IsQueryFilterEnabled);
 
             tenantIdentifierProvider.ChangeTenantIdentifier(1);
-            var tenant1Entities = await TestEntityRepository.GetReadOnlyQuery().ToListAsync();
+            var tenant1Entities = await DatabaseFixture.TestEntityRepository.GetReadOnlyQuery().ToListAsync();
             Assert.Single(tenant1Entities);
             Assert.Equal(1, tenant1Entities.Single().TenantId);
 
             tenantIdentifierProvider.ChangeTenantIdentifier(2);
-            var tenant2Entities = await TestEntityRepository.GetReadOnlyQuery().ToListAsync();
+            var tenant2Entities = await DatabaseFixture.TestEntityRepository.GetReadOnlyQuery().ToListAsync();
             Assert.Single(tenant2Entities);
             Assert.Equal(2, tenant2Entities.Single().TenantId);
         }

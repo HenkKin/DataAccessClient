@@ -28,8 +28,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests
                 new LocalizableEntityBehaviorConfiguration<string>(),
                 new TenantScopeableEntityBehaviorConfiguration<int>(),
                 new TranslatableEntityBehaviorConfiguration(),
-                new TranslatedPropertyEntityBehaviorConfiguration(),
-                new UtcDateTimePropertyEntityBehaviorConfiguration()
+                new TranslatedPropertyEntityBehaviorConfiguration()
             }));
 
         [Fact]

@@ -10,7 +10,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
 {
     public class CreatableIntegrationTests : DbContextTestBase
     {
-        public CreatableIntegrationTests() : base(nameof(CreatableIntegrationTests))
+        public CreatableIntegrationTests(DatabaseFixture databaseFixture) : base(nameof(CreatableIntegrationTests), databaseFixture)
         {
         }
 
@@ -18,13 +18,13 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
         public async Task Creatable_WhenCalled_ItShouldSetCreatablePropertiesOnInsert()
         {
             // Arrange
-            var userIdentifierProvider = (TestUserIdentifierProvider)ServiceProvider.GetRequiredService<IUserIdentifierProvider<int>>();
+            var userIdentifierProvider = (TestUserIdentifierProvider)DatabaseFixture.ServiceProvider.GetRequiredService<IUserIdentifierProvider<int>>();
 
             var userIdentifier = 15;
             userIdentifierProvider.ChangeUserIdentifier(userIdentifier);
             var testEntity = new TestEntity();
-            TestEntityRepository.Add(testEntity);
-            await UnitOfWork.SaveAsync();
+            DatabaseFixture.TestEntityRepository.Add(testEntity);
+            await DatabaseFixture.UnitOfWork.SaveAsync();
 
             Assert.Equal(userIdentifier, testEntity.CreatedById);
             Assert.NotEqual(DateTime.MinValue, testEntity.CreatedOn);
@@ -35,7 +35,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
             userIdentifierProvider.ChangeUserIdentifier(16);
             testEntity.Description = "updated";
 
-            await UnitOfWork.SaveAsync();
+            await DatabaseFixture.UnitOfWork.SaveAsync();
 
             Assert.Equal(createdById, testEntity.CreatedById);
             Assert.Equal(createdOn, testEntity.CreatedOn);

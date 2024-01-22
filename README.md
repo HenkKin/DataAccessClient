@@ -40,7 +40,7 @@ No external dependencies
 ### (Breaking) Changes
 
 #### 7.0.1: Added option to disable UtcDateTimePropertyEntityBehavior
-#### Future 8.0.0: Removed UtcDateTimePropertyEntityBehavior options and properties with types DateTime and Nullable DateTime no longer default to Utc. You have to do that in your own modelbuilder with a convention.
+#### 8.0.1: Removed UtcDateTimePropertyEntityBehavior options and properties with types DateTime and Nullable DateTime no longer default to Utc. THIS IS A BREAKING CHANGE. You have to do that in your own modelbuilder with a convention.
 
 For example
 ```csharp
@@ -49,11 +49,11 @@ protected override void ConfigureConventions(ModelConfigurationBuilder configura
 {
     configurationBuilder
         .Properties<DateTime>()
-        .HaveConversion<UtcDateTimeConverter>();
+        .HaveConversion<UtcDateTimeValueConverter>();
 	
 	configurationBuilder
         .Properties<DateTime?>()
-        .HaveConversion<UtcDateTimeConverter>();
+        .HaveConversion<UtcDateTimeValueConverter>();
 }
 
 ...
@@ -567,8 +567,6 @@ public class Startup
         // register as DataAccessClient
         services.AddDataAccessClient<ExampleDbContext>(conf => conf
             .UsePooling(true)
-			// This option will be deleted in version 8.0.0
-            .DisableUtcDateTimePropertyEntityBehavior() // Disable the default UtcDateTimePropertyEntityBehavior
             .AddCustomEntityBehavior<YourCustomEntityBehaviorConfigurationType>() // optional extensible
             .ConfigureDbContextOptions(builder => builder
                 .EnableSensitiveDataLogging()

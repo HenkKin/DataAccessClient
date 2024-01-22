@@ -12,7 +12,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
 {
     public class SoftDeletableIntegrationTests : DbContextTestBase
     {
-        public SoftDeletableIntegrationTests() : base(nameof(SoftDeletableIntegrationTests))
+        public SoftDeletableIntegrationTests(DatabaseFixture databaseFixture) : base(nameof(SoftDeletableIntegrationTests), databaseFixture)
         {
         }
 
@@ -20,22 +20,22 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
         public async Task SoftDeletableQueryFilter_WhenCalled_ItShouldApplyQueryFilter()
         {
             // Arrange
-            var userIdentifierProvider = (TestUserIdentifierProvider)ServiceProvider.GetRequiredService<IUserIdentifierProvider<int>>();
-            var softDeletableConfiguration = ServiceProvider.GetRequiredService<ISoftDeletableConfiguration>();
+            var userIdentifierProvider = (TestUserIdentifierProvider)DatabaseFixture.ServiceProvider.GetRequiredService<IUserIdentifierProvider<int>>();
+            var softDeletableConfiguration = DatabaseFixture.ServiceProvider.GetRequiredService<ISoftDeletableConfiguration>();
 
             var userIdentifier = 15;
             userIdentifierProvider.ChangeUserIdentifier(userIdentifier);
 
             var testEntity1 = new TestEntity();
-            TestEntityRepository.Add(testEntity1);
+            DatabaseFixture.TestEntityRepository.Add(testEntity1);
             var testEntity2 = new TestEntity();
-            TestEntityRepository.Add(testEntity2);
+            DatabaseFixture.TestEntityRepository.Add(testEntity2);
             
-            await UnitOfWork.SaveAsync();
+            await DatabaseFixture.UnitOfWork.SaveAsync();
 
-            TestEntityRepository.Remove(testEntity1);
+            DatabaseFixture.TestEntityRepository.Remove(testEntity1);
 
-            await UnitOfWork.SaveAsync();
+            await DatabaseFixture.UnitOfWork.SaveAsync();
             Assert.True(testEntity1.IsDeleted);
             Assert.Equal(userIdentifier, testEntity1.DeletedById);
             Assert.NotNull(testEntity1.DeletedOn);
@@ -49,7 +49,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
                 // IsEnabled overrides IsQueryFilterEnabled
                 Assert.True(softDeletableConfiguration.IsQueryFilterEnabled);
 
-                var allEntities = await TestEntityRepository.GetReadOnlyQuery().ToListAsync();
+                var allEntities = await DatabaseFixture.TestEntityRepository.GetReadOnlyQuery().ToListAsync();
                 Assert.Equal(2, allEntities.Count);
             }
             Assert.True(softDeletableConfiguration.IsEnabled);
@@ -59,13 +59,13 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
             {
                 Assert.False(softDeletableConfiguration.IsQueryFilterEnabled);
 
-                var allEntities = await TestEntityRepository.GetReadOnlyQuery().ToListAsync();
+                var allEntities = await DatabaseFixture.TestEntityRepository.GetReadOnlyQuery().ToListAsync();
                 Assert.Equal(2, allEntities.Count);
             }
 
             Assert.True(softDeletableConfiguration.IsQueryFilterEnabled);
 
-            var notDeletedEntities = await TestEntityRepository.GetReadOnlyQuery().ToListAsync();
+            var notDeletedEntities = await DatabaseFixture.TestEntityRepository.GetReadOnlyQuery().ToListAsync();
             Assert.Single(notDeletedEntities);
             Assert.False(notDeletedEntities.Single().IsDeleted);
 
@@ -73,7 +73,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.Configuration.Ent
             {
                 Assert.False(softDeletableConfiguration.IsQueryFilterEnabled);
 
-                var deletedEntities = await TestEntityRepository.GetReadOnlyQuery()
+                var deletedEntities = await DatabaseFixture.TestEntityRepository.GetReadOnlyQuery()
                     .Where(x=>x.IsDeleted).ToListAsync();
                 Assert.Single(deletedEntities);
                 Assert.True(deletedEntities.Single().IsDeleted);

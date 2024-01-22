@@ -13,7 +13,7 @@
     <PackageTags>DataAccess Repository, UnitOfWork, Multitenancy, SoftDelete, RowVersioning, Filtering, Paging, Translation, Localization, Sorting, Includes</PackageTags>
     <Description>Provides interfaces for Data Access with IRepository&lt;T&gt; and IUnitOfWork. Also provides haviorial interfaces for entities like IIdentifiable, ICreatable, IModifiable, ISoftDeletable, ITranslatable, ILocalizable, ITenantScopable and IRowVersioned. Last but not least provides some types for Exceptions and searching capabilities like Filtering,Paging, Sorting and Includes.</Description>
     <Copyright>Henk Kin</Copyright>
-    <Version>8.0.0</Version>
+    <Version>8.0.1</Version>
 	<PublishRepositoryUrl>true</PublishRepositoryUrl>
 	<EmbedUntrackedSources>true</EmbedUntrackedSources>
 	<IncludeSymbols>true</IncludeSymbols>
@@ -22,6 +22,7 @@
 
 	<ItemGroup Condition="('$(TargetFramework)' == 'net6.0')">
 		<PackageReference Include="EntityCloner.Microsoft.EntityFrameworkCore" Version="[6,)" />
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="[1.1.1,)" PrivateAssets="All" />
 	</ItemGroup>
 	<PropertyGroup Condition="('$(TargetFramework)' == 'net6.0')">
 		<DefineConstants>NET6_0</DefineConstants>
@@ -29,6 +30,7 @@
 
 	<ItemGroup Condition="('$(TargetFramework)' == 'net7.0')">
 		<PackageReference Include="EntityCloner.Microsoft.EntityFrameworkCore" Version="[7,)" />
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="[1.1.1,)" PrivateAssets="All" />
 	</ItemGroup>
 	<PropertyGroup Condition="('$(TargetFramework)' == 'net7.0')">
 		<DefineConstants>NET7_0</DefineConstants>
@@ -41,7 +43,4 @@
 		<DefineConstants>NET8_0</DefineConstants>
 	</PropertyGroup>
 
-	<ItemGroup>
-	  <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-  </ItemGroup>
 </Project>

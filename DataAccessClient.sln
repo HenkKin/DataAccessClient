@@ -21,6 +21,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataAccessClient.Tests", "D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataAccessClient.EntityFrameworkCore.SqlServer.Tests", "DataAccessClient.EntityFrameworkCore.SqlServer.Tests\DataAccessClient.EntityFrameworkCore.SqlServer.Tests.csproj", "{B2AE5FD4-D99D-4FBD-94D0-86FEF54A9814}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataAccessClientExample-6", "DataAccessClientExample-6\DataAccessClientExample-6.csproj", "{761ED4D4-CDA2-4D49-AD6C-FE5962151050}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataAccessClientExample-7", "DataAccessClientExample-7\DataAccessClientExample-7.csproj", "{DFC5E1A2-1765-4B04-952F-9896AE4EE539}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataAccessClientExample-8", "DataAccessClientExample-8\DataAccessClientExample-8.csproj", "{4601B6EF-8795-4CC2-AFCB-1418E6BA08E3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,6 +53,18 @@ Global
 		{B2AE5FD4-D99D-4FBD-94D0-86FEF54A9814}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B2AE5FD4-D99D-4FBD-94D0-86FEF54A9814}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B2AE5FD4-D99D-4FBD-94D0-86FEF54A9814}.Release|Any CPU.Build.0 = Release|Any CPU
+		{761ED4D4-CDA2-4D49-AD6C-FE5962151050}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{761ED4D4-CDA2-4D49-AD6C-FE5962151050}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{761ED4D4-CDA2-4D49-AD6C-FE5962151050}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{761ED4D4-CDA2-4D49-AD6C-FE5962151050}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DFC5E1A2-1765-4B04-952F-9896AE4EE539}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DFC5E1A2-1765-4B04-952F-9896AE4EE539}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DFC5E1A2-1765-4B04-952F-9896AE4EE539}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DFC5E1A2-1765-4B04-952F-9896AE4EE539}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4601B6EF-8795-4CC2-AFCB-1418E6BA08E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4601B6EF-8795-4CC2-AFCB-1418E6BA08E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4601B6EF-8795-4CC2-AFCB-1418E6BA08E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4601B6EF-8795-4CC2-AFCB-1418E6BA08E3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

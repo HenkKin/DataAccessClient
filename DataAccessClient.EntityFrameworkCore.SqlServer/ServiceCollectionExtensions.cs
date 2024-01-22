@@ -39,11 +39,6 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                 new TranslatedPropertyEntityBehaviorConfiguration()
             };
 
-            if (dataAccessClientOptions.DisableUtcDateTimePropertyEntityBehavior == false)
-            {
-                entityBehaviorConfigurations.Add(new UtcDateTimePropertyEntityBehaviorConfiguration());
-            }
-
             if (dataAccessClientOptions.CustomEntityBehaviors.Any())
             {
                 entityBehaviorConfigurations.AddRange(dataAccessClientOptions.CustomEntityBehaviors);
