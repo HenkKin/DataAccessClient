@@ -8,6 +8,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageProjectUrl>https://github.com/HenkKin/DataAccessClient</PackageProjectUrl>
+	<PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/HenkKin/DataAccessClient.git</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
     <PackageTags>DataAccess Repository, UnitOfWork, Multitenancy, SoftDelete, RowVersioning, Filtering, Paging, Translation, Localization, Sorting, Includes</PackageTags>
@@ -19,6 +20,10 @@
 	<IncludeSymbols>true</IncludeSymbols>
 	<SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+	<ItemGroup>
+		<None Include="../README.md" Pack="true" PackagePath="\" />
+	</ItemGroup>
 
 	<ItemGroup Condition="('$(TargetFramework)' == 'net6.0')">
 		<PackageReference Include="EntityCloner.Microsoft.EntityFrameworkCore" Version="[6,)" />
