@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-	<TargetFrameworks>net9.0;net8.0;net7.0;net6.0;</TargetFrameworks>
+	<TargetFrameworks>net10.0;net9.0;net8.0;net7.0;net6.0;</TargetFrameworks>
     <Authors>Henk Kin</Authors>
     <Company>Henk Kin</Company>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -14,7 +14,7 @@
     <PackageTags>DataAccess Repository, UnitOfWork, Multitenancy, SoftDelete, RowVersioning, Filtering, Paging, Translation, Localization, Sorting, Includes</PackageTags>
     <Description>Provides interfaces for Data Access with IRepository&lt;T&gt; and IUnitOfWork. Also provides haviorial interfaces for entities like IIdentifiable, ICreatable, IModifiable, ISoftDeletable, ITranslatable, ILocalizable, ITenantScopable and IRowVersioned. Last but not least provides some types for Exceptions and searching capabilities like Filtering,Paging, Sorting and Includes.</Description>
     <Copyright>Henk Kin</Copyright>
-    <Version>9.0.0</Version>
+    <Version>10.0.0</Version>
 	<PublishRepositoryUrl>true</PublishRepositoryUrl>
 	<EmbedUntrackedSources>true</EmbedUntrackedSources>
 	<IncludeSymbols>true</IncludeSymbols>
@@ -53,6 +53,13 @@
 	</ItemGroup>
 	<PropertyGroup Condition="('$(TargetFramework)' == 'net9.0')">
 		<DefineConstants>NET9_0</DefineConstants>
+	</PropertyGroup>
+	
+	<ItemGroup Condition="('$(TargetFramework)' == 'net10.0')">
+		<PackageReference Include="EntityCloner.Microsoft.EntityFrameworkCore" Version="[10,)" />
+	</ItemGroup>
+	<PropertyGroup Condition="('$(TargetFramework)' == 'net10.0')">
+		<DefineConstants>NET10_0</DefineConstants>
 	</PropertyGroup>
 
 </Project>

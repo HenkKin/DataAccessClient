@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-	<TargetFrameworks>net9.0;net8.0;net7.0;net6.0;</TargetFrameworks>
+	<TargetFrameworks>net10.0;net9.0;net8.0;net7.0;net6.0;</TargetFrameworks>
     <Authors>Henk Kin</Authors>
     <Description>Provides implementation for Data Access with EntityFrameworkCore.SqlServer. It provides implementation for IRepository&lt;T&gt; and DbContext. It also provides extension methods for IServiceCollection to easily adding types to .NET Core DependencyInjection. Is also supports using multiple DbContexts within same IUnitOfWork.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -14,7 +14,7 @@
     <PackageReleaseNotes></PackageReleaseNotes>
     <Copyright>Henk Kin</Copyright>
     <PackageTags>EntityFrameworkCore, EF, SqlServer, DependencyInjection, Multiple DbContext support, DataAccess, Repository, UnitOfWork, SoftDelete, Translation, Localization, RowVersioning, Multitenancy, Filtering, Paging, Sorting, Includes</PackageTags>
-    <Version>9.0.0</Version>
+    <Version>10.0.0</Version>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>
@@ -65,6 +65,16 @@
   </ItemGroup>
   <PropertyGroup Condition="('$(TargetFramework)' == 'net9.0')">
   	<DefineConstants>NET9_0</DefineConstants>
+  </PropertyGroup>	
+  
+  <ItemGroup Condition="('$(TargetFramework)' == 'net10.0')">
+	  <PackageReference Include="EntityCloner.Microsoft.EntityFrameworkCore" Version="[10,)" />
+	  <PackageReference Include="LinqKit.Microsoft.EntityFrameworkCore" Version="[10.0.9,)" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="[10,)" />
+	  <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="[4.14.0,)" />
+  </ItemGroup>
+  <PropertyGroup Condition="('$(TargetFramework)' == 'net10.0')">
+  	<DefineConstants>NET10_0</DefineConstants>
   </PropertyGroup>	
 
   <ItemGroup>
