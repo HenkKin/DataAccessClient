@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
 {
     [DbContext(typeof(ExampleSecondDbContext))]
-    [Migration("20221111064923_Initial")]
+    [Migration("20251115133440_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -20,7 +20,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.0")
+                .HasAnnotation("ProductVersion", "10.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -114,7 +114,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                             b1.Navigation("Translations");
                         });
 
-                    b.OwnsOne("DataAccessClientExample.DataLayer.ExampleSecondEntity.Description#TranslatedProperty", "Description", b1 =>
+                    b.OwnsOne("TranslatedProperty", "Description", b1 =>
                         {
                             b1.Property<int>("ExampleSecondEntityId")
                                 .HasColumnType("int");
@@ -126,7 +126,7 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                             b1.WithOwner()
                                 .HasForeignKey("ExampleSecondEntityId");
 
-                            b1.OwnsMany("DataAccessClientExample.DataLayer.ExampleSecondEntity.Description#TranslatedProperty.Translations#PropertyTranslation", "Translations", b2 =>
+                            b1.OwnsMany("PropertyTranslation", "Translations", b2 =>
                                 {
                                     b2.Property<int>("OwnerId")
                                         .HasColumnType("int");

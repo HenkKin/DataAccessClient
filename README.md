@@ -18,7 +18,7 @@ DataAccessClient
 
 Provides interfaces for Data Access with IRepository<T>, IUnitOfWork and IQueryableSearcher<T>. Also provides haviorial interfaces for entities like IIdentifiable, ICreatable, IModifiable, ISoftDeletable, ITranslatable, IRowVersionable, ITenantScopable and ILocalizable. Last but not least provides some types for Exceptions and searching capabilities like Filtering, Paging, Sorting and Includes. The IRepostory contains some methods to support cloning based on EntityFrameworkCore configuration.
 
-This library is Cross-platform, supporting `net6.0`, `net7.0`, `net8.0` and `net9.0`.
+This library is Cross-platform, supporting `net6.0`, `net7.0`, `net8.0`, `net9.0` and `net10.0`.
 
 
 ### Installing DataAccessClient
@@ -513,7 +513,7 @@ DataAccessClient.EntityFrameworkCore.SqlServer
 
 The DataAccessClient.EntityFrameworkCore.SqlServer library is an Microsoft.EntityFrameworkCore.SqlServer implementation for [DataAccessClient](https://github.com/HenkKin/DataAccessClient/).
 
-This library is Cross-platform, supporting `net6.0`, `net7.0` and `net8.0`.
+This library is Cross-platform, supporting `net6.0`, `net7.0`, `net8.0`, `net9.0` and `net10.0`.
 
 
 ### Installing DataAccessClient.EntityFrameworkCore.SqlServer
