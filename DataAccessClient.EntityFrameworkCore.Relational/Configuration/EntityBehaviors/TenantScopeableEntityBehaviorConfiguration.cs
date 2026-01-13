@@ -73,7 +73,7 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
             return context;
         }
 
-        public void OnModelCreating(ModelBuilder modelBuilder, RelationalDbContext serverDbContext, Type entityType)
+        public void OnModelCreating(ModelBuilder modelBuilder, RelationalDbContext relationalDbContext, Type entityType)
         {
             var entityInterfaces = entityType.GetInterfaces();
 
@@ -92,19 +92,19 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
                 }
 
                 var tenantScopableQueryFilterMethod = createTenantScopableQueryFilter.MakeGenericMethod(entityType);
-                var tenantScopableQueryFilter = tenantScopableQueryFilterMethod.Invoke(this, new object[]{serverDbContext});
+                var tenantScopableQueryFilter = tenantScopableQueryFilterMethod.Invoke(this, new object[]{relationalDbContext});
 
                 TenantScopeableEntityBehaviorConfigurationExtensions.ModelBuilderConfigureEntityBehaviorITenantScopableMethod.MakeGenericMethod(entityType, identifierType)
                     .Invoke(null, new [] { modelBuilder, tenantScopableQueryFilter });
             }
         }
 
-        public void OnBeforeSaveChanges(RelationalDbContext serverDbContext, DateTime onSaveChangesTime)
+        public void OnBeforeSaveChanges(RelationalDbContext relationalDbContext, DateTime onSaveChangesTime)
         {
-            var tenantIdentifier = serverDbContext.ExecutionContext
+            var tenantIdentifier = relationalDbContext.ExecutionContext
                 .Get<ITenantIdentifierProvider<TTenantIdentifierType>>().Execute();
 
-            foreach (var entityEntry in serverDbContext.ChangeTracker.Entries<ITenantScopable<TTenantIdentifierType>>()
+            foreach (var entityEntry in relationalDbContext.ChangeTracker.Entries<ITenantScopable<TTenantIdentifierType>>()
                 .Where(c => c.State == EntityState.Added))
             {
                 var tenantId = entityEntry.Entity.TenantId;
@@ -123,7 +123,7 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
             }
         }
 
-        public void OnAfterSaveChanges(RelationalDbContext serverDbContext)
+        public void OnAfterSaveChanges(RelationalDbContext relationalDbContext)
         {
             
         }

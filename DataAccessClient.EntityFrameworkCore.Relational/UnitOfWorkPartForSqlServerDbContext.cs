@@ -9,9 +9,9 @@ namespace DataAccessClient.EntityFrameworkCore.Relational
     {
         private readonly TDbContext _dbContext;
 
-        public UnitOfWorkPartForRelationalDbContext(IRelationalDbContextResolver<TDbContext> relationalServerDbContextResolver)
+        public UnitOfWorkPartForRelationalDbContext(IRelationalDbContextResolver<TDbContext> relationalDbContextResolver)
         {
-            _dbContext = relationalServerDbContextResolver.Execute() ?? throw new ArgumentNullException(nameof(relationalServerDbContextResolver));
+            _dbContext = relationalDbContextResolver.Execute() ?? throw new ArgumentNullException(nameof(relationalDbContextResolver));
         }
 
         public async Task SaveAsync()
