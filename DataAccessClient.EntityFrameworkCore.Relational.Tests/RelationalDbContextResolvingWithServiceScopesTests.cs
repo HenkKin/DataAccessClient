@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using DataAccessClient.EntityFrameworkCore.Relational.Tests.TestModels;
-using DataAccessClient.EntityFrameworkCore.Relational;
 using DataAccessClient.EntityFrameworkCore.Relational.Resolvers;
+using DataAccessClient.EntityFrameworkCore.Relational.Tests.TestModels;
 using DataAccessClient.Providers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
