@@ -15,11 +15,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DataAccessClient.EntityFrameworkCore\DataAccessClient.EntityFrameworkCore.Relational.csproj" />
+    <Folder Include="Migrations\" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Migrations\" />
+    <ProjectReference Include="..\DataAccessClient.EntityFrameworkCore.Relational\DataAccessClient.EntityFrameworkCore.Relational.csproj" />
   </ItemGroup>
 
 </Project>

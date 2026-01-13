@@ -114,7 +114,7 @@
 
 
   <ItemGroup>
-    <ProjectReference Include="..\DataAccessClient.EntityFrameworkCore\DataAccessClient.EntityFrameworkCore.Relational.csproj" />
+    <ProjectReference Include="..\DataAccessClient.EntityFrameworkCore.Relational\DataAccessClient.EntityFrameworkCore.Relational.csproj" />
     <ProjectReference Include="..\DataAccessClient\DataAccessClient.csproj" />
   </ItemGroup>
 
