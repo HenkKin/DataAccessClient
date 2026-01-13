@@ -1,9 +1,9 @@
-﻿using DataAccessClient.EntityFrameworkCore.SqlServer;
+﻿using DataAccessClient.EntityFrameworkCore.Relational;
 using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessClientExample.DataLayer
 {
-    internal class ExampleSecondDbContext : SqlServerDbContext
+    internal class ExampleSecondDbContext : RelationalDbContext
     {
         public ExampleSecondDbContext(DbContextOptions<ExampleSecondDbContext> options) : base(options)
         {
@@ -11,6 +11,8 @@ namespace DataAccessClientExample.DataLayer
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.HasDefaultSchema("dbo");
+
             modelBuilder.Entity<ExampleSecondEntity>()
                 .ToTable("ExampleSecondEntities");
                 

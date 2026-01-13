@@ -4,6 +4,8 @@ Packages
 
 [DataAccessClient](https://github.com/HenkKin/DataAccessClient#dataaccessclient)
 
+[DataAccessClient.EntityFrameworkCore.Relational](https://github.com/HenkKin/DataAccessClient#dataaccesscliententityframeworkcorerelational)
+
 [DataAccessClient.EntityFrameworkCore.SqlServer](https://github.com/HenkKin/DataAccessClient#dataaccesscliententityframeworkcoresqlserver)
 
 
@@ -91,7 +93,7 @@ public class UtcDateTimeValueConverter : ValueConverter<DateTime?, DateTime?>
 
 The [DataAccessClient](https://github.com/HenkKin/DataAccessClient/) package provides you a set of EntityBehavior interfaces. These interfaces you can use to decorate your entites.
 
-The implementation packages, like [DataAccessClient.EntityFrameworkCore.SqlServer](https://github.com/HenkKin/DataAccessClient.EntityFrameworkCore.SqlServer/) package, use these interface to apply the behavior automatically.
+The implementation packages, like [DataAccessClient.EntityFrameworkCore.Relational](https://github.com/HenkKin/DataAccessClient.EntityFrameworkCore.Relational/) package, use these interface to apply the behavior automatically.
 
 ```csharp
 ...
@@ -504,41 +506,45 @@ public class Client
 ```
 
 
-DataAccessClient.EntityFrameworkCore.SqlServer
+DataAccessClient.EntityFrameworkCore.Relational (Before: DataAccessClient.EntityFrameworkCore.SqlServer)
 =========================================
+[![NuGet](https://img.shields.io/nuget/dt/DataAccessClient.EntityFrameworkCore.Relational.svg)](https://www.nuget.org/packages/DataAccessClient.EntityFrameworkCore.Relational) 
+[![NuGet](https://img.shields.io/nuget/vpre/DataAccessClient.EntityFrameworkCore.Relational.svg)](https://www.nuget.org/packages/DataAccessClient.EntityFrameworkCore.Relational)
+
 [![NuGet](https://img.shields.io/nuget/dt/DataAccessClient.EntityFrameworkCore.SqlServer.svg)](https://www.nuget.org/packages/DataAccessClient.EntityFrameworkCore.SqlServer) 
 [![NuGet](https://img.shields.io/nuget/vpre/DataAccessClient.EntityFrameworkCore.SqlServer.svg)](https://www.nuget.org/packages/DataAccessClient.EntityFrameworkCore.SqlServer)
 
 ### Summary
 
-The DataAccessClient.EntityFrameworkCore.SqlServer library is an Microsoft.EntityFrameworkCore.SqlServer implementation for [DataAccessClient](https://github.com/HenkKin/DataAccessClient/).
+The DataAccessClient.EntityFrameworkCore.Relational library is an Microsoft.EntityFrameworkCore.Relational implementation for [DataAccessClient](https://github.com/HenkKin/DataAccessClient/).
 
 This library is Cross-platform, supporting `net6.0`, `net7.0`, `net8.0`, `net9.0` and `net10.0`.
 
+This package is supporting relational databases (Tested with SqlServer and PostgreSQL). Other database could only miss the DbUpdateException handling (not tested). 
 
-### Installing DataAccessClient.EntityFrameworkCore.SqlServer
+### Installing DataAccessClient.EntityFrameworkCore.Relational
 
-You should install [DataAccessClient.EntityFrameworkCore.SqlServer with NuGet](https://www.nuget.org/packages/DataAccessClient.EntityFrameworkCore.SqlServer):
+You should install [DataAccessClient.EntityFrameworkCore.Relational with NuGet](https://www.nuget.org/packages/DataAccessClient.EntityFrameworkCore.Relational):
 
-    Install-Package DataAccessClient.EntityFrameworkCore.SqlServer
+    Install-Package DataAccessClient.EntityFrameworkCore.Relational
 
 Or via the .NET Core command line interface:
 
-    dotnet add package DataAccessClient.EntityFrameworkCore.SqlServer
+    dotnet add package DataAccessClient.EntityFrameworkCore.Relational
 
-Either commands, from Package Manager Console or .NET Core CLI, will download and install DataAccessClient.EntityFrameworkCore.SqlServer and all required dependencies.
+Either commands, from Package Manager Console or .NET Core CLI, will download and install DataAccessClient.EntityFrameworkCore.Relational and all required dependencies.
 
 ### Dependencies
 
 - [DataAccessClient](https://www.nuget.org/packages/DataAccessClient/)
-- [Microsoft.EntityFrameworkCore.SqlServer](https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.SqlServer/)
+- [Microsoft.EntityFrameworkCore.Relational](https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Relational/)
 - [LinqKit.Microsoft.EntityFrameworkCore](https://www.nuget.org/packages/LinqKit.Microsoft.EntityFrameworkCore/)
 - [Microsoft.CodeAnalysis.CSharp.Scripting](https://www.nuget.org/packages/Microsoft.CodeAnalysis.CSharp.Scripting/)
 - [EntityCloner.Microsoft.EntityFrameworkCore](https://www.nuget.org/packages/EntityCloner.Microsoft.EntityFrameworkCore)
 
 ### Usage
 
-If you're using EntityFrameworkCore.SqlServer and you want to use the DataAccessClient, then you can use [DataAccessClient.EntityFrameworkCore.SqlServer](https://github.com/HenkKin/DataAccessClient#dataaccesscliententityframeworkcoresqlserver) package which includes the following registration options via extensions method:
+If you're using EntityFrameworkCore.Relational and you want to use the DataAccessClient, then you can use [DataAccessClient.EntityFrameworkCore.Relational](https://github.com/HenkKin/DataAccessClient#dataaccesscliententityframeworkcorerelational) package which includes the following registration options via extensions method:
 
 - `IServiceCollection AddDataAccessClient<TDbContext>(this IServiceCollection services, Action<DataAccessClientOptionsBuilder> dataAccessClientOptionsBuilderAction)`
 
@@ -548,7 +554,7 @@ To use it:
 
 ```csharp
 ...
-using DataAccessClient.EntityFrameworkCore.SqlServer;
+using DataAccessClient.EntityFrameworkCore.Relational;
 
 public class Startup
 {
@@ -571,7 +577,12 @@ public class Startup
             .ConfigureDbContextOptions(builder => builder
                 .EnableSensitiveDataLogging()
                 .EnableDetailedErrors()
+				// For SqlServer
                 .UseSqlServer("[Your connectionstring]")
+				// For PostgreSQL
+				.UseNpgsql([Your connectionstring])
+				// Other relational databases which supported by EF
+				.Use......([Your connectionstring])
             )
         );
                 
@@ -581,13 +592,13 @@ public class Startup
     ...
 ```
 
-Using the base class `SqlServerDbContext` on your own DbContext implementation:
+Using the base class `RelationalDbContext` on your own DbContext implementation:
 
 ```csharp
 ...
-using DataAccessClient.EntityFrameworkCore.SqlServer;
+using DataAccessClient.EntityFrameworkCore.Relational;
 
-internal class YourDbContext : SqlServerDbContext
+internal class YourDbContext : RelationalDbContext
 {
 	public YourDbContext(DbContextOptions<YourDbContext> options) : base(options)
 	{
@@ -616,11 +627,11 @@ internal class YourDbContext : SqlServerDbContext
 
 To add your custom EntityBehavior, you have to implement the `IEntityBehaviorConfiguration` interface.
 
-To see a working implementation of an EntityBehavior, have a look at: [TenantScopeableEntityBehaviorConfiguration](https://github.com/HenkKin/DataAccessClient/blob/master/DataAccessClient.EntityFrameworkCore.SqlServer/Configuration/EntityBehaviors/TenantScopeableEntityBehaviorConfiguration.cs)
+To see a working implementation of an EntityBehavior, have a look at: [TenantScopeableEntityBehaviorConfiguration](https://github.com/HenkKin/DataAccessClient/blob/master/DataAccessClient.EntityFrameworkCore.Relational/Configuration/EntityBehaviors/TenantScopeableEntityBehaviorConfiguration.cs)
 
 ```csharp
 ...
-using DataAccessClient.EntityFrameworkCore.SqlServer;
+using DataAccessClient.EntityFrameworkCore.Relational;
 
 public class Startup
 {
@@ -656,17 +667,17 @@ public class YourCustomEntityBehaviorConfigurationType : IEntityBehaviorConfigur
 		return new Dictionary<string, dynamic>();
 	}
 	
-	public void OnModelCreating(ModelBuilder modelBuilder, SqlServerDbContext sqlServerDbContext, Type entityType)
+	public void OnModelCreating(ModelBuilder modelBuilder, RelationalDbContext relationalDbContext, Type entityType)
 	{
 		// configure the Entities if needed
 	}
 	
-	public void OnBeforeSaveChanges(SqlServerDbContext sqlServerDbContext, DateTime onSaveChangesTime)
+	public void OnBeforeSaveChanges(RelationalDbContext relationalDbContext, DateTime onSaveChangesTime)
 	{
 		// optional you van provide some logic before save. You can you use here the `ChangeTracker`
 	}
 	
-	public void OnAfterSaveChanges(SqlServerDbContext sqlServerDbContext)
+	public void OnAfterSaveChanges(RelationalDbContext relationalDbContext)
 	{
 		// optional you van provide some logic after save. You can you use here the `ChangeTracker`
 	}
@@ -683,7 +694,7 @@ To solve this issue an extension method is provided:
 
 `EntityTypeBuilder<TEntity> AppendQueryFilter<TEntity>(this EntityTypeBuilder<TEntity> entityTypeBuilder, Expression<Func<TEntity, bool>> expression) where TEntity : class`
 
-It lives in the namespace `DataAccessClient.EntityFrameworkCore.SqlServer` and class `EntityTypeBuilderExtensions`.
+It lives in the namespace `DataAccessClient.EntityFrameworkCore.Relational` and class `EntityTypeBuilderExtensions`.
 
 This method concatenates the queryies provided via `AppendQueryFilter(...)`.
 
