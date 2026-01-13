@@ -78,7 +78,7 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
             return context;
         }
 
-        public void OnModelCreating(ModelBuilder modelBuilder, RelationalDbContext serverDbContext, Type entityType)
+        public void OnModelCreating(ModelBuilder modelBuilder, RelationalDbContext relationalDbContext, Type entityType)
         {
             var entityInterfaces = entityType.GetInterfaces();
 
@@ -98,21 +98,21 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
 
                 var softDeletableQueryFilterMethod = createSoftDeletableQueryFilter.MakeGenericMethod(entityType);
                 var softDeletableQueryFilter =
-                    softDeletableQueryFilterMethod.Invoke(this, new object[] {serverDbContext});
+                    softDeletableQueryFilterMethod.Invoke(this, new object[] {relationalDbContext});
 
                 SoftDeletableEntityBehaviorConfigurationExtensions.ModelBuilderConfigureEntityBehaviorISoftDeletableMethod.MakeGenericMethod(entityType, identifierType)
                     .Invoke(null, new[] {modelBuilder, softDeletableQueryFilter});
             }
         }
 
-        public void OnBeforeSaveChanges(RelationalDbContext serverDbContext, DateTime onSaveChangesTime)
+        public void OnBeforeSaveChanges(RelationalDbContext relationalDbContext, DateTime onSaveChangesTime)
         {
-            var softDeletableConfiguration = serverDbContext.ExecutionContext.Get<ISoftDeletableConfiguration>();
+            var softDeletableConfiguration = relationalDbContext.ExecutionContext.Get<ISoftDeletableConfiguration>();
             if (softDeletableConfiguration.IsEnabled)
             {
-                var userIdentifier = serverDbContext.ExecutionContext
+                var userIdentifier = relationalDbContext.ExecutionContext
                     .Get<IUserIdentifierProvider<TUserIdentifierType>>().Execute();
-                foreach (var entityEntry in serverDbContext.ChangeTracker.Entries<ISoftDeletable<TUserIdentifierType>>()
+                foreach (var entityEntry in relationalDbContext.ChangeTracker.Entries<ISoftDeletable<TUserIdentifierType>>()
                     .Where(c => c.State == EntityState.Deleted))
                 {
                     entityEntry.State = EntityState.Unchanged;
@@ -151,20 +151,20 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
             }
         }
 
-        public void OnAfterSaveChanges(RelationalDbContext serverDbContext)
+        public void OnAfterSaveChanges(RelationalDbContext relationalDbContext)
         {
             var trackedEntities = new HashSet<object>();
-            foreach (var dbEntityEntry in serverDbContext.ChangeTracker.Entries().ToArray())
+            foreach (var dbEntityEntry in relationalDbContext.ChangeTracker.Entries().ToArray())
             {
                 if (dbEntityEntry.Entity != null)
                 {
                     trackedEntities.Add(dbEntityEntry.Entity);
-                    RemoveSoftDeletableProperties(serverDbContext, dbEntityEntry, trackedEntities);
+                    RemoveSoftDeletableProperties(relationalDbContext, dbEntityEntry, trackedEntities);
                 }
             }
         }
 
-        private void RemoveSoftDeletableProperties(RelationalDbContext serverDbContext, EntityEntry entityEntry, HashSet<object> trackedEntities)
+        private void RemoveSoftDeletableProperties(RelationalDbContext relationalDbContext, EntityEntry entityEntry, HashSet<object> trackedEntities)
         {
             var navigationPropertiesEntries = entityEntry.Navigations;
             foreach (var navigationEntry in navigationPropertiesEntries)
@@ -176,7 +176,7 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
                         var notRemovedItems = new Collection<object>();
                         foreach (var collectionItem in collection)
                         {
-                            var listItemDbEntityEntry = serverDbContext.ChangeTracker.Context.Entry(collectionItem);
+                            var listItemDbEntityEntry = relationalDbContext.ChangeTracker.Context.Entry(collectionItem);
                             if (collectionItem is ISoftDeletable<TUserIdentifierType> deletable && deletable.IsDeleted)
                             {
                                 listItemDbEntityEntry.State = EntityState.Detached;
@@ -187,7 +187,7 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
                                 if (!trackedEntities.Contains(collectionItem))
                                 {
                                     trackedEntities.Add(collectionItem);
-                                    RemoveSoftDeletableProperties(serverDbContext, listItemDbEntityEntry, trackedEntities);
+                                    RemoveSoftDeletableProperties(relationalDbContext, listItemDbEntityEntry, trackedEntities);
                                 }
                             }
                         }
@@ -218,7 +218,7 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
                             if (!trackedEntities.Contains(navigationEntry.CurrentValue))
                             {
                                 trackedEntities.Add(navigationEntry.CurrentValue);
-                                RemoveSoftDeletableProperties(serverDbContext,
+                                RemoveSoftDeletableProperties(relationalDbContext,
                                     propertyEntityEntry, trackedEntities);
                             }
                         }

@@ -50,7 +50,7 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
             return context;
         }
 
-        public void OnModelCreating(ModelBuilder modelBuilder, RelationalDbContext serverDbContext, Type entityType)
+        public void OnModelCreating(ModelBuilder modelBuilder, RelationalDbContext relationalDbContext, Type entityType)
         {
             var entityInterfaces = entityType.GetInterfaces();
 
@@ -61,9 +61,9 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
             }
         }
 
-        public void OnBeforeSaveChanges(RelationalDbContext serverDbContext, DateTime onSaveChangesTime)
+        public void OnBeforeSaveChanges(RelationalDbContext relationalDbContext, DateTime onSaveChangesTime)
         {
-            foreach (var entityEntry in serverDbContext.ChangeTracker.Entries<IRowVersionable>())
+            foreach (var entityEntry in relationalDbContext.ChangeTracker.Entries<IRowVersionable>())
             {
                 var rowVersionProperty = entityEntry.Property(u => u.RowVersion);
                 var rowVersion = rowVersionProperty.CurrentValue;
@@ -72,7 +72,7 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
             }
         }
 
-        public void OnAfterSaveChanges(RelationalDbContext serverDbContext)
+        public void OnAfterSaveChanges(RelationalDbContext relationalDbContext)
         {
         }
     }

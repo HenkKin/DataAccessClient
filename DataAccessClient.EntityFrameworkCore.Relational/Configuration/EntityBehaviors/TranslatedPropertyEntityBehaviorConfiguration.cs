@@ -74,16 +74,16 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
             return context;
         }
 
-        public void OnModelCreating(ModelBuilder modelBuilder, RelationalDbContext serverDbContext, Type entityType)
+        public void OnModelCreating(ModelBuilder modelBuilder, RelationalDbContext relationalDbContext, Type entityType)
         {
             TranslatedPropertyEntityBehaviorConfigurationExtensions.ModelBuilderConfigureEntityBehaviorTranslatedProperties.MakeGenericMethod(entityType).Invoke(null, new object[] { modelBuilder });
         }
 
-        public void OnBeforeSaveChanges(RelationalDbContext serverDbContext, DateTime onSaveChangesTime)
+        public void OnBeforeSaveChanges(RelationalDbContext relationalDbContext, DateTime onSaveChangesTime)
         {
         }
 
-        public void OnAfterSaveChanges(RelationalDbContext serverDbContext)
+        public void OnAfterSaveChanges(RelationalDbContext relationalDbContext)
         {
         }
     }

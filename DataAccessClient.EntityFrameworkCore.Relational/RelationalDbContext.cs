@@ -145,8 +145,7 @@ namespace DataAccessClient.EntityFrameworkCore.Relational
             }         
         }
 
-        public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess,
-            CancellationToken cancellationToken = new CancellationToken())
+        public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = new CancellationToken())
         {
             OnBeforeSaveChanges();
 
@@ -162,25 +161,57 @@ namespace DataAccessClient.EntityFrameworkCore.Relational
             }
             catch (DbUpdateException exception)
             {
-                if (exception.InnerException != null)
-                {
-                    /*if (exception.InnerException is SqlException sqlException)
-                    {
-                        switch (sqlException.Number)
-                        {
-                            //case 2627:  // Unique constraint error
-                            //case 547:   // Constraint check violation
-                            case 2601: // Duplicated key row error
-                                // Constraint violation exception
-                                // A custom exception of yours for concurrency issues
-                                throw new DuplicateKeyException(sqlException.Message, exception);
-                            default:
-                                // A custom exception of yours for other DB issues
-                                throw;
-                        }
-                    }*/
+                var kind = SaveChangesDbUpdateExceptionHandler.Handle(exception, out var info);
+                if (kind == DbErrorKind.DuplicateKey)
+                    throw new DuplicateKeyException(info?.Message ?? "Duplicate key.", exception);
 
-                }
+                throw;
+            }
+        }
+
+        public override int SaveChanges()
+        {
+            OnBeforeSaveChanges();
+
+            try
+            {
+                var result = base.SaveChanges();
+                OnAfterSaveChanges();
+                return result;
+            }
+            catch (DbUpdateConcurrencyException exception)
+            {
+                throw new RowVersioningException(exception.Message, exception);
+            }
+            catch (DbUpdateException exception)
+            {
+                var kind = SaveChangesDbUpdateExceptionHandler.Handle(exception, out var info);
+                if (kind == DbErrorKind.DuplicateKey)
+                    throw new DuplicateKeyException(info?.Message ?? "Duplicate key.", exception);
+
+                throw;
+            }
+        }
+
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            OnBeforeSaveChanges();
+
+            try
+            {
+                var result = await base.SaveChangesAsync(cancellationToken);
+                OnAfterSaveChanges();
+                return result;
+            }
+            catch (DbUpdateConcurrencyException exception)
+            {
+                throw new RowVersioningException(exception.Message, exception);
+            }
+            catch (DbUpdateException exception)
+            {
+                var kind = SaveChangesDbUpdateExceptionHandler.Handle(exception, out var info);
+                if (kind == DbErrorKind.DuplicateKey)
+                    throw new DuplicateKeyException(info?.Message ?? "Duplicate key.", exception);
 
                 throw;
             }

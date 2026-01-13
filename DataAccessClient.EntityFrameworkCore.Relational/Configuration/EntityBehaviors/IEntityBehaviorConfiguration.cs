@@ -10,9 +10,9 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
     {
         void OnRegistering(IServiceCollection serviceCollection);
         Dictionary<string, dynamic> OnExecutionContextCreating(IServiceProvider scopedServiceProvider);
-        void OnModelCreating(ModelBuilder modelBuilder, RelationalDbContext relationalServerDbContext, Type entityType);
+        void OnModelCreating(ModelBuilder modelBuilder, RelationalDbContext relationalDbContext, Type entityType);
 
-        void OnBeforeSaveChanges(RelationalDbContext relationalServerDbContext, DateTime onSaveChangesTime);
-        void OnAfterSaveChanges(RelationalDbContext relationalServerDbContext);
+        void OnBeforeSaveChanges(RelationalDbContext relationalDbContext, DateTime onSaveChangesTime);
+        void OnAfterSaveChanges(RelationalDbContext relationalDbContext);
     }
 }

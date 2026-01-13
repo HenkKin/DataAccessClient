@@ -84,7 +84,7 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
             return context;
         }
 
-        public void OnModelCreating(ModelBuilder modelBuilder, RelationalDbContext serverDbContext, Type entityType)
+        public void OnModelCreating(ModelBuilder modelBuilder, RelationalDbContext relationalDbContext, Type entityType)
         {
             var entityInterfaces = entityType.GetInterfaces();
 
@@ -104,11 +104,11 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
             }
         }
 
-        public void OnBeforeSaveChanges(RelationalDbContext serverDbContext, DateTime onSaveChangesTime)
+        public void OnBeforeSaveChanges(RelationalDbContext relationalDbContext, DateTime onSaveChangesTime)
         {
         }
 
-        public void OnAfterSaveChanges(RelationalDbContext serverDbContext)
+        public void OnAfterSaveChanges(RelationalDbContext relationalDbContext)
         {
         }
     }
