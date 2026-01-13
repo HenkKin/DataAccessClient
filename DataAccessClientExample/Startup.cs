@@ -1,4 +1,4 @@
-using DataAccessClient.EntityFrameworkCore.SqlServer;
+using DataAccessClient.EntityFrameworkCore.Relational;
 using DataAccessClient.Providers;
 using DataAccessClientExample.DataLayer;
 using Microsoft.AspNetCore.Builder;
@@ -40,7 +40,7 @@ namespace DataAccessClientExample
                     .ConfigureDbContextOptions(builder => builder
                         .EnableSensitiveDataLogging()
                         .EnableDetailedErrors()
-                        .UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=ExampleDataAccessClient;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False")
+                        .UseNpgsql("Host=localhost;Port=5432;Database=ExampleDataAccessClient;Username=postgres;Password=admin")//"Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=ExampleDataAccessClient;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False")
                     )
             );
 
@@ -49,7 +49,7 @@ namespace DataAccessClientExample
                     .ConfigureDbContextOptions(builder => builder
                         .EnableSensitiveDataLogging()
                         .EnableDetailedErrors()
-                        .UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=ExampleSecondDataAccessClient;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False")
+                        .UseNpgsql("Host=localhost;Port=5432;Database=ExampleSecondDataAccessClient;Username=postgres;Password=admin")//"Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=ExampleSecondDataAccessClient;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=True;ApplicationIntent=ReadWrite;MultiSubnetFailover=False")
                     )
             );
         }

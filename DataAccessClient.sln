@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.3.11206.111 d18.3
+VisualStudioVersion = 18.3.11206.111
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataAccessClient", "DataAccessClient\DataAccessClient.csproj", "{4446942B-C7D8-470E-919D-20F28B33499D}"
 EndProject
@@ -29,6 +29,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataAccessClientExample-9", "DataAccessClientExample-9\DataAccessClientExample-9.csproj", "{38C284F3-4DF9-45CE-A575-80811F2F8D23}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataAccessClientExample-10", "DataAccessClientExample-10\DataAccessClientExample-10.csproj", "{7D57AA98-D0ED-75F2-C512-5B0AD02CED5B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataAccessClient.EntityFrameworkCore.Relational", "DataAccessClient.EntityFrameworkCore\DataAccessClient.EntityFrameworkCore.Relational.csproj", "{352D8AE8-5621-2260-640F-FC5622117BDB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataAccessClient.EntityFrameworkCore.Relational.Tests", "DataAccessClient.EntityFrameworkCore.Relational.Tests\DataAccessClient.EntityFrameworkCore.Relational.Tests.csproj", "{17B5C120-2B69-0FD1-BD8F-CD29B1C274BE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -76,6 +80,14 @@ Global
 		{7D57AA98-D0ED-75F2-C512-5B0AD02CED5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7D57AA98-D0ED-75F2-C512-5B0AD02CED5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7D57AA98-D0ED-75F2-C512-5B0AD02CED5B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{352D8AE8-5621-2260-640F-FC5622117BDB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{352D8AE8-5621-2260-640F-FC5622117BDB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{352D8AE8-5621-2260-640F-FC5622117BDB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{352D8AE8-5621-2260-640F-FC5622117BDB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{17B5C120-2B69-0FD1-BD8F-CD29B1C274BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{17B5C120-2B69-0FD1-BD8F-CD29B1C274BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{17B5C120-2B69-0FD1-BD8F-CD29B1C274BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{17B5C120-2B69-0FD1-BD8F-CD29B1C274BE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

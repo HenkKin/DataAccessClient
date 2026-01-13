@@ -3,71 +3,72 @@ using System;
 using DataAccessClientExample.DataLayer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
 {
     [DbContext(typeof(ExampleSecondDbContext))]
-    [Migration("20251115133440_Initial")]
-    partial class Initial
+    [Migration("20260113113557_Initial2")]
+    partial class Initial2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasDefaultSchema("dbo")
                 .HasAnnotation("ProductVersion", "10.0.0")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleSecondEntity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("CreatedById")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedOn")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int?>("DeletedById")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("DeletedOn")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<int?>("ModifiedById")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("ModifiedOn")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Name")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("bytea");
 
                     b.Property<int>("TenantId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.ToTable("ExampleSecondEntities", (string)null);
+                    b.ToTable("ExampleSecondEntities", "dbo");
                 });
 
             modelBuilder.Entity("DataAccessClientExample.DataLayer.ExampleSecondEntity", b =>
@@ -75,11 +76,11 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                     b.OwnsOne("DataAccessClient.EntityBehaviors.TranslatedProperty<string>", "Code", b1 =>
                         {
                             b1.Property<int>("ExampleSecondEntityId")
-                                .HasColumnType("int");
+                                .HasColumnType("integer");
 
                             b1.HasKey("ExampleSecondEntityId");
 
-                            b1.ToTable("ExampleSecondEntities");
+                            b1.ToTable("ExampleSecondEntities", "dbo");
 
                             b1.WithOwner()
                                 .HasForeignKey("ExampleSecondEntityId");
@@ -87,25 +88,25 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                             b1.OwnsMany("DataAccessClient.EntityBehaviors.PropertyTranslation<string>", "Translations", b2 =>
                                 {
                                     b2.Property<int>("OwnerId")
-                                        .HasColumnType("int");
+                                        .HasColumnType("integer");
 
                                     b2.Property<int>("Id")
                                         .ValueGeneratedOnAdd()
-                                        .HasColumnType("int");
+                                        .HasColumnType("integer");
 
-                                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b2.Property<int>("Id"));
+                                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b2.Property<int>("Id"));
 
                                     b2.Property<string>("LocaleId")
                                         .IsRequired()
-                                        .HasColumnType("nvarchar(max)");
+                                        .HasColumnType("text");
 
                                     b2.Property<string>("Translation")
                                         .IsRequired()
-                                        .HasColumnType("nvarchar(max)");
+                                        .HasColumnType("text");
 
                                     b2.HasKey("OwnerId", "Id");
 
-                                    b2.ToTable("ExampleSecondEntity_CodeTranslations", (string)null);
+                                    b2.ToTable("ExampleSecondEntity_CodeTranslations", "dbo");
 
                                     b2.WithOwner()
                                         .HasForeignKey("OwnerId");
@@ -117,11 +118,11 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                     b.OwnsOne("TranslatedProperty", "Description", b1 =>
                         {
                             b1.Property<int>("ExampleSecondEntityId")
-                                .HasColumnType("int");
+                                .HasColumnType("integer");
 
                             b1.HasKey("ExampleSecondEntityId");
 
-                            b1.ToTable("ExampleSecondEntities");
+                            b1.ToTable("ExampleSecondEntities", "dbo");
 
                             b1.WithOwner()
                                 .HasForeignKey("ExampleSecondEntityId");
@@ -129,25 +130,25 @@ namespace DataAccessClientExample.Migrations.ExampleSecondDatabase
                             b1.OwnsMany("PropertyTranslation", "Translations", b2 =>
                                 {
                                     b2.Property<int>("OwnerId")
-                                        .HasColumnType("int");
+                                        .HasColumnType("integer");
 
                                     b2.Property<int>("Id")
                                         .ValueGeneratedOnAdd()
-                                        .HasColumnType("int");
+                                        .HasColumnType("integer");
 
-                                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b2.Property<int>("Id"));
+                                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b2.Property<int>("Id"));
 
                                     b2.Property<string>("LocaleId")
                                         .IsRequired()
-                                        .HasColumnType("nvarchar(max)");
+                                        .HasColumnType("text");
 
                                     b2.Property<string>("Translation")
                                         .IsRequired()
-                                        .HasColumnType("nvarchar(max)");
+                                        .HasColumnType("text");
 
                                     b2.HasKey("OwnerId", "Id");
 
-                                    b2.ToTable("ExampleSecondEntity_DescriptionTranslations", (string)null);
+                                    b2.ToTable("ExampleSecondEntity_DescriptionTranslations", "dbo");
 
                                     b2.WithOwner()
                                         .HasForeignKey("OwnerId");
