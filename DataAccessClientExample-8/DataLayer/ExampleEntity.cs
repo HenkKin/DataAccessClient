@@ -4,7 +4,7 @@ using DataAccessClient.EntityBehaviors;
 
 namespace DataAccessClientExample.DataLayer
 {
-    public interface IEntity : IIdentifiable<int>, ICreatable<int>, IModifiable<int>, ISoftDeletable<int>, IRowVersionable, ITranslatable<ExampleEntityTranslation, int, string>, ITenantScopable<int>
+    public interface IEntity : IIdentifiable<int>, ICreatable<int>, IModifiable<int>, ISoftDeletable<int>, IRowVersionable<byte[]>, ITranslatable<ExampleEntityTranslation, int, string>, ITenantScopable<int>
     {
 
     }

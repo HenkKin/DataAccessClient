@@ -42,8 +42,11 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
         {
             entity.Property(e => e.TenantId).IsRequired();
 
+#if NET10_0_OR_GREATER
+            entity.HasQueryFilter("TenantScopeableEntityBehaviorQueryFilter", queryFilter);
+#else
             entity.AppendQueryFilter(queryFilter);
-
+#endif
             return entity;
         }
     }

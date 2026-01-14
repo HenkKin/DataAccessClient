@@ -4,7 +4,7 @@ using DataAccessClient.EntityBehaviors;
 
 namespace DataAccessClient.EntityFrameworkCore.Relational.Tests.TestModels
 {
-    public class TestEntity : IIdentifiable<int>, ICreatable<int>, IModifiable<int>, ISoftDeletable<int>, IRowVersionable, ITranslatable<TestEntityTranslation, int, string>, ITenantScopable<int>
+    public class TestEntity : IIdentifiable<int>, ICreatable<int>, IModifiable<int>, ISoftDeletable<int>, IRowVersionable<byte[]>, ITranslatable<TestEntityTranslation, int, string>, ITenantScopable<int>
     {
         public int Id { get; set; }
         public DateTime CreatedOn { get; set; }

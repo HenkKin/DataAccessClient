@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Xunit;
+using System.Linq;
 
 namespace DataAccessClient.EntityFrameworkCore.Relational.Tests.Configuration.EntityBehaviors
 {
@@ -32,14 +33,18 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Tests.Configuration.En
             var entityTypeBuilder = new ModelBuilder(new ConventionSet());
 
             // Act
-            var result = entityTypeBuilder.ConfigureEntityBehaviorILocalizable<TestEntityView, string>(x => x.LocaleId == "nl-NL");
+            var result = entityTypeBuilder.ConfigureEntityBehaviorILocalizable<TestEntityView, string>(Param_0 => Param_0.LocaleId == "nl-NL");
 
             // Assert
             var localeId = result.Entity<TestEntityView>().Metadata.FindProperty(nameof(ILocalizable<int>.LocaleId));
             Assert.Equal(nameof(ILocalizable<string>.LocaleId), localeId.Name);
             Assert.False(localeId.IsNullable);
 
+#if NET10_0_OR_GREATER
+            var localeQueryFilter = result.Entity<TestEntityView>().Metadata.GetDeclaredQueryFilters().Where(x => x.Key == "LocalizableEntityBehaviorQueryFilter").FirstOrDefault()?.Expression;
+#else
             var localeQueryFilter = result.Entity<TestEntityView>().Metadata.GetQueryFilter();
+#endif
             Assert.Equal("Param_0 => (Param_0.LocaleId == \"nl-NL\")", localeQueryFilter.ToString());
         }
 
@@ -66,14 +71,18 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Tests.Configuration.En
             var entityTypeBuilder = new EntityTypeBuilder<TestEntityView>(entityType);
 
             // Act
-            var result = entityTypeBuilder.IsLocalizable<TestEntityView, string>(x => x.LocaleId == "nl-NL");
+            var result = entityTypeBuilder.IsLocalizable<TestEntityView, string>(Param_0 => Param_0.LocaleId == "nl-NL");
 
             // Assert
             var localeId = result.Metadata.FindProperty(nameof(ILocalizable<string>.LocaleId));
             Assert.Equal(nameof(ILocalizable<string>.LocaleId), localeId.Name);
             Assert.False(localeId.IsNullable);
 
+#if NET10_0_OR_GREATER
+            var localeQueryFilter = result.Metadata.GetDeclaredQueryFilters().Where(x => x.Key == "LocalizableEntityBehaviorQueryFilter").FirstOrDefault()?.Expression;
+#else
             var localeQueryFilter = result.Metadata.GetQueryFilter();
+#endif
             Assert.Equal("Param_0 => (Param_0.LocaleId == \"nl-NL\")", localeQueryFilter.ToString());
         }
     }

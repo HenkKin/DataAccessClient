@@ -8,6 +8,7 @@ namespace DataAccessClient.EntityFrameworkCore.Relational
 {
     public static class EntityTypeBuilderExtensions
     {
+        [Obsolete("In EF Core 10 version there is a named QueryFilter, this is from EF Core 10 not needed")]
         public static EntityTypeBuilder<TEntity> AppendQueryFilter<TEntity>(this EntityTypeBuilder<TEntity> entityTypeBuilder, Expression<Func<TEntity, bool>> expression) where TEntity : class
         {
             var parameterType = Expression.Parameter(entityTypeBuilder.Metadata.ClrType);

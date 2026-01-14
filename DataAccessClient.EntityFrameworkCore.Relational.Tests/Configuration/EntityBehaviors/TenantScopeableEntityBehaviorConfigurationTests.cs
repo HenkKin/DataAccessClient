@@ -1,11 +1,12 @@
 ﻿using DataAccessClient.EntityBehaviors;
-using DataAccessClient.EntityFrameworkCore.Relational.Tests.TestModels;
 using DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBehaviors;
+using DataAccessClient.EntityFrameworkCore.Relational.Tests.TestModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System.Linq;
 using Xunit;
 
 namespace DataAccessClient.EntityFrameworkCore.Relational.Tests.Configuration.EntityBehaviors
@@ -22,7 +23,12 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Tests.Configuration.En
             // Assert
             Assert.Null(result.Entity<TestEntity>().Metadata.FindProperty(nameof(ITenantScopable<int>.TenantId)));
 
-            Assert.Null(result.Entity<TestEntity>().Metadata.GetQueryFilter());
+#if NET10_0_OR_GREATER
+            var queryFilter = result.Entity<TestEntity>().Metadata.GetDeclaredQueryFilters().Where(x => x.Key == "TenantScopeableEntityBehaviorQueryFilter").FirstOrDefault()?.Expression;
+#else
+            var queryFilter = result.Entity<TestEntity>().Metadata.GetQueryFilter();
+#endif
+            Assert.Null(queryFilter);
         }
 
         [Fact]
@@ -32,14 +38,18 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Tests.Configuration.En
             var entityTypeBuilder = new ModelBuilder(new ConventionSet());
 
             // Act
-            var result = TenantScopeableEntityBehaviorConfigurationExtensions.ConfigureEntityBehaviorITenantScopable<TestEntity, int>(entityTypeBuilder, x => x.TenantId == 1);
+            var result = TenantScopeableEntityBehaviorConfigurationExtensions.ConfigureEntityBehaviorITenantScopable<TestEntity, int>(entityTypeBuilder, Param_0 => Param_0.TenantId == 1);
 
             // Assert
             var tenantId = result.Entity<TestEntity>().Metadata.FindProperty(nameof(ITenantScopable<int>.TenantId));
             Assert.Equal(nameof(ITenantScopable<int>.TenantId), tenantId.Name);
             Assert.False(tenantId.IsNullable);
 
+#if NET10_0_OR_GREATER
+            var tenantQueryFilter = result.Entity<TestEntity>().Metadata.GetDeclaredQueryFilters().Where(x => x.Key == "TenantScopeableEntityBehaviorQueryFilter").FirstOrDefault()?.Expression;
+#else
             var tenantQueryFilter = result.Entity<TestEntity>().Metadata.GetQueryFilter();
+#endif
             Assert.Equal("Param_0 => (Param_0.TenantId == 1)", tenantQueryFilter.ToString());
         }
 
@@ -55,7 +65,12 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Tests.Configuration.En
             // Assert
             Assert.Null(result.Metadata.FindProperty(nameof(ITenantScopable<int>.TenantId)));
 
-            Assert.Null(result.Metadata.GetQueryFilter());
+#if NET10_0_OR_GREATER
+            var queryFilter = result.Metadata.GetDeclaredQueryFilters().Where(x => x.Key == "TenantScopeableEntityBehaviorQueryFilter").FirstOrDefault()?.Expression;
+#else
+            var queryFilter = result.Metadata.GetQueryFilter();
+#endif
+            Assert.Null(queryFilter);
         }
 
         [Fact]
@@ -66,14 +81,18 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Tests.Configuration.En
             var entityTypeBuilder = new EntityTypeBuilder<TestEntity>(entityType);
 
             // Act
-            var result = entityTypeBuilder.IsTenantScopable<TestEntity, int>(x => x.TenantId == 1);
+            var result = entityTypeBuilder.IsTenantScopable<TestEntity, int>(Param_0 => Param_0.TenantId == 1);
 
             // Assert
             var tenantId = result.Metadata.FindProperty(nameof(ITenantScopable<int>.TenantId));
             Assert.Equal(nameof(ITenantScopable<int>.TenantId), tenantId.Name);
             Assert.False(tenantId.IsNullable);
 
+#if NET10_0_OR_GREATER
+            var tenantQueryFilter = result.Metadata.GetDeclaredQueryFilters().Where(x => x.Key == "TenantScopeableEntityBehaviorQueryFilter").FirstOrDefault()?.Expression;
+#else
             var tenantQueryFilter = result.Metadata.GetQueryFilter();
+#endif
             Assert.Equal("Param_0 => (Param_0.TenantId == 1)", tenantQueryFilter.ToString());
         }
     }
