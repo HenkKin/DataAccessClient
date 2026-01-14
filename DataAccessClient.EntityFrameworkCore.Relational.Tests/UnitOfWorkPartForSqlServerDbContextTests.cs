@@ -7,7 +7,6 @@ using DataAccessClient.EntityFrameworkCore.Relational.Tests.TestModels;
 using DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBehaviors;
 using DataAccessClient.EntityFrameworkCore.Relational.Infrastructure;
 using DataAccessClient.EntityFrameworkCore.Relational.Resolvers;
-using DataAccessClient.EntityFrameworkCore.Relational.Tests.TestModels;
 using DataAccessClient.Providers;
 using Microsoft.EntityFrameworkCore;
 using Moq;

@@ -3,7 +3,7 @@ using DataAccessClient.EntityBehaviors;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Tests.TestModels
 {
-    public class TestEntityWithWrongIdentifierTypes : IIdentifiable<long>, ICreatable<long>, IModifiable<long>, ISoftDeletable<long>, IRowVersionable, ITenantScopable<long>
+    public class TestEntityWithWrongIdentifierTypes : IIdentifiable<long>, ICreatable<long>, IModifiable<long>, ISoftDeletable<long>, IRowVersionable<byte[]>, ITenantScopable<long>
     {
         public long Id { get; set; }
         public DateTime CreatedOn { get; set; }

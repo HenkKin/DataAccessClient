@@ -1,5 +1,4 @@
-﻿using DataAccessClient.EntityBehaviors;
-using DataAccessClient.EntityFrameworkCore.Relational.Tests.TestModels;
+﻿using DataAccessClient.EntityFrameworkCore.Relational.Tests.TestModels;
 using DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBehaviors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -20,7 +19,7 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Tests.Configuration.En
             var result = new ModelBuilder(new ConventionSet());
 
             // Assert
-            Assert.Null(result.Entity<TestEntity>().Metadata.FindProperty(nameof(IRowVersionable.RowVersion)));
+            Assert.Null(result.Entity<TestEntity>().Metadata.FindProperty(nameof(TestEntity.RowVersion)));
         }
 
         [Fact]
@@ -30,11 +29,11 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Tests.Configuration.En
             var entityTypeBuilder = new ModelBuilder(new ConventionSet());
 
             // Act
-            var result = RowVersionableEntityBehaviorConfigurationExtensions.ConfigureEntityBehaviorIRowVersionable<TestEntity>(entityTypeBuilder);
+            var result = RowVersionableEntityBehaviorConfigurationExtensions.ConfigureEntityBehaviorIRowVersionable<TestEntity, byte[]>(entityTypeBuilder);
 
             // Assert
-            var rowVersion = result.Entity<TestEntity>().Metadata.FindProperty(nameof(IRowVersionable.RowVersion));
-            Assert.Equal(nameof(IRowVersionable.RowVersion), rowVersion.Name);
+            var rowVersion = result.Entity<TestEntity>().Metadata.FindProperty(nameof(TestEntity.RowVersion));
+            Assert.Equal(nameof(TestEntity.RowVersion), rowVersion.Name);
             Assert.True(rowVersion.IsNullable);
             Assert.True(rowVersion.IsConcurrencyToken);
         }
@@ -49,7 +48,7 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Tests.Configuration.En
             var result = new EntityTypeBuilder<TestEntity>(entityType);
 
             // Assert
-            Assert.Null(result.Metadata.FindProperty(nameof(IRowVersionable.RowVersion)));
+            Assert.Null(result.Metadata.FindProperty(nameof(TestEntity.RowVersion)));
         }
 
         [Fact]
@@ -60,11 +59,11 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Tests.Configuration.En
             var entityTypeBuilder = new EntityTypeBuilder<TestEntity>(entityType);
 
             // Act
-            var result = entityTypeBuilder.IsRowVersionable();
+            var result = entityTypeBuilder.IsRowVersionable<TestEntity, byte[]>();
 
             // Assert
-            var rowVersion = result.Metadata.FindProperty(nameof(IRowVersionable.RowVersion));
-            Assert.Equal(nameof(IRowVersionable.RowVersion), rowVersion.Name);
+            var rowVersion = result.Metadata.FindProperty(nameof(TestEntity.RowVersion));
+            Assert.Equal(nameof(TestEntity.RowVersion), rowVersion.Name);
             Assert.True(rowVersion.IsNullable);
             Assert.True(rowVersion.IsConcurrencyToken);
         }

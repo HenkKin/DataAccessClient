@@ -41,8 +41,11 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
         {
             entity.Property(e => e.LocaleId).IsRequired();
 
+#if NET10_0_OR_GREATER
+            entity.HasQueryFilter("LocalizableEntityBehaviorQueryFilter", queryFilter);
+#else
             entity.AppendQueryFilter(queryFilter);
-
+#endif
             return entity;
         }
     }

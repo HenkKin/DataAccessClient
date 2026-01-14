@@ -14,6 +14,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
 {
     public static class ServiceCollectionExtensions
     {
+        [Obsolete("DataAccessClient.EntityFrameworkCore.SqlServer nuget package will be replace by DataAccessClient.EntityFrameworkCore.Relational nuget package")]
         public static IServiceCollection AddDataAccessClient<TDbContext>(this IServiceCollection services, Action<DataAccessClientOptionsBuilder> dataAccessClientOptionsBuilderAction)
             where TDbContext : SqlServerDbContext
         {

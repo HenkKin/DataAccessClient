@@ -1,7 +1,9 @@
-﻿namespace DataAccessClient.EntityBehaviors
+﻿using System;
+
+namespace DataAccessClient.EntityBehaviors
 {
-    public interface IRowVersionable
+    public interface IRowVersionable<TRowVersionableType>
     {
-        byte[] RowVersion { get; set; }
+        TRowVersionableType RowVersion { get; set; }
     }
 }

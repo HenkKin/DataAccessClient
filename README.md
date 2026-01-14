@@ -41,10 +41,11 @@ No external dependencies
 
 ### (Breaking) Changes
 
-#### 7.0.1: Added option to disable UtcDateTimePropertyEntityBehavior
-#### 8.0.1: Removed UtcDateTimePropertyEntityBehavior options and properties with types DateTime and Nullable DateTime no longer default to Utc. THIS IS A BREAKING CHANGE. You have to do that in your own modelbuilder with a convention.
+####  7.0.1: Added option to disable UtcDateTimePropertyEntityBehavior
+####  8.0.1: Removed UtcDateTimePropertyEntityBehavior options and properties with types DateTime and Nullable DateTime no longer default to Utc. THIS IS A BREAKING CHANGE. You have to do that in your own modelbuilder with a convention.
+#### 10.1.0: Modified IRowversionable to IRowversionable<TRowVersionableType> to support SqlServer and PostgreSQL and maybe other relational databases.
 
-For example
+Version 8.0.1: For example
 ```csharp
 
 protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -104,7 +105,7 @@ public class ExampleEntity :
 	ICreatable<int>, 
 	IModifiable<int>, 
 	ISoftDeletable<int>, 
-	IRowVersionable,
+	IRowVersionable<byte[]>,
 	ITranslatable<ExampleEntityTranslation, int, string>,
 	ITenantScopable<int>
 {
@@ -684,7 +685,7 @@ public class YourCustomEntityBehaviorConfigurationType : IEntityBehaviorConfigur
 }
     ...
 ```
-#### HasQueryFilter issue, please use AppendQueryFilter!
+#### HasQueryFilter issue, please use AppendQueryFilter! => Solved in EF CORE 10
 
 When configuring an QueryFilter for an entity, you normally use `EntityTypeBuilder.HasQueryFilter(LambdaExpression filter)` or the generic variant of it.
 The downside of this method is, that is overwrite the current QueryFilter.
@@ -697,6 +698,8 @@ To solve this issue an extension method is provided:
 It lives in the namespace `DataAccessClient.EntityFrameworkCore.Relational` and class `EntityTypeBuilderExtensions`.
 
 This method concatenates the queryies provided via `AppendQueryFilter(...)`.
+
+In EF Core 10, please use method `HasQueryFilter("name of your filter", [query filter])`
 
 ### Supporting migrations using `dotnet ef` tooling
 

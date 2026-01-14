@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Xunit;
+using System.Linq;
 
 namespace DataAccessClient.EntityFrameworkCore.Relational.Tests.Configuration.EntityBehaviors
 {
@@ -24,7 +25,12 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Tests.Configuration.En
             Assert.Null(result.Entity<TestEntity>().Metadata.FindProperty(nameof(ISoftDeletable<int>.DeletedOn)));
             Assert.Null(result.Entity<TestEntity>().Metadata.FindProperty(nameof(ISoftDeletable<int>.DeletedById)));
 
-            Assert.Null(result.Entity<TestEntity>().Metadata.GetQueryFilter());
+#if NET10_0_OR_GREATER
+            var queryFilter = result.Entity<TestEntity>().Metadata.GetDeclaredQueryFilters().Where(x => x.Key == "SoftDeletableEntityBehaviorQueryFilter").FirstOrDefault()?.Expression;
+#else
+            var queryFilter = result.Entity<TestEntity>().Metadata.GetQueryFilter();
+#endif
+            Assert.Null(queryFilter);
         }
 
         [Fact]
@@ -34,7 +40,7 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Tests.Configuration.En
             var entityTypeBuilder = new ModelBuilder(new ConventionSet());
 
             // Act
-            var result = SoftDeletableEntityBehaviorConfigurationExtensions.ConfigureEntityBehaviorISoftDeletable<TestEntity, int>(entityTypeBuilder, x => x.IsDeleted == false);
+            var result = SoftDeletableEntityBehaviorConfigurationExtensions.ConfigureEntityBehaviorISoftDeletable<TestEntity, int>(entityTypeBuilder, Param_0 => Param_0.IsDeleted == false);
 
             // Assert
             var isDeleted = result.Entity<TestEntity>().Metadata.FindProperty(nameof(ISoftDeletable<int>.IsDeleted));
@@ -50,7 +56,11 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Tests.Configuration.En
             Assert.Equal(nameof(ISoftDeletable<int>.DeletedById), deletedById.Name);
             Assert.True(deletedById.IsNullable);
 
+#if NET10_0_OR_GREATER
+            var deletedQueryFilter = result.Entity<TestEntity>().Metadata.GetDeclaredQueryFilters().Where(x => x.Key == "SoftDeletableEntityBehaviorQueryFilter").FirstOrDefault()?.Expression;
+#else
             var deletedQueryFilter = result.Entity<TestEntity>().Metadata.GetQueryFilter();
+#endif
             Assert.Equal("Param_0 => (Param_0.IsDeleted == False)", deletedQueryFilter.ToString());
         }
 
@@ -68,7 +78,12 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Tests.Configuration.En
             Assert.Null(result.Metadata.FindProperty(nameof(ISoftDeletable<int>.DeletedOn)));
             Assert.Null(result.Metadata.FindProperty(nameof(ISoftDeletable<int>.DeletedById)));
 
-            Assert.Null(result.Metadata.GetQueryFilter());
+#if NET10_0_OR_GREATER
+            var queryFilter = result.Metadata.GetDeclaredQueryFilters().Where(x => x.Key == "SoftDeletableEntityBehaviorQueryFilter").FirstOrDefault()?.Expression;
+#else
+            var queryFilter = result.Metadata.GetQueryFilter();
+#endif
+            Assert.Null(queryFilter);
         }
 
         [Fact]
@@ -79,7 +94,7 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Tests.Configuration.En
             var entityTypeBuilder = new EntityTypeBuilder<TestEntity>(entityType);
 
             // Act
-            var result = entityTypeBuilder.IsSoftDeletable<TestEntity, int>(x => x.IsDeleted == false);
+            var result = entityTypeBuilder.IsSoftDeletable<TestEntity, int>(Param_0 => Param_0.IsDeleted == false);
 
             // Assert
             var isDeleted = result.Metadata.FindProperty(nameof(ISoftDeletable<int>.IsDeleted));
@@ -95,7 +110,11 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Tests.Configuration.En
             Assert.Equal(nameof(ISoftDeletable<int>.DeletedById), deletedById.Name);
             Assert.True(deletedById.IsNullable);
 
+#if NET10_0_OR_GREATER
+            var deletedQueryFilter = result.Metadata.GetDeclaredQueryFilters().Where(x => x.Key == "SoftDeletableEntityBehaviorQueryFilter").FirstOrDefault()?.Expression;
+#else
             var deletedQueryFilter = result.Metadata.GetQueryFilter();
+#endif
             Assert.Equal("Param_0 => (Param_0.IsDeleted == False)", deletedQueryFilter.ToString());
         }
     }

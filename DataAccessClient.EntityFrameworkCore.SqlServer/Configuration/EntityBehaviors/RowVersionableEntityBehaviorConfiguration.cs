@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using DataAccessClient.EntityBehaviors;
+﻿using DataAccessClient.EntityBehaviors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBehaviors
 {
@@ -20,17 +20,17 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
                 .Single(m => m.Name == nameof(ConfigureEntityBehaviorIRowVersionable));
         }
 
-        internal static ModelBuilder ConfigureEntityBehaviorIRowVersionable<TEntity>(ModelBuilder modelBuilder)
-            where TEntity : class, IRowVersionable
+        internal static ModelBuilder ConfigureEntityBehaviorIRowVersionable<TEntity, TRowVersionableType>(ModelBuilder modelBuilder)
+            where TEntity : class, IRowVersionable<TRowVersionableType>
         {
             modelBuilder.Entity<TEntity>()
-                .IsRowVersionable();
+                .IsRowVersionable<TEntity, TRowVersionableType>();
 
             return modelBuilder;
         }
 
-        internal static EntityTypeBuilder<TEntity> IsRowVersionable<TEntity>(this EntityTypeBuilder<TEntity> entity)
-            where TEntity : class, IRowVersionable
+        internal static EntityTypeBuilder<TEntity> IsRowVersionable<TEntity, TRowVersionableType>(this EntityTypeBuilder<TEntity> entity)
+            where TEntity : class, IRowVersionable<TRowVersionableType>
         {
             entity.Property(e => e.RowVersion).IsRowVersion();
             return entity;
@@ -54,18 +54,22 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Configuration.EntityBeh
         {
             var entityInterfaces = entityType.GetInterfaces();
 
-            if (entityInterfaces.Any(x => !x.IsGenericType && x == typeof(IRowVersionable)))
+            if (entityInterfaces.Any(
+               x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IRowVersionable<>)))
             {
-                RowVersionableEntityBehaviorConfigurationExtensions.ModelBuilderConfigureEntityBehaviorIRowVersionable.MakeGenericMethod(entityType)
-                    .Invoke(null, new object[] {modelBuilder});
+                var rowVersionableType = entityType.GetInterface(typeof(IRowVersionable<>).Name)
+                    .GenericTypeArguments[0];
+                RowVersionableEntityBehaviorConfigurationExtensions.ModelBuilderConfigureEntityBehaviorIRowVersionable.MakeGenericMethod(entityType, rowVersionableType)
+                    .Invoke(null, new object[] { modelBuilder });
             }
         }
 
         public void OnBeforeSaveChanges(SqlServerDbContext serverDbContext, DateTime onSaveChangesTime)
         {
-            foreach (var entityEntry in serverDbContext.ChangeTracker.Entries<IRowVersionable>())
+            foreach (var entityEntry in serverDbContext.ChangeTracker.Entries().Where(x => x.Entity.GetType().GetInterface(typeof(IRowVersionable<>).Name) != null))
             {
-                var rowVersionProperty = entityEntry.Property(u => u.RowVersion);
+                // IRowVersionable<string> => I only need the name of the property
+                var rowVersionProperty = entityEntry.Property(nameof(IRowVersionable<string>.RowVersion));
                 var rowVersion = rowVersionProperty.CurrentValue;
                 //https://github.com/aspnet/EntityFramework/issues/4512
                 rowVersionProperty.OriginalValue = rowVersion;

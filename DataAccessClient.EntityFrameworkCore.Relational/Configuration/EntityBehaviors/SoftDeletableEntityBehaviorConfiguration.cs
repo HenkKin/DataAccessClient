@@ -47,7 +47,11 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
             entity.Property(e => e.DeletedOn).IsRequired(false);
             entity.Property(e => e.DeletedById).IsRequired(false);
 
+#if NET10_0_OR_GREATER
+            entity.HasQueryFilter("SoftDeletableEntityBehaviorQueryFilter", queryFilter);
+#else
             entity.AppendQueryFilter(queryFilter);
+#endif
             return entity;
         }
     }
