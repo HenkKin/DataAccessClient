@@ -17,8 +17,4 @@
     <ProjectReference Include="..\DataAccessClient.EntityFrameworkCore.SqlServer\DataAccessClient.EntityFrameworkCore.SqlServer.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Migrations\" />
-  </ItemGroup>
-
 </Project>

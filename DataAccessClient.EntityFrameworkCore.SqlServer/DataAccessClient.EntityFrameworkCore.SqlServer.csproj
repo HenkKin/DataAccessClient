@@ -14,7 +14,7 @@
     <PackageReleaseNotes></PackageReleaseNotes>
     <Copyright>Henk Kin</Copyright>
     <PackageTags>EntityFrameworkCore, EF, SqlServer, DependencyInjection, Multiple DbContext support, DataAccess, Repository, UnitOfWork, SoftDelete, Translation, Localization, RowVersioning, Multitenancy, Filtering, Paging, Sorting, Includes</PackageTags>
-    <Version>10.1.0</Version>
+    <Version>10.1.1</Version>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>

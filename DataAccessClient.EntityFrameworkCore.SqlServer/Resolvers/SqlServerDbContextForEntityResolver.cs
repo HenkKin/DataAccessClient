@@ -14,21 +14,26 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Resolvers
 
         public SqlServerDbContext Execute<TEntity>() where TEntity : class
         {
+            return Execute(typeof(TEntity));
+        }
+
+        public SqlServerDbContext Execute(Type entityType)
+        {
             Type dbContextType =
                 SqlServerDbContext.RegisteredEntityTypesPerDbContexts.Where(c =>
-                    c.Value.Any(entityType => entityType == typeof(TEntity))).Select(x => x.Key).SingleOrDefault();
+                    c.Value.Any(et => et == entityType)).Select(x => x.Key).SingleOrDefault();
 
             SqlServerDbContext dbContext = null;
             if (dbContextType != null)
             {
-                dbContext = ResolveDbContextInstance<TEntity>(_scopedServiceProvider, dbContextType);
+                dbContext = ResolveDbContextInstance(_scopedServiceProvider, entityType, dbContextType);
             }
 
             if (dbContext == null)
             {
                 foreach (var registeredDbContextType in SqlServerDbContext.RegisteredDbContextTypes)
                 {
-                    dbContext = ResolveDbContextInstance<TEntity>(_scopedServiceProvider, registeredDbContextType);
+                    dbContext = ResolveDbContextInstance(_scopedServiceProvider, entityType, registeredDbContextType);
 
                     if (dbContext != null)
                     {
@@ -40,7 +45,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Resolvers
             return dbContext;
         }
 
-        private SqlServerDbContext ResolveDbContextInstance<TEntity>(IServiceProvider scopedServiceProvider, Type dbContextType) where TEntity : class
+        private SqlServerDbContext ResolveDbContextInstance(IServiceProvider scopedServiceProvider, Type entityType, Type dbContextType)
         {
             var dbContextResolverType = typeof(ISqlServerDbContextResolver<>).MakeGenericType(dbContextType);
             var executeMethod =
@@ -49,7 +54,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer.Resolvers
                 executeMethod?.Invoke(scopedServiceProvider.GetService(dbContextResolverType), new object[0]) as
                     SqlServerDbContext ??
                 throw new ArgumentNullException(nameof(SqlServerDbContext));
-            if (dbContext.Model.FindEntityType(typeof(TEntity)) != null)
+            if (dbContext.Model.FindEntityType(entityType) != null)
             {
                 return dbContext;
             }
