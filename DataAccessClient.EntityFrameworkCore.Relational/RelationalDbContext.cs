@@ -20,6 +20,8 @@ namespace DataAccessClient.EntityFrameworkCore.Relational
         private static readonly MethodInfo DbContextResetStateAsyncMethodInfo;
         internal static ConcurrentBag<Type> RegisteredDbContextTypes = new ConcurrentBag<Type>();
         internal static ConcurrentDictionary<Type, List<Type>> RegisteredEntityTypesPerDbContexts = new ConcurrentDictionary<Type, List<Type>>();
+        protected bool IsSqlServer => Database.ProviderName.Contains("SqlServer");
+        protected bool IsPostgreSql => Database.ProviderName.Contains("Npgsql");
 
         static RelationalDbContext()
         {

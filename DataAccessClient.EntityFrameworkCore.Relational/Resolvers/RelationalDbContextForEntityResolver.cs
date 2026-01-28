@@ -14,21 +14,26 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Resolvers
 
         public RelationalDbContext Execute<TEntity>() where TEntity : class
         {
+            return Execute(typeof(TEntity));
+        }
+
+        public RelationalDbContext Execute(Type entityType)
+        {
             Type dbContextType =
                 RelationalDbContext.RegisteredEntityTypesPerDbContexts.Where(c =>
-                    c.Value.Any(entityType => entityType == typeof(TEntity))).Select(x => x.Key).SingleOrDefault();
+                    c.Value.Any(et => et == entityType)).Select(x => x.Key).SingleOrDefault();
 
             RelationalDbContext dbContext = null;
             if (dbContextType != null)
             {
-                dbContext = ResolveDbContextInstance<TEntity>(_scopedServiceProvider, dbContextType);
+                dbContext = ResolveDbContextInstance(_scopedServiceProvider, entityType, dbContextType);
             }
 
             if (dbContext == null)
             {
                 foreach (var registeredDbContextType in RelationalDbContext.RegisteredDbContextTypes)
                 {
-                    dbContext = ResolveDbContextInstance<TEntity>(_scopedServiceProvider, registeredDbContextType);
+                    dbContext = ResolveDbContextInstance(_scopedServiceProvider, entityType, registeredDbContextType);
 
                     if (dbContext != null)
                     {
@@ -40,7 +45,12 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Resolvers
             return dbContext;
         }
 
-        private RelationalDbContext ResolveDbContextInstance<TEntity>(IServiceProvider scopedServiceProvider, Type dbContextType) where TEntity : class
+        //private RelationalDbContext ResolveDbContextInstance<TEntity>(IServiceProvider scopedServiceProvider, Type dbContextType) where TEntity : class
+        //{
+        //    return ResolveDbContextInstance(scopedServiceProvider, typeof(TEntity), dbContextType);
+        //}
+
+        private RelationalDbContext ResolveDbContextInstance(IServiceProvider scopedServiceProvider, Type entityType, Type dbContextType)
         {
             var dbContextResolverType = typeof(IRelationalDbContextResolver<>).MakeGenericType(dbContextType);
             var executeMethod =
@@ -49,7 +59,7 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Resolvers
                 executeMethod?.Invoke(scopedServiceProvider.GetService(dbContextResolverType), new object[0]) as
                     RelationalDbContext ??
                 throw new ArgumentNullException(nameof(RelationalDbContext));
-            if (dbContext.Model.FindEntityType(typeof(TEntity)) != null)
+            if (dbContext.Model.FindEntityType(entityType) != null)
             {
                 return dbContext;
             }
