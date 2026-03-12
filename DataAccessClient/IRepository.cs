@@ -26,8 +26,10 @@ namespace DataAccessClient
         
         TEntity Update(TEntity entity);
 
+        [Obsolete("Use EntityCloner.Microsoft.EntityFrameworkCore nuget package directly.")]
         Task<TEntity> CloneAsync(params object[] id);
 
+        [Obsolete("Use EntityCloner.Microsoft.EntityFrameworkCore nuget package directly.")]
         Task<TEntity> CloneAsync(Func<IClonableQueryable<TEntity>, IClonableQueryable<TEntity>> includeQuery, params object[] id);
     }
 }
