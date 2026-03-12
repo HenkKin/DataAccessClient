@@ -94,6 +94,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             return DbSet.Update(entity).Entity;
         }
 
+        [Obsolete("Use EntityCloner.Microsoft.EntityFrameworkCore nuget package directly.")]
         public async Task<TEntity> CloneAsync(params object[] id)
         {
             ThrowIfInvalidPrimaryKey(id, _primaryKeyProperties);
@@ -102,6 +103,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             return clonedEntity;
         }
 
+        [Obsolete("Use EntityCloner.Microsoft.EntityFrameworkCore nuget package directly.")]
         public async Task<TEntity> CloneAsync(Func<IClonableQueryable<TEntity>, IClonableQueryable<TEntity>> includeQuery, params object[] id)
         {
             ThrowIfInvalidPrimaryKey(id, _primaryKeyProperties);
