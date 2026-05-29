@@ -10,7 +10,7 @@ namespace DataAccessClientExample.DataLayer
             return LocaleId;
         }
 
-        public void ChangeTentantIdentifier(string localeIdentifier)
+        public void ChangeLocaleIdentifier(string localeIdentifier)
         {
             LocaleId = localeIdentifier;
         }

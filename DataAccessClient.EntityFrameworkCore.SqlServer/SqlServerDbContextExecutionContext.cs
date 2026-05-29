@@ -2,11 +2,11 @@
 
 namespace DataAccessClient.EntityFrameworkCore.SqlServer
 {
-    internal class SqlServerDbContextExecutionContext
+    public class SqlServerDbContextExecutionContext
     {
         private readonly Dictionary<string, dynamic> _context;
 
-        public SqlServerDbContextExecutionContext(Dictionary<string, dynamic> context)
+        internal SqlServerDbContextExecutionContext(Dictionary<string, dynamic> context)
         {
             _context = context;
         }
@@ -16,9 +16,26 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
             return (T)_context[typeof(T).Name];
         }
 
+        public T TryGet<T>()
+        {
+            if (_context.TryGetValue(typeof(T).Name, out var value))
+            {
+                return (T)value;
+            }
+            return default;
+        }
         public T Get<T>(string name)
         {
             return (T)_context[name];
+        }
+
+        public T TryGet<T>(string name)
+        {
+            if (_context.TryGetValue(name, out var value))
+            {
+                return (T)value;
+            }
+            return default;
         }
     }
 }
