@@ -33,7 +33,7 @@ namespace DataAccessClient.EntityFrameworkCore.Relational
                 BindingFlags.Instance | BindingFlags.NonPublic);
         }
 
-        internal RelationalDbContextExecutionContext ExecutionContext { get; private set; }
+        public RelationalDbContextExecutionContext ExecutionContext { get; private set; }
 
         private readonly Action _dbContextResetStateMethod;
         private readonly Func<CancellationToken, Task> _dbContextResetStateAsyncMethod;

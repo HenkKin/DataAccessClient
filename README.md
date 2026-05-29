@@ -379,7 +379,7 @@ When using this package, there are two required implementation you have to provi
  - ITenantIdentifierProvider<TTenantIdentifierType>
  - ILocaleIdentifierProvider<TLocaleIdentifierType>
 
-These three providers have to be registered with Scoped Lifetime in DependencyInjection. They are only required when it is needed for the EntityBehaviors you have implemented.
+These three providers have to be registered with Scoped or Singleton Lifetime in DependencyInjection. They are only required when it is needed for the EntityBehaviors you have implemented.
 
 #### IUserIdentifierProvider<TUserIdentifierType>
 
@@ -567,9 +567,9 @@ public class Startup
         var entityTypes = new [] { typeof(Entity1), typeof(Entity2) }; // can also done by using reflection
         ...
         
-        services.AddScoped<IUserIdentifierProvider<int>, ExampleUserIdentifierProvider>();
-        services.AddScoped<ITenantIdentifierProvider<int>, ExampleTenantIdentifierProvider>();
-        services.AddScoped<ILocaleIdentifierProvider<string>, ExampleLocaleIdentifierProvider>();
+        services.AddSingleton<IUserIdentifierProvider<int>, ExampleUserIdentifierProvider>();
+        services.AddSingleton<ITenantIdentifierProvider<int>, ExampleTenantIdentifierProvider>();
+        services.AddSingleton<ILocaleIdentifierProvider<string>, ExampleLocaleIdentifierProvider>();
         
         // register as DataAccessClient
         services.AddDataAccessClient<ExampleDbContext>(conf => conf

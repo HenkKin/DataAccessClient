@@ -94,30 +94,30 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
         private static Type GetUserIdentifierType(this IServiceCollection services)
         {
             var registration =
-                services.SingleOrDefault(s =>
+                services.FirstOrDefault(s =>
                     s.ServiceType.IsGenericType &&
                     s.ServiceType.GetGenericTypeDefinition() == typeof(IUserIdentifierProvider<>) &&
-                    s.Lifetime == ServiceLifetime.Scoped);
+                    (s.Lifetime == ServiceLifetime.Scoped || s.Lifetime == ServiceLifetime.Singleton));
             return registration?.ServiceType.GenericTypeArguments[0];
         }
 
         private static Type GetTenantIdentifierType(this IServiceCollection services)
         {
             var registration =
-                services.SingleOrDefault(s =>
+                services.FirstOrDefault(s =>
                     s.ServiceType.IsGenericType &&
                     s.ServiceType.GetGenericTypeDefinition() == typeof(ITenantIdentifierProvider<>) &&
-                    s.Lifetime == ServiceLifetime.Scoped);
+                    (s.Lifetime == ServiceLifetime.Scoped || s.Lifetime == ServiceLifetime.Singleton));
             return registration?.ServiceType.GenericTypeArguments[0];
         }
 
         private static Type GetLocaleIdentifierType(this IServiceCollection services)
         {
             var registration =
-                services.SingleOrDefault(s =>
+                services.FirstOrDefault(s =>
                     s.ServiceType.IsGenericType &&
                     s.ServiceType.GetGenericTypeDefinition() == typeof(ILocaleIdentifierProvider<>) &&
-                    s.Lifetime == ServiceLifetime.Scoped);
+                    (s.Lifetime == ServiceLifetime.Scoped || s.Lifetime == ServiceLifetime.Singleton));
             return registration?.ServiceType.GenericTypeArguments[0];
         }
     }

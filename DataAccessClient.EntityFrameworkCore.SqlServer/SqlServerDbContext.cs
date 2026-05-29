@@ -31,7 +31,7 @@ namespace DataAccessClient.EntityFrameworkCore.SqlServer
                 BindingFlags.Instance | BindingFlags.NonPublic);
         }
 
-        internal SqlServerDbContextExecutionContext ExecutionContext { get; private set; }
+        public SqlServerDbContextExecutionContext ExecutionContext { get; private set; }
 
         private readonly Action _dbContextResetStateMethod;
         private readonly Func<CancellationToken, Task> _dbContextResetStateAsyncMethod;
