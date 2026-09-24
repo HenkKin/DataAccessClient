@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace DataAccessClient.EntityFrameworkCore.Relational
 {
@@ -13,7 +14,7 @@ namespace DataAccessClient.EntityFrameworkCore.Relational
 
         public T Get<T>()
         {
-            return (T)_context[typeof(T).Name];
+            return Get<T>(typeof(T).Name);
         }
 
         public T TryGet<T>()
@@ -27,7 +28,13 @@ namespace DataAccessClient.EntityFrameworkCore.Relational
 
         public T Get<T>(string name)
         {
-            return (T)_context[name];
+            if (!_context.TryGetValue(name, out var value))
+            {
+                throw new InvalidOperationException(
+                    $"'{name}' is not available in the execution context, because it is not registered in DependencyInjection with Scoped or Singleton lifetime.");
+            }
+
+            return (T)value;
         }
 
         public T TryGet<T>(string name)

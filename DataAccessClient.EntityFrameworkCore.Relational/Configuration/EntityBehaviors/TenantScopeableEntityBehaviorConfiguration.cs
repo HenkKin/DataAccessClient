@@ -104,7 +104,7 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
 
         public void OnBeforeSaveChanges(RelationalDbContext relationalDbContext, DateTime onSaveChangesTime)
         {
-            var tenantIdentifier = relationalDbContext.ExecutionContext
+            var tenantIdentifier = relationalDbContext.GetRequiredExecutionContext()
                 .Get<ITenantIdentifierProvider<TTenantIdentifierType>>().Execute();
 
             foreach (var entityEntry in relationalDbContext.ChangeTracker.Entries<ITenantScopable<TTenantIdentifierType>>()
@@ -133,13 +133,13 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
 
         private static TTenantIdentifierType? CurrentTenantIdentifier(RelationalDbContext dbContext)
         {
-            var tenantIdentifier = dbContext.ExecutionContext.Get<ITenantIdentifierProvider<TTenantIdentifierType>>().Execute();
+            var tenantIdentifier = dbContext.GetRequiredExecutionContext().Get<ITenantIdentifierProvider<TTenantIdentifierType>>().Execute();
             return tenantIdentifier;
         }
 
         private static bool IsTenantScopableQueryFilterEnabled(RelationalDbContext dbContext)
         {
-            var multiTenancyConfiguration = dbContext.ExecutionContext.Get<IMultiTenancyConfiguration>();
+            var multiTenancyConfiguration = dbContext.GetRequiredExecutionContext().Get<IMultiTenancyConfiguration>();
             return multiTenancyConfiguration.IsQueryFilterEnabled;
         }
 

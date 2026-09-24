@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DataAccessClient.EntityFrameworkCore.Relational.Resolvers
@@ -26,24 +25,8 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Resolvers
                     {
                         return _resolvedDbContext;
                     }
-
-                    var dbContext = _scopedServiceProvider.GetRequiredService<TDbContext>();
-
-                    var context = new Dictionary<string, dynamic>();
-                   
-                    foreach (var entityBehaviorConfiguration in dbContext.DataAccessClientOptionsExtension.EntityBehaviors)
-                    {
-                        foreach (var entityBehaviorContext in entityBehaviorConfiguration.OnExecutionContextCreating(_scopedServiceProvider))
-                        {
-                            context.TryAdd(entityBehaviorContext.Key, entityBehaviorContext.Value);
-                        }
-                    }
-
-                    var executionContext = new RelationalDbContextExecutionContext(context);
-
-                    dbContext.Initialize(executionContext);
-
-                    _resolvedDbContext = dbContext;
+                    
+                    _resolvedDbContext = _scopedServiceProvider.GetRequiredService<TDbContext>();
                 }
             }
 

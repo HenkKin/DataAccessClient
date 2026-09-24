@@ -1,4 +1,4 @@
-Packages
+﻿Packages
 =========================================
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/HenkKin/DataAccessClient?branch=master&svg=true)](https://ci.appveyor.com/project/HenkKin/DataAccessClient) 
 
@@ -44,6 +44,7 @@ No external dependencies
 ####  7.0.1: Added option to disable UtcDateTimePropertyEntityBehavior
 ####  8.0.1: Removed UtcDateTimePropertyEntityBehavior options and properties with types DateTime and Nullable DateTime no longer default to Utc. THIS IS A BREAKING CHANGE. You have to do that in your own modelbuilder with a convention.
 #### 10.1.0: Modified IRowversionable to IRowversionable<TRowVersionableType> to support SqlServer and PostgreSQL and maybe other relational databases.
+#### 10.2.0: Resolving a DbContext directly from the container now returns an initialized instance (with its execution context applied), instead of one that throws a NullReferenceException on first use. Using a DbContext that is not initialized now throws an InvalidOperationException explaining how to obtain an initialized one. See [Obtaining a DbContext for a third-party EntityFrameworkCore integration](https://github.com/HenkKin/DataAccessClient#obtaining-a-dbcontext-for-a-third-party-entityframeworkcore-integration).
 
 Version 8.0.1: For example
 ```csharp
@@ -700,6 +701,16 @@ It lives in the namespace `DataAccessClient.EntityFrameworkCore.Relational` and 
 This method concatenates the queryies provided via `AppendQueryFilter(...)`.
 
 In EF Core 10, please use method `HasQueryFilter("name of your filter", [query filter])`
+
+### Obtaining a `DbContext` for a third-party EntityFrameworkCore integration
+
+Data access is intended to go through `IRepository<T>` and `IUnitOfWork`. Some third-party EntityFrameworkCore integrations, like Wolverine's transactional outbox with `IDbContextOutbox<TDbContext>`, resolve `TDbContext` from the container themselves. To support them, resolving `TDbContext` from a scope returns an initialized instance (the same one `IRelationalDbContextResolver<TDbContext>.Execute()` returns), with or without DbContext pooling. No extra configuration is needed.
+
+Things to be aware of:
+
+ - The `DbContext` has to be resolved from a scope. Resolving it from the root `IServiceProvider` builds the execution context from root scoped services, which are then used for the lifetime of the application.
+ - A `DbContext` that is not resolved from the container, for example one created with `new`, is not initialized. Using it throws an `InvalidOperationException`.
+ - The `DbContext` is owned by the scope, so it should not be disposed by your own code.
 
 ### Supporting migrations using `dotnet ef` tooling
 

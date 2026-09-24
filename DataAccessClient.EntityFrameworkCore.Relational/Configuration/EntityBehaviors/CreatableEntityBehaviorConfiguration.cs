@@ -75,7 +75,7 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
         
         public void OnBeforeSaveChanges(RelationalDbContext relationalDbContext, DateTime onSaveChangesTime)
         {
-            var userIdentifier = relationalDbContext.ExecutionContext
+            var userIdentifier = relationalDbContext.GetRequiredExecutionContext()
                 .Get<IUserIdentifierProvider<TUserIdentifierType>>().Execute();
 
             foreach (var entityEntry in relationalDbContext.ChangeTracker.Entries<ICreatable<TUserIdentifierType>>()
