@@ -111,13 +111,13 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
 
         private static TLocaleIdentifierType CurrentLocaleIdentifier(RelationalDbContext dbContext)
         {
-            var localeIdentifier = dbContext.ExecutionContext.Get<ILocaleIdentifierProvider<TLocaleIdentifierType>>().Execute();
+            var localeIdentifier = dbContext.GetRequiredExecutionContext().Get<ILocaleIdentifierProvider<TLocaleIdentifierType>>().Execute();
             return localeIdentifier;
         }
 
         private static bool IsLocalizationQueryFilterEnabled(RelationalDbContext dbContext)
         {
-            var localizationConfiguration = dbContext.ExecutionContext.Get<ILocalizationConfiguration>();
+            var localizationConfiguration = dbContext.GetRequiredExecutionContext().Get<ILocalizationConfiguration>();
             return localizationConfiguration.IsQueryFilterEnabled;
         }
 

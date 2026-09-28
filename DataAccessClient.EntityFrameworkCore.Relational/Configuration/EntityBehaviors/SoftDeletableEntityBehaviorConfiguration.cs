@@ -111,10 +111,10 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
 
         public void OnBeforeSaveChanges(RelationalDbContext relationalDbContext, DateTime onSaveChangesTime)
         {
-            var softDeletableConfiguration = relationalDbContext.ExecutionContext.Get<ISoftDeletableConfiguration>();
+            var softDeletableConfiguration = relationalDbContext.GetRequiredExecutionContext().Get<ISoftDeletableConfiguration>();
             if (softDeletableConfiguration.IsEnabled)
             {
-                var userIdentifier = relationalDbContext.ExecutionContext
+                var userIdentifier = relationalDbContext.GetRequiredExecutionContext()
                     .Get<IUserIdentifierProvider<TUserIdentifierType>>().Execute();
                 foreach (var entityEntry in relationalDbContext.ChangeTracker.Entries<ISoftDeletable<TUserIdentifierType>>()
                     .Where(c => c.State == EntityState.Deleted))
@@ -233,7 +233,7 @@ namespace DataAccessClient.EntityFrameworkCore.Relational.Configuration.EntityBe
 
         private static bool IsSoftDeletableQueryFilterEnabled(RelationalDbContext dbContext)
         {
-            var softDeletableConfiguration = dbContext.ExecutionContext.Get<ISoftDeletableConfiguration>();
+            var softDeletableConfiguration = dbContext.GetRequiredExecutionContext().Get<ISoftDeletableConfiguration>();
             return softDeletableConfiguration.IsEnabled && softDeletableConfiguration.IsQueryFilterEnabled;
         }
 

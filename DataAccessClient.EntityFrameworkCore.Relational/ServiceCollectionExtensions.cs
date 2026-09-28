@@ -74,6 +74,8 @@ namespace DataAccessClient.EntityFrameworkCore.Relational
                 services.AddDbContext<TDbContext>(ExtendedDbContextOptionsBuilder);
             }
 
+            InitializeDbContextOnResolving<TDbContext>(services);
+
             services.AddScoped<IUnitOfWorkPart, UnitOfWorkPartForRelationalDbContext<TDbContext>>();
 
             RelationalDbContext.RegisteredDbContextTypes.Add(typeof(TDbContext));
@@ -90,6 +92,43 @@ namespace DataAccessClient.EntityFrameworkCore.Relational
             services.AddSingleton<ISaveChangesDbUpdateExceptionHandler>(sp => new RelationalSaveChangesDbUpdateExceptionHandler(sp.GetServices<ISaveChangesDbUpdateExceptionHandler>()));
 
             return services;
+        }
+
+        // Wraps the TDbContext registration of EntityFrameworkCore, so a TDbContext resolved directly from the container
+        // is initialized as well, while the pooling and lifetime of that registration stay untouched
+        private static void InitializeDbContextOnResolving<TDbContext>(IServiceCollection services)
+            where TDbContext : RelationalDbContext
+        {
+            var dbContextServiceDescriptor = services.Last(s => s.ServiceType == typeof(TDbContext));
+
+            Func<IServiceProvider, object> dbContextFactory;
+            if (dbContextServiceDescriptor.ImplementationFactory != null)
+            {
+                dbContextFactory = dbContextServiceDescriptor.ImplementationFactory;
+            }
+            else if (dbContextServiceDescriptor.ImplementationType != null)
+            {
+                var objectFactory = ActivatorUtilities.CreateFactory(dbContextServiceDescriptor.ImplementationType, Type.EmptyTypes);
+                dbContextFactory = sp => objectFactory(sp, null);
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    $"'{typeof(TDbContext).FullName}' is registered as an instance, which is not supported. Register it with {nameof(AddDataAccessClient)}<{typeof(TDbContext).Name}>() only.");
+            }
+
+            services.Remove(dbContextServiceDescriptor);
+            services.Add(new ServiceDescriptor(typeof(TDbContext), sp =>
+            {
+                var dbContext = (TDbContext)dbContextFactory(sp);
+
+                if (dbContext.ExecutionContext == null)
+                {
+                    RelationalDbContextInitializer.Initialize(dbContext, sp);
+                }
+
+                return dbContext;
+            }, dbContextServiceDescriptor.Lifetime));
         }
 
         private static IEntityBehaviorConfiguration CreateEntityBehaviorTypeInstance(Type entityBehaviorType)

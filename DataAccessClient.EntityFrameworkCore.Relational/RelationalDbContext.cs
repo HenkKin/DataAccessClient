@@ -1,6 +1,7 @@
 ﻿using DataAccessClient.EntityBehaviors;
 using DataAccessClient.EntityFrameworkCore.Relational.ExceptionHandling;
 using DataAccessClient.EntityFrameworkCore.Relational.Infrastructure;
+using DataAccessClient.EntityFrameworkCore.Relational.Resolvers;
 using DataAccessClient.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -91,6 +92,21 @@ namespace DataAccessClient.EntityFrameworkCore.Relational
         internal void Initialize(RelationalDbContextExecutionContext executionContext)
         {
             ExecutionContext = executionContext;
+        }
+
+        public RelationalDbContextExecutionContext GetRequiredExecutionContext()
+        {
+            if (ExecutionContext == null)
+            {
+                throw new InvalidOperationException(
+                    $"'{GetType().FullName}' is resolved without being initialized, so its execution context is not available. " +
+                    $"Data access is intended to go through {typeof(IRepository<>).Name} and {nameof(IUnitOfWork)}. " +
+                    $"When the {nameof(DbContext)} itself is needed, for example for a third party EntityFrameworkCore integration, " +
+                    $"resolve it from a scoped service provider after registering it with {nameof(ServiceCollectionExtensions.AddDataAccessClient)}<{GetType().Name}>(), " +
+                    $"or with {typeof(IRelationalDbContextResolver<>).Name}.{nameof(IRelationalDbContextResolver<RelationalDbContext>.Execute)}().");
+            }
+
+            return ExecutionContext;
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
